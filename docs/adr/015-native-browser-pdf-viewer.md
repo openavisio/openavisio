@@ -1,0 +1,3 @@
+# Native browser PDF viewer for Documents
+
+When adding inline Document viewing, we chose the browser's native PDF renderer (an `<iframe>` fed a blob URL) over a JS library such as react-pdf / pdf.js. The native renderer is zero-bundle-cost and good enough for the read-only use case here — users need to see the source document while reviewing extracted clinical data, not annotate or navigate it programmatically. The blob URL is fetched through a Next.js proxy route that adds the Bearer token, keeping auth server-side. Images (`image/*`) are rendered with `<img>` instead. If consistent cross-browser chrome or programmatic page control is needed later, swapping to react-pdf is straightforward.

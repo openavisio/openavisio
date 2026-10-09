@@ -1,0 +1,127 @@
+[
+  {
+    "pattern": "medgemma",
+    "tasks": [
+      "extract"
+    ],
+    "hint": "Fine-tuned for clinical text — recommended for extraction",
+    "tags": [
+      "medical"
+    ]
+  },
+  {
+    "pattern": "gemma4",
+    "tasks": [
+      "extract",
+      "classify",
+      "chat",
+      "vision"
+    ],
+    "hint": "Multimodal all-rounder — strong candidate for extraction (see docs/research-extraction-model.md), classification, chat, and vision OCR",
+    "tags": [
+      "general",
+      "multimodal"
+    ]
+  },
+  {
+    "pattern": "gemma3",
+    "tasks": [
+      "classify",
+      "chat"
+    ],
+    "hint": "General-purpose model, good for classification and chat",
+    "tags": [
+      "general"
+    ]
+  },
+  {
+    "pattern": "qwen3.6",
+    "tasks": [
+      "classify",
+      "chat",
+      "vision"
+    ],
+    "hint": "Newest Qwen line (27b/35b, multimodal, 256K) — agentic-coding focus, no OCR claims; 27b fits 24GB",
+    "tags": [
+      "general",
+      "multimodal"
+    ]
+  },
+  {
+    "pattern": "qwen3.5",
+    "tasks": [
+      "classify",
+      "chat",
+      "vision"
+    ],
+    "hint": "Unified multimodal family — general-purpose alternative for classification, chat, vision",
+    "tags": [
+      "general",
+      "multimodal"
+    ]
+  },
+  {
+    "pattern": "qwen3-vl",
+    "tasks": [
+      "vision"
+    ],
+    "hint": "Superseded by qwen3.5 — kept for existing installs",
+    "tags": [
+      "vision",
+      "multimodal"
+    ]
+  },
+  {
+    "pattern": "glm",
+    "tasks": [
+      "vision"
+    ],
+    "hint": "GLM-OCR: #1 OmniDocBench, German + handwriting, ~2GB — recommended vision OCR (see docs/research-vision-ocr-model.md)",
+    "tags": [
+      "vision",
+      "multimodal"
+    ]
+  },
+  {
+    "pattern": "nomic-embed",
+    "tasks": [
+      "embed"
+    ],
+    "hint": "Text embedding, English only — kept for existing installs, see docs/research-embedding-model.md",
+    "tags": [
+      "embed"
+    ]
+  },
+  {
+    "pattern": "qwen3-embedding",
+    "tasks": [
+      "embed"
+    ],
+    "hint": "Text embedding, multilingual — the default; nomic-embed-text is English-only and does not separate German text",
+    "tags": [
+      "embed"
+    ]
+  },
+  {
+    "pattern": "qwen3",
+    "tasks": [
+      "classify",
+      "chat"
+    ],
+    "hint": "Strong general-purpose model for classification and chat",
+    "tags": [
+      "general"
+    ]
+  },
+  {
+    "pattern": "llama",
+    "tasks": [
+      "classify",
+      "chat"
+    ],
+    "hint": "General-purpose model for classification and chat",
+    "tags": [
+      "general"
+    ]
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "placeholder": true,
+  "note": "Run: python scripts/generate_demo_embeddings.py  (requires AI service)",
+  "dimension": 768,
+  "embeddings": {}
+}

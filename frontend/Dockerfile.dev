@@ -1,0 +1,6 @@
+FROM node:22-alpine
+RUN corepack enable pnpm
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+CMD ["pnpm", "run", "dev"]

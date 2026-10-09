@@ -1,0 +1,53 @@
+{
+  "name": "OpenAvisio Dev",
+  "dockerComposeFile": [
+    "../deploy/docker-compose.infra.yml",
+    "docker-compose.yml"
+  ],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/openavisio",
+
+  "forwardPorts": [3000, 8000, 8001, 5555],
+  "portsAttributes": {
+    "3000": { "label": "Frontend" },
+    "8000": { "label": "Backend API" },
+    "8001": { "label": "AI Service" },
+    "5555": { "label": "Flower (Celery)" }
+  },
+
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql+asyncpg://openavisio:devpassword123@postgres:5432/vaultdb",
+    "REDIS_URL": "redis://redis:6379/0",
+    "AI_BACKEND": "mock",
+    "APP_SECRET": "dev-secret-not-for-production-use-replace-me",
+    "CORS_ORIGINS": "http://localhost:3000",
+    "ENVIRONMENT": "development",
+    "DOCUMENT_STORAGE_PATH": "/workspaces/openavisio/data/documents",
+    "NEXTAUTH_URL": "http://localhost:3000",
+    "NEXTAUTH_SECRET": "dev-secret-not-for-production-use-replace-me",
+    "NEXT_PUBLIC_API_URL": "http://localhost:8000",
+    "API_URL": "http://localhost:8000"
+  },
+
+  "postCreateCommand": "cd /workspaces/openavisio/backend && uv sync && cd /workspaces/openavisio/frontend && pnpm install",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/openavisio/backend/.venv/bin/python",
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        }
+      }
+    }
+  }
+}

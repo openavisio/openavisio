@@ -1,0 +1,1 @@
+Beta-Begleit-App für deine selbst-gehostete OpenAvisio-Instanz

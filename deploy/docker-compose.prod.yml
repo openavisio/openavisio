@@ -1,0 +1,260 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: vaultdb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d vaultdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  aiservice:
+    build:
+      context: ../aiservice
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      AISERVICE_TOKEN: ${AISERVICE_TOKEN:-}
+      AI_BACKEND: ${AI_BACKEND:-ollama}
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      # Optional: vision / embeddings on their own Ollama (own GPU). Fall back to OLLAMA_URL.
+      OLLAMA_VISION_URL: ${OLLAMA_VISION_URL:-}
+      OLLAMA_EMBED_URL: ${OLLAMA_EMBED_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-qwen3-embedding:4b}
+      OLLAMA_CLASSIFY_MODEL: ${OLLAMA_CLASSIFY_MODEL:-}
+      OLLAMA_EXTRACT_MODEL: ${OLLAMA_EXTRACT_MODEL:-}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-}
+      VLLM_URL: ${VLLM_URL:-}
+      VLLM_MODEL: ${VLLM_MODEL:-}
+      # Without the key a hosted provider answers 401 — backend.py sends "unused" (#248)
+      VLLM_API_KEY: ${VLLM_API_KEY:-}
+      # Optional: vision / embeddings at the provider instead of the chat endpoint
+      VLLM_VISION_URL: ${VLLM_VISION_URL:-}
+      VLLM_VISION_MODEL: ${VLLM_VISION_MODEL:-}
+      VLLM_EMBED_URL: ${VLLM_EMBED_URL:-}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://aiservice:8000
+      AISERVICE_TOKEN: ${AISERVICE_TOKEN:-}
+      APP_SECRET: ${APP_SECRET}
+      DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
+      # Fallback only: the admin UI still wins once SMTP is configured there (#249)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      # Operator copy of pipeline alerts, counts only (#250)
+      OPS_ALERT_EMAIL: ${OPS_ALERT_EMAIL:-}
+      BOOTSTRAP_TOKEN: ${BOOTSTRAP_TOKEN}
+      # demo instances only: locks uploads to the bundled sample (by sha256)
+      DEMO_LOCKED_UPLOAD_SHA256: ${DEMO_LOCKED_UPLOAD_SHA256:-}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-}
+      DOCUMENT_STORAGE_PATH: /data/documents
+      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
+      EMBEDDING_SCHEDULER_BATCH_SIZE: ${EMBEDDING_SCHEDULER_BATCH_SIZE:-50}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      APP_URL: https://${DOMAIN}
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-${DOMAIN}}
+      WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-OpenAvisio}
+      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-https://${DOMAIN}}
+      ENVIRONMENT: production
+    volumes:
+      - document-data:/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      aiservice:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    # -Q celery: the default queue only — GPU stages live on their own queue below
+    command: uv run celery -A app.workers.celery_app worker -Q celery --loglevel=info --concurrency=4
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://aiservice:8000
+      AISERVICE_TOKEN: ${AISERVICE_TOKEN:-}
+      APP_SECRET: ${APP_SECRET}
+      DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
+      # Fallback only: the admin UI still wins once SMTP is configured there (#249)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      # Operator copy of pipeline alerts, counts only (#250)
+      OPS_ALERT_EMAIL: ${OPS_ALERT_EMAIL:-}
+      APP_URL: https://${DOMAIN}
+      DOCUMENT_STORAGE_PATH: /data/documents
+    volumes:
+      - document-data:/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # One model, one card: GPU stages (ocr, extraction, embedding) run strictly one
+  # at a time (#152). Four in parallel produced five timeouts out of nine docs.
+  celery-worker-gpu:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    command: uv run celery -A app.workers.celery_app worker -Q gpu --loglevel=info --concurrency=1
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://aiservice:8000
+      AISERVICE_TOKEN: ${AISERVICE_TOKEN:-}
+      APP_SECRET: ${APP_SECRET}
+      DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
+      # Fallback only: the admin UI still wins once SMTP is configured there (#249)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      # Operator copy of pipeline alerts, counts only (#250)
+      OPS_ALERT_EMAIL: ${OPS_ALERT_EMAIL:-}
+      APP_URL: https://${DOMAIN}
+      DOCUMENT_STORAGE_PATH: /data/documents
+    volumes:
+      - document-data:/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    command: uv run celery -A app.workers.celery_app beat --loglevel=info
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://aiservice:8000
+      AISERVICE_TOKEN: ${AISERVICE_TOKEN:-}
+      APP_SECRET: ${APP_SECRET}
+      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      HOSTNAME: "0.0.0.0"
+      NEXTAUTH_URL: https://${DOMAIN}
+      NEXTAUTH_SECRET: ${APP_SECRET}
+      API_URL: http://backend:8000
+      # "preview, not ready for production" banner — set true on test instances (#110)
+      PREVIEW_BANNER: ${PREVIEW_BANNER:-false}
+      # demo instances only: upload panel offers the bundled sample instead of a dropzone
+      DEMO_MODE: ${DEMO_MODE:-false}
+      # opt-in self-hosted analytics — unset means none (the default and the promise)
+      UMAMI_URL: ${UMAMI_URL:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000',(r)=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: vaultdb
+      AGE_PUBKEY: ${AGE_PUBKEY}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      RETENTION_CLINICAL_DAYS: ${RETENTION_CLINICAL_DAYS:-90}
+      # short, so an erased patient's KEK drops out of every backup (ADR-031)
+      RETENTION_KEYSTORE_DAYS: ${RETENTION_KEYSTORE_DAYS:-7}
+      TZ: ${TZ:-Europe/Berlin}
+    volumes:
+      - document-data:/data/documents:ro
+      - ${BACKUP_DIR:-/opt/openavisio-backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  document-data:
+  caddy-data:
+  caddy-config:

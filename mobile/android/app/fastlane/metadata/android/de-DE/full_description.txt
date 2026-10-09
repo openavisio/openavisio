@@ -1,0 +1,7 @@
+OpenAvisio ist ein selbst-gehosteter Speicher für medizinische Unterlagen und Dokumente. Diese App ist ein schlanker Begleit-Client: Sie verbindet sich mit einer OpenAvisio-Instanz, die du oder dein Behandlungsteam betreibt, und bietet einen nativen, biometrisch gesperrten Zugang auf Android.
+
+Die App speichert selbst keine medizinischen Daten. Alles liegt auf deiner Instanz — die App merkt sich nur deren Adresse und deine App-Sperre.
+
+Dies ist eine Beta-Version. Sie ist nutzbar, aber noch in aktiver Entwicklung, mit Ecken und Kanten ist also zu rechnen.
+
+Freie Software unter der AGPL-3.0. Keine Werbung, kein Tracking, keine Google-Dienste und keine Push-Benachrichtigungen.

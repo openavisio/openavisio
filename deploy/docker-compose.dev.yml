@@ -1,0 +1,169 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-openavisio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env.dev}
+      POSTGRES_DB: vaultdb
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-openavisio} -d vaultdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  aiservice:
+    build:
+      context: ../aiservice
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      AI_BACKEND: ${AI_BACKEND:-mock}
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      OLLAMA_VISION_URL: ${OLLAMA_VISION_URL:-}
+      OLLAMA_EMBED_URL: ${OLLAMA_EMBED_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-qwen3-embedding:4b}
+      OLLAMA_CLASSIFY_MODEL: ${OLLAMA_CLASSIFY_MODEL:-}
+      OLLAMA_EXTRACT_MODEL: ${OLLAMA_EXTRACT_MODEL:-}
+      OLLAMA_VISION_MODEL: ${OLLAMA_VISION_MODEL:-}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-}
+      VLLM_URL: ${VLLM_URL:-}
+      VLLM_MODEL: ${VLLM_MODEL:-}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      UV_NO_SYNC: "false"  # /app is mounted over the image venv, let uv run sync into it
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-openavisio}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://aiservice:8000
+      APP_SECRET: ${APP_SECRET:-dev-secret-not-for-production-use-replace-me}
+      DOCUMENT_STORAGE_PATH: /data/documents
+      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
+      EMBEDDING_SCHEDULER_BATCH_SIZE: ${EMBEDDING_SCHEDULER_BATCH_SIZE:-50}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      ENVIRONMENT: development
+    volumes:
+      - ../backend:/app
+      - document-data:/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    command: uv run celery -A app.workers.celery_app worker -Q celery,gpu --loglevel=info  # dev: one worker drains both queues
+    restart: unless-stopped
+    environment:
+      UV_NO_SYNC: "false"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-openavisio}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://aiservice:8000
+      APP_SECRET: ${APP_SECRET:-dev-secret-not-for-production-use-replace-me}
+      DOCUMENT_STORAGE_PATH: /data/documents
+    volumes:
+      - ../backend:/app
+      - document-data:/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      aiservice:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    command: uv run celery -A app.workers.celery_app beat --loglevel=info
+    restart: unless-stopped
+    environment:
+      UV_NO_SYNC: "false"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-openavisio}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://aiservice:8000
+      APP_SECRET: ${APP_SECRET:-dev-secret-not-for-production-use-replace-me}
+      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
+    volumes:
+      - ../backend:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  flower:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    command: uv run celery -A app.workers.celery_app flower --port=5555
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5555:5555"
+    environment:
+      UV_NO_SYNC: "false"
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${APP_SECRET:-dev-secret-not-for-production-use-replace-me}
+      API_URL: http://backend:8000
+      # "preview, not ready for production" banner — set true on test instances (#110)
+      PREVIEW_BANNER: ${PREVIEW_BANNER:-false}
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  document-data:

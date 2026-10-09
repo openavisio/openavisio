@@ -1,0 +1,24 @@
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  sharp: true
+  unrs-resolver: true
+
+# Security overrides. All three are transitive and cannot be reached by bumping
+# a direct dependency: form-data sits under axios, postcss and @babel/core under
+# next. Patch-level fixes for known advisories; drop an entry once the parent
+# ships the fix itself.
+overrides:
+  form-data: '>=4.0.6'
+  postcss: '>=8.5.23'
+  '@babel/core': '>=7.29.1'
+  # sharp <0.35.4 inherits libvips/libheif CVEs; it is next's optional image dep.
+  sharp: '>=0.35.4'
+  # nanoid sits under postcss under next. The advisory needs a custom generator
+  # with size 0, which nothing here does, but the gate is branch-independent and
+  # a pin costs nothing.
+  nanoid: '>=3.3.18'
+  # baseline-browser-mapping sits under next; <2.11.0 crashes on invalid input (DoS).
+  baseline-browser-mapping: '>=2.11.0'
+  # source-map-js sits under postcss under next; <1.2.2 has an event-loop DoS.
+  source-map-js: '>=1.2.2'
