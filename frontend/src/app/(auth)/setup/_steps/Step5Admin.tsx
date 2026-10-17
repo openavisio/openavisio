@@ -18,8 +18,8 @@ export function Step5Admin({ state, onChange, bootstrapToken, onBootstrapToken, 
 
   return (
     <div className="space-y-4">
-      {/* hosted: the link from the welcome mail filled it; a customer never sees a token */}
-      {!(hosted && bootstrapToken) && (
+      {/* hosted: the link from the welcome mail filled it; without it SetupWizard shows no form */}
+      {!hosted && (
         <div className="space-y-1">
           <label className="text-sm font-medium">{t("BootstrapToken")} *</label>
           <input
@@ -30,7 +30,7 @@ export function Step5Admin({ state, onChange, bootstrapToken, onBootstrapToken, 
             autoComplete="off"
             className="w-full rounded-lg border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <p className="text-xs text-muted-foreground">{t(hosted ? "BootstrapTokenHintHosted" : "BootstrapTokenHint")}</p>
+          <p className="text-xs text-muted-foreground">{t("BootstrapTokenHint")}</p>
         </div>
       )}
       <div className="space-y-1">

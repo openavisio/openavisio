@@ -142,11 +142,12 @@ services:
 
   # One model, one card: GPU stages (ocr, extraction, embedding) run strictly one
   # at a time (#152). Four in parallel produced five timeouts out of nine docs.
+  # With the AI at a provider there is no card to share: GPU_CONCURRENCY raises it.
   celery-worker-gpu:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    command: uv run celery -A app.workers.celery_app worker -Q gpu --loglevel=info --concurrency=1
+    command: uv run celery -A app.workers.celery_app worker -Q gpu --loglevel=info --concurrency=${GPU_CONCURRENCY:-1}
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/vaultdb

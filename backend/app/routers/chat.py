@@ -1,13 +1,14 @@
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import require_patient_access
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.ratelimit import client_ip, enforce
 from app.deps import get_current_user
 from app.models.calendar import CalendarEvent, EventCategory
 from app.models.care_notes import HEADINGS as CARE_HEADINGS, CareNotes
@@ -403,10 +404,15 @@ async def _chat_model(db: AsyncSession) -> str | None:
 async def chat(
     patient_id: uuid.UUID,
     body: ChatRequest,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     await require_patient_access(patient_id, user, db)
+    # the demo's visitors share one login: nobody reads another's questions, and each IP has a budget
+    demo = bool(settings.demo_locked_upload_sha256)
+    if demo:
+        await enforce(f"rl:demo:chat:{client_ip(request)}", limit=20, window_seconds=3600)
     lang = await _org_language(db)
     plan = (await db.execute(select(EmergencyPlan).where(EmergencyPlan.patient_id == patient_id))).scalar_one_or_none()
     plan_med_ids = [s["medication_id"] for sit in plan.situations for s in sit["steps"] if s.get("medication_id")] if plan else []
@@ -414,12 +420,13 @@ async def chat(
         select(MedicationStatement.medication_display).where(MedicationStatement.id.in_(plan_med_ids))
     )).scalars().all() if plan_med_ids else []
     if _is_emergency(body.question, plan_meds):
-        await _store(patient_id, user.id, body.question, _LABELS[lang]["emergency"], db)
+        if not demo:
+            await _store(patient_id, user.id, body.question, _LABELS[lang]["emergency"], db)
         return ChatResponse(answer=_LABELS[lang]["emergency"], history=await _get_history(patient_id, user.id, db),
                             emergency_plan=True)
 
     # an emergency question and its pointer stay out, or a follow-up would carry it to the model
-    full = await _get_history(patient_id, user.id, db)
+    full = [] if demo else await _get_history(patient_id, user.id, db)
     history = [m for i, m in enumerate(full)
                if not m.emergency_plan and not (i + 1 < len(full) and full[i + 1].emergency_plan)][-HISTORY_WINDOW:]
     # "und wann war der letzte?" embeds to nothing on its own — the previous
@@ -463,7 +470,8 @@ async def chat(
     if not answer:
         raise HTTPException(status_code=503, detail="ai_service_unavailable")
 
-    await _store(patient_id, user.id, body.question, answer, db)
+    if not demo:
+        await _store(patient_id, user.id, body.question, answer, db)
 
     return ChatResponse(
         answer=answer,

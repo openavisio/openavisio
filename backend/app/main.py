@@ -59,6 +59,9 @@ app = FastAPI(
     redoc_url="/redoc" if settings.is_dev else None,
 )
 
+from app.demo import read_only  # noqa: E402 — a no-op unless this is the public demo
+app.middleware("http")(read_only)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

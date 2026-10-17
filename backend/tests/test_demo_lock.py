@@ -69,3 +69,33 @@ async def test_no_lock_means_normal_uploads(client: AsyncClient, db: AsyncSessio
     r = await client.post(f"/api/patients/{p.id}/documents/upload", headers=h,
                           files={"file": ("normal.pdf", b"%PDF-1.4 anything", "application/pdf")})
     assert r.status_code == 201
+
+
+async def test_the_demo_is_read_only_but_for_the_sample_and_the_chat(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """Every visitor shares one login: what one writes, all others read until the nightly reset."""
+    from sqlalchemy import func, select
+
+    from app.models.chat import ChatMessage
+    from tests.test_chat_fhir_emergency_plan import _fake_aiservice
+
+    _, p = await _setup(db)
+    h = await _auth(client)
+    monkeypatch.setattr(settings, "demo_locked_upload_sha256", SAMPLE_SHA)
+
+    r = await client.post(f"/api/patients/{p.id}/diary", headers=h, json={"content": "Mein Sohn hat ..."})
+    assert r.status_code == 403, "nothing a visitor types may reach the others"
+    r = await client.patch("/api/auth/me", headers=h, json={"first_name": "x"})
+    assert r.status_code == 403
+
+    r = await client.post(f"/api/patients/{p.id}/documents/upload", headers=h,
+                          files={"file": ("sample.pdf", SAMPLE, "application/pdf")})
+    assert r.status_code == 201
+    r = await client.delete(f"/api/documents/{r.json()['id']}", headers=h)
+    assert r.status_code == 204, "the upload panel removes the previous sample run"
+
+    _fake_aiservice(monkeypatch, {})
+    r = await client.post(f"/api/patients/{p.id}/chat", headers=h, json={"question": "Wann war der letzte Termin?"})
+    assert r.status_code == 200 and r.json()["answer"]
+    assert (await db.execute(select(func.count()).select_from(ChatMessage))).scalar() == 0, "no visitor's question is kept"
+    r = await client.get(f"/api/patients/{p.id}/chat/history", headers=h)
+    assert r.json()["messages"] == []

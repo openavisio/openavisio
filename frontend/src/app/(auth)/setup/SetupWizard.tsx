@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useWizardState } from "./_hooks/useWizardState";
 import { WizardShell } from "./_components/WizardShell";
@@ -26,7 +27,10 @@ export function SetupWizard({ hosted }: { hosted: boolean }) {
   const [bootstrapToken, setBootstrapToken] = useState(() =>
     typeof window === "undefined" ? "" : new URLSearchParams(location.hash.slice(1)).get("token") ?? "",
   );
+  // the token is read from the address bar, which the server render cannot see
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     if (new URLSearchParams(location.hash.slice(1)).has("token")) {
       history.replaceState(history.state, "", location.pathname + location.search);
     }
@@ -127,6 +131,20 @@ export function SetupWizard({ hosted }: { hosted: boolean }) {
     />,
     <Step7Done key="7" recoveryCode={recoveryCode} hosted={hosted} />,
   ];
+
+  // hosted without the link's token: the wizard would end at a token field nobody understands
+  if (hosted && !mounted) return null;
+  if (hosted && !bootstrapToken && !recoveryCode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+        <div className="w-full max-w-lg bg-card rounded-2xl shadow-lg p-8 text-center space-y-3">
+          <Image src="/logo.png" alt="OpenAvisio" width={56} height={56} className="mx-auto" />
+          <h1 className="text-lg font-semibold">{t("NotSetUpTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t("NotSetUpBody")}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <WizardShell

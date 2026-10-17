@@ -544,7 +544,8 @@
     "AccountEmail": "Your e-mail",
     "BootstrapToken": "Setup token",
     "BootstrapTokenHint": "The one-time token printed by setup.sh. Required to create the first admin.",
-    "BootstrapTokenHintHosted": "Open the link from your welcome mail again and this field fills itself.",
+    "NotSetUpTitle": "Your record is not set up yet",
+    "NotSetUpBody": "To set it up, open the “Jetzt einrichten” link in your welcome mail. After that, this address takes you straight to sign-in.",
     "AdminPassword": "Admin Password",
     "AccountPassword": "Your password",
     "AdminFirstName": "First Name",
@@ -577,7 +578,8 @@
     "Copied": "Copied"
   },
   "Preview": {
-    "banner": "Preview — This version is not yet ready for production use."
+    "banner": "Preview — This version is not yet ready for production use.",
+    "demo": "Public demo: look around, upload the sample letter and ask questions. Nothing here can be changed."
   },
   "Sharing": {
     "title": "Data sharing",

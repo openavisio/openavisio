@@ -54,6 +54,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Either it is true — then do not onboard patients — or it is stale and must go.
   // The instance decides: set PREVIEW_BANNER=true on the test servers.
   const previewBanner = process.env.PREVIEW_BANNER === "true";
+  // the public demo refuses every write but the sample and the chat (backend app/demo.py)
+  const demoBanner = process.env.DEMO_MODE === "true";
 
   // Opt-in, per instance: self-hosted, cookieless Umami. Unset (the default)
   // means no analytics at all — that is the product's promise; only our own
@@ -70,6 +72,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {previewBanner && (
         <div className="w-full bg-amber-50 border-b border-amber-200 text-amber-900 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200 text-center text-xs py-1.5 px-4 font-medium pt-[max(0.375rem,env(safe-area-inset-top))]">
           {t("banner")}
+        </div>
+        )}
+        {demoBanner && (
+        <div className="w-full bg-amber-50 border-b border-amber-200 text-amber-900 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200 text-center text-xs py-1.5 px-4 font-medium pt-[max(0.375rem,env(safe-area-inset-top))]">
+          {t("demo")}
         </div>
         )}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

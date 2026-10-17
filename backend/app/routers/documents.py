@@ -1,6 +1,6 @@
 import hashlib
 import uuid
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -110,6 +110,7 @@ async def list_documents(
 @router.post("/patients/{patient_id}/documents/upload", response_model=DocumentDto, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     patient_id: uuid.UUID,
+    request: Request,
     file: UploadFile = File(...),
     description: str | None = Form(None),
     doc_type: str | None = Form(None, alias="type"),
@@ -117,6 +118,10 @@ async def upload_document(
     db: AsyncSession = Depends(get_db),
 ):
     await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    from app.core.config import settings
+    if settings.demo_locked_upload_sha256:
+        from app.core.ratelimit import client_ip, enforce
+        await enforce(f"rl:demo:upload:{client_ip(request)}", limit=5, window_seconds=3600)
     data = await file.read()
     file_hash = hashlib.sha256(data).hexdigest()
 
@@ -602,6 +607,9 @@ async def delete_document(doc_id: uuid.UUID, user: User = Depends(get_current_us
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     await require_patient_access(doc.patient_id, user, db, AccessLevel.contribute)
+    from app.core.config import settings
+    if settings.demo_locked_upload_sha256 and doc.hash != settings.demo_locked_upload_sha256:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This is a public demo, it is read-only.")
 
     # Cascade: remove everything this document extracted, so deleting a document
     # (e.g. an accidental duplicate) also clears its observations/diagnoses/etc.

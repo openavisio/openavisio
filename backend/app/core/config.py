@@ -68,6 +68,7 @@ class Settings(BaseSettings):
 
     # Demo instances: when set, document upload accepts ONLY a file with exactly
     # this sha256 (the bundled sample), and patient photos are refused entirely.
+    # It also makes the whole API read-only but for sign-in, the sample and the chat (app/demo.py).
     demo_locked_upload_sha256: str = ""
 
     # SMTP fallback for hosted Deployments (#249). Normally SMTP is configured in

@@ -544,7 +544,8 @@
     "AccountEmail": "Deine E-Mail",
     "BootstrapToken": "Setup-Token",
     "BootstrapTokenHint": "Das von setup.sh angezeigte Einmal-Token. Erforderlich, um den ersten Administrator zu erstellen.",
-    "BootstrapTokenHintHosted": "Öffne den Link aus deiner Willkommensmail noch einmal, dann ist dieses Feld ausgefüllt.",
+    "NotSetUpTitle": "Deine Akte ist noch nicht eingerichtet",
+    "NotSetUpBody": "Öffne zum Einrichten den Link „Jetzt einrichten“ aus deiner Willkommensmail. Danach kommst du über diese Adresse direkt zur Anmeldung.",
     "AdminPassword": "Admin-Passwort",
     "AccountPassword": "Dein Passwort",
     "AdminFirstName": "Vorname",
@@ -577,7 +578,8 @@
     "Copied": "Kopiert"
   },
   "Preview": {
-    "banner": "Vorschau — Diese Version ist noch nicht für den Produktiveinsatz bereit."
+    "banner": "Vorschau — Diese Version ist noch nicht für den Produktiveinsatz bereit.",
+    "demo": "Öffentliche Demo: Sieh dich um, lade den Beispielbrief hoch und stell Fragen. Ändern lässt sich hier nichts."
   },
   "Sharing": {
     "title": "Datenfreigabe",
