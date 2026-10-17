@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User, UserRole
@@ -46,6 +47,13 @@ def require_role(*roles: UserRole):
 
 
 require_admin = require_role(UserRole.admin)
+
+
+async def operator_only() -> None:
+    """The routes behind it belong to whoever runs the instance. On a hosted Deployment that is
+    the operator, not the customer, so nobody who logs in may use them."""
+    if settings.hosted:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Managed by the operator of this instance")
 require_manager = require_role(UserRole.admin, UserRole.manager)
 
 

@@ -38,6 +38,9 @@ log() { echo "[backup] $(date -Iseconds) $*"; }
 run_backup() {
   day=$(date +%F)
   tmp="$OUT/.tmp.$$"
+  # $$ is the same on every pass of the loop below, so a failed run's files would sit in
+  # here for good and fail every later run
+  rm -rf "$tmp"
   mkdir -p "$OUT" "$tmp"
   # a half-written backup must never look like a good one: build in a temp dir,
   # move into place only once every stream succeeded
@@ -49,6 +52,15 @@ run_backup() {
   until pg_isready -h "$PGHOST" -U "$POSTGRES_USER" -q; do
     i=$((i + 1))
     [ "$i" -ge 30 ] && { log "FEHLER: Postgres nach 60s nicht erreichbar — kein Backup"; return 1; }
+    sleep 2
+  done
+
+  # pg_isready is true as soon as Postgres accepts connections, minutes before the backend's
+  # migrations have created a single table. A first run in that gap dumps nothing.
+  i=0
+  until [ -n "$(psql -h "$PGHOST" -U "$POSTGRES_USER" -d "$DB" -Atc "select to_regclass('public.patient_keys')" 2>/dev/null)" ]; do
+    i=$((i + 1))
+    [ "$i" -ge 90 ] && { log "FEHLER: das Schema fehlt nach 180s — kein Backup"; return 1; }
     sleep 2
   done
 

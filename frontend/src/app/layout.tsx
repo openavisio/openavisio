@@ -4,6 +4,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { ThemeProvider } from "next-themes";
 import { ThemeColorMeta } from "@/components/providers/ThemeColorMeta";
 import { HighContrastProvider } from "@/components/providers/HighContrastProvider";
+import { UmamiNotice } from "@/components/UmamiNotice";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <HighContrastProvider>
             <NextIntlClientProvider messages={messages}>
               {children}
+              {umamiUrl && umamiId && <UmamiNotice />}
             </NextIntlClientProvider>
           </HighContrastProvider>
         </ThemeProvider>

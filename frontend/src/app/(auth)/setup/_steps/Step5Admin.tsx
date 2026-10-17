@@ -9,28 +9,32 @@ interface Props {
   onChange: (admin: Partial<WizardState["admin"]>) => void;
   bootstrapToken: string;
   onBootstrapToken: (token: string) => void;
+  hosted?: boolean;
 }
 
-export function Step5Admin({ state, onChange, bootstrapToken, onBootstrapToken }: Props) {
+export function Step5Admin({ state, onChange, bootstrapToken, onBootstrapToken, hosted = false }: Props) {
   const t = useTranslations("Setup");
   const { email, password, firstName, lastName } = state.admin;
 
   return (
     <div className="space-y-4">
+      {/* hosted: the link from the welcome mail filled it; a customer never sees a token */}
+      {!(hosted && bootstrapToken) && (
+        <div className="space-y-1">
+          <label className="text-sm font-medium">{t("BootstrapToken")} *</label>
+          <input
+            type="password"
+            required
+            value={bootstrapToken}
+            onChange={(e) => onBootstrapToken(e.target.value)}
+            autoComplete="off"
+            className="w-full rounded-lg border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <p className="text-xs text-muted-foreground">{t(hosted ? "BootstrapTokenHintHosted" : "BootstrapTokenHint")}</p>
+        </div>
+      )}
       <div className="space-y-1">
-        <label className="text-sm font-medium">{t("BootstrapToken")} *</label>
-        <input
-          type="password"
-          required
-          value={bootstrapToken}
-          onChange={(e) => onBootstrapToken(e.target.value)}
-          autoComplete="off"
-          className="w-full rounded-lg border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <p className="text-xs text-muted-foreground">{t("BootstrapTokenHint")}</p>
-      </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">{t("AdminEmail")} *</label>
+        <label className="text-sm font-medium">{t(hosted ? "AccountEmail" : "AdminEmail")} *</label>
         <input
           type="email"
           required
@@ -40,7 +44,7 @@ export function Step5Admin({ state, onChange, bootstrapToken, onBootstrapToken }
         />
       </div>
       <div className="space-y-1">
-        <label className="text-sm font-medium">{t("AdminPassword")} *</label>
+        <label className="text-sm font-medium">{t(hosted ? "AccountPassword" : "AdminPassword")} *</label>
         <input
           type="password"
           required

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
-export function Step7Done({ recoveryCode }: { recoveryCode?: string }) {
+export function Step7Done({ recoveryCode, hosted = false }: { recoveryCode?: string; hosted?: boolean }) {
   const t = useTranslations("Setup");
   const router = useRouter();
   const [noted, setNoted] = useState(false);
@@ -21,7 +21,7 @@ export function Step7Done({ recoveryCode }: { recoveryCode?: string }) {
         ✓
       </div>
       <h2 className="text-xl font-semibold">{t("DoneTitle")}</h2>
-      <p className="text-sm text-muted-foreground">{t("DoneBody")}</p>
+      <p className="text-sm text-muted-foreground">{t(hosted ? "DoneBodyHosted" : "DoneBody")}</p>
 
       {/* ADR 044: this is the only time the code is ever shown. A household has
           no second admin to let anyone back in. */}

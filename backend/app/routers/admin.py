@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.log_handler import REDIS_CHANNEL, get_log_history
-from app.deps import get_current_user, require_admin
+from app.deps import get_current_user, operator_only, require_admin
 from app.models.audit import AuditLog
 from app.models.document import DocumentReference
 from app.models.log_entry import LogEntry
@@ -205,7 +205,7 @@ async def _get_ai_model_settings(db: AsyncSession) -> dict[str, str | None]:
     return {row.key.removeprefix("ai.model."): row.value for row in rows.scalars().all()}
 
 
-@router.get("/ollama", response_model=OllamaSettingsDto)
+@router.get("/ollama", dependencies=[Depends(operator_only)], response_model=OllamaSettingsDto)
 async def get_ollama_settings(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     model_settings = await _get_ai_model_settings(db)
 
@@ -249,7 +249,7 @@ async def get_ollama_settings(admin: User = Depends(require_admin), db: AsyncSes
     )
 
 
-@router.put("/ollama/models")
+@router.put("/ollama/models", dependencies=[Depends(operator_only)])
 async def save_ai_model_config(
     body: AiModelConfigRequest,
     admin: User = Depends(require_admin),
@@ -271,7 +271,7 @@ async def save_ai_model_config(
     return {"ok": True}
 
 
-@router.post("/ollama/test", response_model=OllamaConnectionTestResult)
+@router.post("/ollama/test", dependencies=[Depends(operator_only)], response_model=OllamaConnectionTestResult)
 async def test_ollama(admin: User = Depends(require_admin)):
     try:
         async with httpx.AsyncClient(timeout=5, headers=settings.ai_service_headers) as client:
@@ -283,7 +283,7 @@ async def test_ollama(admin: User = Depends(require_admin)):
     return OllamaConnectionTestResult(success=False, message="Unexpected response")
 
 
-@router.post("/ollama/pull")
+@router.post("/ollama/pull", dependencies=[Depends(operator_only)])
 async def pull_model(body: OllamaPullRequest, admin: User = Depends(require_admin)):
     _pull_status[body.model] = OllamaPullStatus(status="pulling", progress=0)
     try:
@@ -294,12 +294,12 @@ async def pull_model(body: OllamaPullRequest, admin: User = Depends(require_admi
     return {"ok": True}
 
 
-@router.get("/ollama/pull/status")
+@router.get("/ollama/pull/status", dependencies=[Depends(operator_only)])
 async def get_pull_status(admin: User = Depends(require_admin)):
     return _pull_status
 
 
-@router.get("/logs/tasks", response_model=list[PipelineTaskDto])
+@router.get("/logs/tasks", dependencies=[Depends(operator_only)], response_model=list[PipelineTaskDto])
 async def get_pipeline_tasks(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(DocumentReference)
@@ -323,7 +323,7 @@ async def get_pipeline_tasks(admin: User = Depends(require_admin), db: AsyncSess
     ]
 
 
-@router.get("/logs/task-runs", response_model=list[TaskRunDto])
+@router.get("/logs/task-runs", dependencies=[Depends(operator_only)], response_model=list[TaskRunDto])
 async def get_task_runs(
     task_status: str | None = Query(None, alias="status"),
     name: str | None = Query(None),
@@ -343,7 +343,7 @@ async def get_task_runs(
 
 # --- GDPR data governance (#15/#16) ------------------------------------------
 
-@router.get("/data-categories", response_model=list[DataCategoryDto])
+@router.get("/data-categories", dependencies=[Depends(operator_only)], response_model=list[DataCategoryDto])
 async def list_data_categories(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     from app.models.governance import DataCategory
     from app.services.governance import ensure_categories_seeded
@@ -353,7 +353,7 @@ async def list_data_categories(admin: User = Depends(require_admin), db: AsyncSe
     return result.scalars().all()
 
 
-@router.put("/data-categories/{code}", response_model=DataCategoryDto)
+@router.put("/data-categories/{code}", dependencies=[Depends(operator_only)], response_model=DataCategoryDto)
 async def update_data_category(
     code: str,
     body: UpdateDataCategoryRequest,
@@ -385,7 +385,7 @@ async def update_data_category(
     return cat
 
 
-@router.get("/logs/history")
+@router.get("/logs/history", dependencies=[Depends(operator_only)])
 async def get_log_history_db(
     level: str | None = Query(None),
     source: str | None = Query(None),
@@ -405,7 +405,7 @@ async def get_log_history_db(
     ]
 
 
-@router.get("/logs/stream")
+@router.get("/logs/stream", dependencies=[Depends(operator_only)])
 async def stream_logs(
     admin: User = Depends(require_admin),
 ):
@@ -443,7 +443,7 @@ async def stream_logs(
     )
 
 
-@router.get("/system")
+@router.get("/system", dependencies=[Depends(operator_only)])
 async def get_system_info(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     import os
     import platform
@@ -553,14 +553,14 @@ def _to_license_dto(info) -> LicenseDto:
     )
 
 
-@router.get("/license", response_model=LicenseDto)
+@router.get("/license", dependencies=[Depends(operator_only)], response_model=LicenseDto)
 async def get_license(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     from app.services.license import get_license_info
     info = await get_license_info(db, settings.license_public_key)
     return _to_license_dto(info)
 
 
-@router.post("/license", response_model=LicenseDto)
+@router.post("/license", dependencies=[Depends(operator_only)], response_model=LicenseDto)
 async def upload_license(
     body: UploadLicenseRequest,
     admin: User = Depends(require_admin),
@@ -583,7 +583,7 @@ async def upload_license(
     return _to_license_dto(info)
 
 
-@router.delete("/license", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/license", dependencies=[Depends(operator_only)], status_code=status.HTTP_204_NO_CONTENT)
 async def delete_license(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Organization))
     org = result.scalar_one()

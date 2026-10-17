@@ -101,6 +101,7 @@ production, and write the date and the wall-clock time it took into this file:
 | Date | By | Duration | Outcome |
 |---|---|---|---|
 | 2026-07-14 | Claude, scratch host | ~4 min (copy 1s, restore 9s, backend build + decrypt 162s) | **Passed.** 1 patient, 21 documents, 20 conditions, 5 medications, 34 encrypted blobs. Three PDFs decrypted end to end (`%PDF-`, 2.3 MB / 936 KB / 640 KB) with their extracted text. |
+| 2026-10-17 | Claude, hosted box, `deploy/hosted/restore.sh` | 136 s for one Deployment | **Passed.** Backup and escrowed KEK taken from the Storage Box, not the box; restored into a new Deployment beside the old one; 1 document decrypted end to end (`%PDF-`, 187 KB). The age key stayed on the operator machine. |
 
 **What the drill found before it even started:** the backup script was silently
 destroying good backups. A `pg_dump` that died (Postgres briefly down during a

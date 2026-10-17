@@ -41,12 +41,24 @@ function reducer(state: WizardState, action: Action): WizardState {
 
 const SESSION_KEY = "openavisio_setup_wizard";
 
-export function useWizardState() {
+// Hosted: start at the admin step, in German, as a household, with the mail server left to the
+// environment. The stored step never moves a hosted wizard back before it.
+const HOSTED_START = { step: 3, locale: "de" };
+
+export function useWizardState(hosted = false) {
   const [state, dispatch] = useReducer(reducer, INITIAL, (initial) => {
     if (typeof window === "undefined") return initial;
     try {
       const stored = sessionStorage.getItem(SESSION_KEY);
-      return stored ? { ...initial, ...JSON.parse(stored) } : initial;
+      const merged: WizardState = stored ? { ...initial, ...JSON.parse(stored) } : initial;
+      if (!hosted) return merged;
+      return {
+        ...merged,
+        ...HOSTED_START,
+        step: Math.max(merged.step, HOSTED_START.step),
+        org: { ...merged.org, isHousehold: true },
+        smtp: { ...merged.smtp, skip: true },
+      };
     } catch {
       return initial;
     }

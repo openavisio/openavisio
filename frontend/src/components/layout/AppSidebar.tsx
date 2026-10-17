@@ -64,10 +64,11 @@ interface AppSidebarProps {
   userName?: string
   hasGroups?: boolean
   isHousehold?: boolean
+  hosted?: boolean
   favorites?: { id: string; given_name: string; family_name: string }[]
 }
 
-export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold, favorites = [] }: AppSidebarProps) {
+export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold, hosted, favorites = [] }: AppSidebarProps) {
   const t = useTranslations("Nav")
   const tp = useTranslations("Patient")
   const pathname = usePathname()
@@ -92,7 +93,7 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold
 
   // ADR 046: in a household there are no Groups, no Sharing Purposes and no
   // user management. Invitations stay — that is how the other parent gets in.
-  const canShare = (userRole === "admin" || userRole === "manager") && !isHousehold
+  const canShare = (userRole === "admin" || userRole === "manager") && !isHousehold && !hosted
   const showGroups = (canShare || hasGroups) && !isHousehold
   // Azure-DevOps-style: coloured top-level groups, grey contextual sub-nav (#77).
   const navMain = [
@@ -103,7 +104,7 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold
     { href: "/settings", label: t("Settings"), icon: Settings, color: "text-slate-500 dark:text-slate-400" },
   ]
 
-  const adminItems = [
+  const allAdminItems = [
     { href: "/admin/system", label: t("System"), icon: MonitorDot, color: "text-cyan-600 dark:text-cyan-400" },
     { href: "/admin/organization", label: t("Organization"), icon: Building, color: "text-indigo-600 dark:text-indigo-400" },
     ...(isHousehold ? [] : [
@@ -117,6 +118,8 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold
     { href: "/admin/license", label: t("License"), icon: BadgeCheck, color: "text-lime-600 dark:text-lime-400" },
     { href: "/admin/data-governance", label: t("DataGovernance"), icon: Shield, color: "text-rose-600 dark:text-rose-400" },
   ]
+
+  const adminItems = hosted ? allAdminItems.filter((i) => ["/admin/invitations", "/admin/audit"].includes(i.href)) : allAdminItems
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)

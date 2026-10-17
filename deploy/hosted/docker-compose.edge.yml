@@ -1,0 +1,25 @@
+# The shared Caddy of a hosted box. Start once per box. It is on no shared network: provision.sh
+# attaches it to each Deployment's own network (docker network connect oa-<id>_default edge-caddy-1),
+# so Deployments cannot see one another. An attachment is lost when this container is recreated or
+# a Deployment's network is, and the Deployment is then unreachable until it is attached again:
+# isolation-check.sh reports exactly that.
+#   docker compose -f docker-compose.edge.yml up -d
+# Add a Deployment:  printf '%s.openavisio.app {\n    import openavisio %s\n}\n' <id> <id> > sites/<id>.caddy
+#                    docker compose -f docker-compose.edge.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
+name: edge
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    mem_limit: 256m
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sites:/etc/caddy/sites:ro
+      - caddy-data:/data
+      - caddy-config:/config
+volumes:
+  caddy-data:
+  caddy-config:

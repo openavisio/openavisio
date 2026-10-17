@@ -20,9 +20,9 @@ class ChatMessageDto(BaseModel):
 # than none, because it makes us believe we are covered. It ships with every
 # answer now, so a client cannot quietly drop it.
 CHAT_DISCLAIMER = (
-    "Diese Antwort gibt wieder, was in Ihren Dokumenten steht. Sie ist keine "
+    "Diese Antwort gibt wieder, was in deinen Dokumenten steht. Sie ist keine "
     "medizinische Beratung, keine Einschätzung und ersetzt kein ärztliches Urteil. "
-    "Wenden Sie sich mit Fragen zu Befunden und Behandlung an die behandelnden "
+    "Wende dich mit Fragen zu Befunden und Behandlung an die behandelnden "
     "Ärztinnen und Ärzte."
 )
 

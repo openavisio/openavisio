@@ -21,8 +21,13 @@ git tag -a vX.Y.Z -m "Release vX.Y.Z — <one-line summary>"
 git push origin vX.Y.Z
 ```
 
-The tag is annotated (not lightweight) so it carries a message and a date. The
-Codeberg mirror picks it up automatically.
+The tag is annotated (not lightweight) so it carries a message and a date. Then
+publish it to the public repository (ADR 032):
+
+```bash
+scripts/make-public-snapshot.sh vX.Y.Z        # refuses if anything internal survives
+git -C /tmp/openavisio-public-vX.Y.Z push origin main vX.Y.Z
+```
 
 `v0.1.0` (18 Jul 2026) was the first tagged release — the point where the
 Go-Live blockers were cleared.

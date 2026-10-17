@@ -1,0 +1,59 @@
+# One Caddy per hosted box serves every Deployment on it, routing by hostname (ADR 0007, amended).
+# Each Deployment is its own Compose project on its own network; Caddy is attached to every one and
+# reaches the frontend and backend under the aliases <id>-frontend and <id>-backend
+# (docker-compose.shared-box.yml).
+#
+# The snippet below is deploy/Caddyfile with the two upstreams made per-Deployment. Keep the
+# routes in step with it when a Next route handler is added there.
+#
+# A Deployment is one file, sites/<id>.caddy (a block over several lines; one line is rejected):
+#   <id>.openavisio.app {
+#       import openavisio <id>
+#   }
+# The A record must resolve before the file is loaded, or the certificate request fails.
+(openavisio) {
+    # /api/* goes to the backend, so every Next route handler needs its own line here first.
+    handle /api/auth/* {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+    handle /api/upload/* {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+    handle /api/documents/*/file {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+    handle /api/shares/*/file {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+    handle /api/sharing-purposes/*/download {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+    handle /api/patients/*/photo {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+    handle /api/patients/*/chat {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+    handle_path /api/backend/* {
+        rewrite * /api{uri}
+        reverse_proxy {args[0]}-backend:8000 {
+            flush_interval -1
+        }
+    }
+    handle /api/admin/logs/stream* {
+        skip_log
+        reverse_proxy {args[0]}-backend:8000 {
+            flush_interval -1
+        }
+    }
+    handle /api/* {
+        reverse_proxy {args[0]}-backend:8000 {
+            flush_interval -1
+        }
+    }
+    handle {
+        reverse_proxy {args[0]}-frontend:3000
+    }
+}
+
+import /etc/caddy/sites/*.caddy

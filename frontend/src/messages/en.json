@@ -517,6 +517,7 @@
     "StepAI": "AI Configuration",
     "StepSMTP": "Email / SMTP",
     "StepAdmin": "Admin Account",
+    "StepAccount": "Your account",
     "StepPatient": "First Patient",
     "StepDone": "Complete",
     "ChooseLanguage": "Choose your language",
@@ -541,9 +542,12 @@
     "SMTPSkipped": "SMTP skipped — configure later in admin settings",
     "SMTPConfigure": "Configure SMTP now",
     "AdminEmail": "Admin Email",
+    "AccountEmail": "Your e-mail",
     "BootstrapToken": "Setup token",
     "BootstrapTokenHint": "The one-time token printed by setup.sh. Required to create the first admin.",
+    "BootstrapTokenHintHosted": "Open the link from your welcome mail again and this field fills itself.",
     "AdminPassword": "Admin Password",
+    "AccountPassword": "Your password",
     "AdminFirstName": "First Name",
     "AdminLastName": "Last Name",
     "PasswordStrengthWeak": "Weak",
@@ -558,6 +562,7 @@
     "PatientAdd": "Add a patient now",
     "DoneTitle": "Setup complete!",
     "DoneBody": "OpenAvisio has been initialized. Log in with your admin account to get started.",
+    "DoneBodyHosted": "Done. Sign in now with your e-mail and password.",
     "GoToLogin": "Go to login",
     "Initialize": "Finish Setup",
     "AlreadySetup": "Organization already initialized",
@@ -677,7 +682,9 @@
     "dropHint": "Drop files here or click to select",
     "uploading": "Uploading… {done} of {total}",
     "uploadResult": "{done} uploaded · {failed} failed",
-    "uploadedBackground": "{total} uploaded — processing in background",
+    "uploadedBackground": "{total} uploaded",
+    "processingHint": "OpenAvisio is reading the documents now, this usually takes a few minutes. Processing continues even if this page is closed.",
+    "seeProgress": "See progress in Documents",
     "retryFailed": "Retry failed",
     "dismiss": "Dismiss",
     "countObservations": "{count, plural, one {# value} other {# values}}",
@@ -1148,5 +1155,13 @@
     "DeleteConfirm": "Delete this history fact?",
     "SaveError": "The history fact could not be saved.",
     "DeleteError": "The history fact could not be deleted."
+  },
+  "Umami": {
+    "label": "Visitor statistics notice",
+    "text": "This installation counts visits with Umami, without cookies and without storing your IP address.",
+    "privacy": "Privacy",
+    "object": "Object",
+    "optOut": "Stop counting this browser",
+    "optOutDone": "Objection saved, this browser is no longer counted."
   }
 }

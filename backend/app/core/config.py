@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     # One-time token gating POST /organization/init in production (see setup.sh)
     bootstrap_token: str = ""
 
+    # Hosted Deployments (avisiohub ADR 0007): the operator runs the AI, the license and the
+    # system, the customer is a household. Their admin gets no page and no endpoint for those.
+    hosted: bool = False
+
     # Demo instances: when set, document upload accepts ONLY a file with exactly
     # this sha256 (the bundled sample), and patient photos are refused entirely.
     demo_locked_upload_sha256: str = ""

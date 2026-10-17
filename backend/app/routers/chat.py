@@ -96,15 +96,15 @@ _LABELS = {
         "care": {"communication": "Kommunikation", "eating_drinking": "Essen und Trinken", "sleep": "Schlafen",
                  "aids": "Hilfsmittel", "what_helps": "Was hilft", "what_overwhelms": "Was überfordert"},
         "emergency": "Was im Notfall zu tun ist, steht im Notfallplan. Dieser Chat gibt ihn nicht wieder,"
-                     " damit hier keine Dosis falsch zitiert werden kann. Bitte öffnen Sie den Notfallplan selbst.",
+                     " damit hier keine Dosis falsch zitiert werden kann. Bitte öffne den Notfallplan selbst.",
         "lab_cap": "HINWEIS: von den Laborwerten sind nur die {n} neuesten Ergebnisse je"
                    " Parameter enthalten, ältere fehlen.",
         "stripped": "(Ein Teil der Antwort wurde entfernt: dort wurde ein Wert eingeordnet"
                     " oder eine Empfehlung gegeben, und beides darf dieser Chat nicht."
-                    " Fragen Sie dazu bitte die behandelnde Ärztin oder den behandelnden Arzt.)",
+                    " Frag dazu bitte die behandelnde Ärztin oder den behandelnden Arzt.)",
         "declined": "Ob ein Wert bedenklich ist, kann ich nicht beurteilen, das gehört zur"
-                    " behandelnden Ärztin oder zum behandelnden Arzt. Fragen Sie mich, was in"
-                    " den Unterlagen steht, dann nenne ich Ihnen die Einträge mit Datum.",
+                    " behandelnden Ärztin oder zum behandelnden Arzt. Frag mich, was in"
+                    " den Unterlagen steht, dann nenne ich dir die Einträge mit Datum.",
     },
 }
 

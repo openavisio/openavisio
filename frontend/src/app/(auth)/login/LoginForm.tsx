@@ -33,10 +33,14 @@ export function LoginForm({ demoMode = false }: { demoMode?: boolean }) {
     setLoading(true);
     setError("");
     try {
+      const target = params.get("callbackUrl") || "/";
+      // Without redirectTo next-auth returns the current URL, and on
+      // /login?error=SessionExpired it read that "error" as a failed sign-in.
       const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
+        redirectTo: target,
       });
       if (result?.error) {
         // Only CredentialsSignin means the password was wrong. Everything else
@@ -44,7 +48,7 @@ export function LoginForm({ demoMode = false }: { demoMode?: boolean }) {
         // hunting for a typo that was not there.
         setError(result.error === "CredentialsSignin" ? t("InvalidCredentials") : t("SignInFailed"));
       } else {
-        router.push(params.get("callbackUrl") || "/patients");
+        router.push(target);
       }
     } catch (err) {
       console.error("Login error:", err);

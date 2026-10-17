@@ -597,6 +597,22 @@ class MockBackend(InferenceBackend):
         return {"connected": True, "model_count": 1, "error": None}
 
 
+def _vllm_url(stage: str) -> str:
+    """The OpenAI-compatible endpoint serving this stage, or "" when Ollama or mock does (#312)."""
+    backend_type = os.environ.get("AI_BACKEND", "ollama").lower().strip()
+    if backend_type == "mock":
+        return ""
+    main = os.environ.get("VLLM_URL", "").strip() if backend_type == "vllm" else ""
+    if stage == "vision":
+        # OLLAMA_VISION_URL always wins; otherwise a hosted vision endpoint or the chat one
+        if os.environ.get("OLLAMA_VISION_URL", "").strip():
+            return ""
+        return os.environ.get("VLLM_VISION_URL", "").strip() or main
+    if stage == "embed":
+        return os.environ.get("VLLM_EMBED_URL", "").strip() if backend_type == "vllm" else ""
+    return main
+
+
 # --- Singletons ---
 
 _backend: InferenceBackend | None = None
@@ -644,9 +660,8 @@ def get_vision_backend() -> InferenceBackend:
 
     # A hosted vision model (VLLM_VISION_URL, or the chat endpoint itself) keeps
     # OCR at the provider instead of requiring an Ollama next to it.
-    vllm_url = (os.environ.get("VLLM_VISION_URL", "").strip()
-                or (os.environ.get("VLLM_URL", "").strip() if backend_type == "vllm" else ""))
-    if vllm_url and not os.environ.get("OLLAMA_VISION_URL", "").strip():
+    vllm_url = _vllm_url("vision")
+    if vllm_url:
         _vision_backend = VllmBackend(vllm_url)
         logger.info("Vision backend using %s (vLLM)", vllm_url)
         return _vision_backend
@@ -676,7 +691,7 @@ def get_embed_backend() -> InferenceBackend:
         # A hosted embedding endpoint keeps this role at the provider too. Measured
         # over 731 chunks: Qwen3-VL-Embedding-8B truncated to 768d matches the local
         # qwen3-embedding:4b (avisiohub ADR 0006).
-        vllm_embed = os.environ.get("VLLM_EMBED_URL", "").strip()
+        vllm_embed = _vllm_url("embed")
         if vllm_embed:
             _embed_backend = VllmBackend(vllm_embed)
             logger.info("Embed backend using %s (vLLM)", vllm_embed)
@@ -716,10 +731,9 @@ def get_model(stage: str) -> str:
     The backend pipeline may override by passing the model name directly
     when it has read a selection from SystemSetting.
     """
-    backend_type = os.environ.get("AI_BACKEND", "ollama").lower().strip()
     stage_upper = stage.upper()
 
-    if backend_type == "vllm":
+    if _vllm_url(stage):
         val = os.environ.get(f"VLLM_{stage_upper}_MODEL", "").strip()
         if val:
             return val

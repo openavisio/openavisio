@@ -4,9 +4,16 @@ import { auth } from "@/auth";
 export default auth(async function middleware(req) {
   const { pathname } = req.nextUrl;
   const isSetupPath = pathname === "/setup";
-  const isPublicPath = ["/login", "/register", "/recover", "/setup", "/api", "/patients/invite", "/share"].some((p) =>
+  const isPublicPath = ["/login", "/register", "/recover", "/setup", "/api", "/patients/invite", "/share", "/imprint", "/privacy"].some((p) =>
     pathname.startsWith(p)
   );
+
+  // A hosted Deployment is offered by its operator, so the Impressum and the privacy notice are the
+  // operator's, on the one commercial domain (avisiohub ADR 0008), not the household's own.
+  if (process.env.HOSTED_SETUP === "true" && (pathname === "/imprint" || pathname === "/privacy")) {
+    const page = pathname === "/imprint" ? "impressum.html" : "datenschutz.html";
+    return NextResponse.redirect(`https://openavisio.app/${page}`);
+  }
 
   const setupCookie = req.cookies.get("setup_complete");
   let setupConfirmed = !!setupCookie;
@@ -38,6 +45,14 @@ export default auth(async function middleware(req) {
       loginUrl.searchParams.set("callbackUrl", pathname + req.nextUrl.search);
     }
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (
+    process.env.HOSTED_SETUP === "true" &&
+    pathname.startsWith("/admin") &&
+    !["/admin/invitations", "/admin/audit"].some((p) => pathname.startsWith(p))
+  ) {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   const response = NextResponse.next();

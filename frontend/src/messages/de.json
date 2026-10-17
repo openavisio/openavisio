@@ -35,7 +35,7 @@
     "SignUp": "Registrieren",
     "InvalidCredentials": "Ungültige E-Mail oder Passwort",
     "SignInFailed": "Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
-    "SessionExpired": "Ihre Sitzung ist abgelaufen. Bitte erneut anmelden.",
+    "SessionExpired": "Deine Sitzung ist abgelaufen. Bitte erneut anmelden.",
     "AccountLocked": "Konto gesperrt. Bitte später erneut versuchen.",
     "CreateAccount": "Konto erstellen",
     "FirstName": "Vorname",
@@ -50,20 +50,20 @@
     "ServerUnavailable": "Der Server ist nicht erreichbar. Bitte später erneut versuchen.",
     "SignInWithPasskey": "Mit Passkey anmelden",
     "PasskeyError": "Passkey-Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
-    "PasskeyNotSupported": "Ihr Browser unterstützt keine Passkeys.",
+    "PasskeyNotSupported": "Dein Browser unterstützt keine Passkeys.",
     "OpenInApp": "In der OpenAvisio-App öffnen",
     "DemoTitle": "Demo-Zugang, zum Ausfüllen anklicken",
     "DemoHint": "Offene Demo mit erfundenen Daten. Bitte keine echten Gesundheitsdaten eingeben.",
     "LostAccess": "Passwort und Passkey verloren?",
     "RecoverTitle": "Zugang wiederherstellen",
-    "RecoverBody": "Geben Sie den Wiederherstellungscode ein, den Sie bei der Einrichtung notiert haben, und setzen Sie ein neues Passwort.",
+    "RecoverBody": "Gib den Wiederherstellungscode ein, den du bei der Einrichtung notiert hast, und setze ein neues Passwort.",
     "RecoveryCode": "Wiederherstellungscode",
     "NewPassword": "Neues Passwort",
     "RecoverSubmit": "Passwort neu setzen",
-    "RecoverDone": "Das Passwort wurde gesetzt. Melden Sie sich damit an.",
-    "RecoverFreshCode": "Der alte Code ist verbraucht. Dies ist Ihr neuer, und er wird nur hier angezeigt.",
+    "RecoverDone": "Das Passwort wurde gesetzt. Melde dich damit an.",
+    "RecoverFreshCode": "Der alte Code ist verbraucht. Dies ist dein neuer, und er wird nur hier angezeigt.",
     "InvalidRecoveryCode": "Code oder E-Mail-Adresse stimmen nicht.",
-    "TooManyAttempts": "Zu viele Versuche. Bitte warten Sie einen Moment.",
+    "TooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment.",
     "BackToLogin": "Zurück zur Anmeldung"
   },
   "Common": {
@@ -469,13 +469,13 @@
     "Placeholder": "Fragen zu Gesundheitsdaten stellen...",
     "Send": "Senden",
     "History": "Chatverlauf",
-    "You": "Sie",
+    "You": "Du",
     "Assistant": "Assistent",
     "Disabled": "KI-Chat nicht verfügbar (kein KI-Dienst konfiguriert)",
     "Thinking": "Denke nach",
     "Close": "Schließen",
     "Failed": "Die Antwort konnte nicht geladen werden. Bitte später erneut versuchen.",
-    "Empty": "Ich sehe, was in dieser Akte steht, und sage Ihnen dazu, wo es steht. Fragen Sie einfach.",
+    "Empty": "Ich sehe, was in dieser Akte steht, und sage dir dazu, wo es steht. Frag einfach.",
     "Sources": "Durchsuchte Dokumente",
     "suggestions": {
       "s1": "Wann klappte das freie Laufen?",
@@ -483,7 +483,7 @@
       "s3": "Wann waren die letzten Termine?",
       "s4": "Welche Diagnosen sind eingetragen?"
     },
-    "Unavailable": "Der KI-Dienst antwortet gerade nicht. Ihre Frage wurde nicht gespeichert, fragen Sie es später noch einmal.",
+    "Unavailable": "Der KI-Dienst antwortet gerade nicht. Deine Frage wurde nicht gespeichert, frag später noch einmal.",
     "OpenEmergencyPlan": "Notfallplan öffnen"
   },
   "Verify": {
@@ -509,7 +509,7 @@
   },
   "Home": {
     "Welcome": "Willkommen bei OpenAvisio",
-    "Subtitle": "Ihr Gesundheitsdatentresor"
+    "Subtitle": "Dein Gesundheitsdatentresor"
   },
   "Setup": {
     "StepLanguage": "Sprache",
@@ -517,9 +517,10 @@
     "StepAI": "KI-Konfiguration",
     "StepSMTP": "E-Mail / SMTP",
     "StepAdmin": "Admin-Konto",
+    "StepAccount": "Dein Zugang",
     "StepPatient": "Erster Patient",
     "StepDone": "Abgeschlossen",
-    "ChooseLanguage": "Wählen Sie Ihre Sprache",
+    "ChooseLanguage": "Wähle deine Sprache",
     "Next": "Weiter",
     "Back": "Zurück",
     "Skip": "Vorerst überspringen",
@@ -541,9 +542,12 @@
     "SMTPSkipped": "SMTP übersprungen — später in den Admin-Einstellungen konfigurieren",
     "SMTPConfigure": "SMTP jetzt konfigurieren",
     "AdminEmail": "Admin-E-Mail",
+    "AccountEmail": "Deine E-Mail",
     "BootstrapToken": "Setup-Token",
     "BootstrapTokenHint": "Das von setup.sh angezeigte Einmal-Token. Erforderlich, um den ersten Administrator zu erstellen.",
+    "BootstrapTokenHintHosted": "Öffne den Link aus deiner Willkommensmail noch einmal, dann ist dieses Feld ausgefüllt.",
     "AdminPassword": "Admin-Passwort",
+    "AccountPassword": "Dein Passwort",
     "AdminFirstName": "Vorname",
     "AdminLastName": "Nachname",
     "PasswordStrengthWeak": "Schwach",
@@ -557,7 +561,8 @@
     "PatientSkipped": "Kein Patient hinzugefügt — kann nach dem Einloggen hinzugefügt werden",
     "PatientAdd": "Patient jetzt hinzufügen",
     "DoneTitle": "Einrichtung abgeschlossen!",
-    "DoneBody": "OpenAvisio wurde initialisiert. Melden Sie sich mit Ihrem Admin-Konto an.",
+    "DoneBody": "OpenAvisio wurde initialisiert. Melde dich mit deinem Admin-Konto an.",
+    "DoneBodyHosted": "Fertig. Melde dich jetzt mit deiner E-Mail und deinem Passwort an.",
     "GoToLogin": "Zur Anmeldung",
     "Initialize": "Einrichtung abschließen",
     "AlreadySetup": "Organisation bereits initialisiert",
@@ -566,8 +571,8 @@
     "KindOrganization": "Einrichtung",
     "KindOrganizationHint": "Pflegedienst, Heim, Praxis oder Selbsthilfegruppe mit mehreren Betreuten.",
     "HouseholdName": "Mein Haushalt",
-    "RecoveryTitle": "Ihr Wiederherstellungscode",
-    "RecoveryBody": "Dieser Code wird genau einmal angezeigt. Er ist der einzige Weg zurück in Ihr Konto, wenn Sie Ihr Passwort vergessen und das Gerät mit Ihrem Passkey verlieren. Drucken Sie ihn aus oder legen Sie ihn zu Ihren Unterlagen.",
+    "RecoveryTitle": "Dein Wiederherstellungscode",
+    "RecoveryBody": "Dieser Code wird genau einmal angezeigt. Er ist der einzige Weg zurück in dein Konto, wenn du dein Passwort vergisst und das Gerät mit deinem Passkey verlierst. Druck ihn aus oder leg ihn zu deinen Unterlagen.",
     "RecoveryConfirm": "Ich habe den Code notiert und sicher abgelegt.",
     "Copy": "Kopieren",
     "Copied": "Kopiert"
@@ -677,7 +682,9 @@
     "dropHint": "Dateien hierher ziehen oder klicken",
     "uploading": "Wird hochgeladen… {done} von {total}",
     "uploadResult": "{done} hochgeladen · {failed} fehlgeschlagen",
-    "uploadedBackground": "{total} hochgeladen — Verarbeitung im Hintergrund",
+    "uploadedBackground": "{total} hochgeladen",
+    "processingHint": "OpenAvisio liest die Dokumente jetzt, das dauert meist ein paar Minuten. Die Verarbeitung läuft weiter, auch wenn diese Seite geschlossen wird.",
+    "seeProgress": "Fortschritt in den Dokumenten ansehen",
     "retryFailed": "Fehlgeschlagene wiederholen",
     "dismiss": "Schließen",
     "countObservations": "{count, plural, one {# Messwert} other {# Messwerte}}",
@@ -736,7 +743,7 @@
     "GenerateInviteLink": "Einladungslink erzeugen",
     "CaregiverInviteLink": "Betreuer-Einladungslink",
     "RegistrationLink": "Registrierungslink (neuer Nutzer)",
-    "RegistrationLinkHint": "Senden Sie zuerst diesen Link, damit sich der Betreuer registrieren kann, und teilen Sie dann den Einladungslink.",
+    "RegistrationLinkHint": "Sende zuerst diesen Link, damit sich der Betreuer registrieren kann, und teile dann den Einladungslink.",
     "Revoke": "Entziehen",
     "Revoking": "Wird entzogen…",
     "Edit": "Bearbeiten",
@@ -792,7 +799,7 @@
     "class_discharge_summary": "Entlassbrief"
   },
   "Ai": {
-    "notice": "Diese Angaben wurden automatisch aus dem Dokument gelesen — von einer Texterkennung und einem KI-Modell. Beide machen Fehler: Werte, Einheiten oder Daten können falsch übernommen worden sein. Maßgeblich ist immer das Originaldokument. Prüfen Sie wichtige Angaben dort nach.",
+    "notice": "Diese Angaben wurden automatisch aus dem Dokument gelesen — von einer Texterkennung und einem KI-Modell. Beide machen Fehler: Werte, Einheiten oder Daten können falsch übernommen worden sein. Maßgeblich ist immer das Originaldokument. Prüf wichtige Angaben dort nach.",
     "noticeShort": "Automatisch aus dem Dokument gelesen — kann Fehler enthalten. Maßgeblich ist das Original."
   },
   "Conditions": {
@@ -1031,7 +1038,7 @@
     "Name": "Name",
     "Description": "Beschreibung",
     "WhoRuns": "Wer betreibt diese Installation",
-    "WhoRunsHint": "Ein privater Haushalt sieht weder Gruppen noch Datenweitergabe noch die Nutzerverwaltung. Stellen Sie auf Einrichtung um, sobald mehrere Menschen mehrere Betreute verwalten.",
+    "WhoRunsHint": "Ein privater Haushalt sieht weder Gruppen noch Datenweitergabe noch die Nutzerverwaltung. Stell auf Einrichtung um, sobald mehrere Menschen mehrere Betreute verwalten.",
     "KindHousehold": "Privater Haushalt",
     "KindOrganization": "Einrichtung",
     "DefaultLanguage": "Standardsprache",
@@ -1148,5 +1155,13 @@
     "DeleteConfirm": "Diese Angabe löschen?",
     "SaveError": "Die Angabe konnte nicht gespeichert werden.",
     "DeleteError": "Die Angabe konnte nicht gelöscht werden."
+  },
+  "Umami": {
+    "label": "Hinweis zur Besucherstatistik",
+    "text": "Diese Installation zählt Besuche mit Umami, ohne Cookies und ohne Speicherung der IP-Adresse.",
+    "privacy": "Datenschutz",
+    "object": "Widersprechen",
+    "optOut": "Diesen Browser nicht mehr zählen",
+    "optOutDone": "Widerspruch gespeichert, dieser Browser wird nicht mehr gezählt."
   }
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Upload,
   Camera,
@@ -52,6 +53,7 @@ function uploadFile(patientId: string, file: File, onProgress: (pct: number) => 
 
 export function UploadPanel({ patientId, demoMode = false }: { patientId: string; demoMode?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations("DocumentsPage");
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -273,6 +275,18 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
               )}
             </div>
           </div>
+
+          {active === 0 && done > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {t("processingHint")}{" "}
+              {/* #328: the live progress is only in the documents list */}
+              {!pathname.endsWith("/documents") && (
+                <Link href={`/patients/${patientId}/documents`} className="font-medium text-primary hover:underline">
+                  {t("seeProgress")}
+                </Link>
+              )}
+            </p>
+          )}
 
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {entries.map((entry) => (

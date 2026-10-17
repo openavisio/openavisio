@@ -20,12 +20,13 @@ type Fav = { id: string; given_name: string; family_name: string };
 // the left sidebar (global nav, admin, favourites, theme, logout). Replaces the
 // left drawer on mobile (ADR 030).
 export function MobileMoreSheet({
-  userRole, userName, hasGroups, isHousehold, favorites = [], active, triggerClassName,
+  userRole, userName, hasGroups, isHousehold, hosted, favorites = [], active, triggerClassName,
 }: {
   userRole?: string;
   userName?: string;
   hasGroups?: boolean;
   isHousehold?: boolean;
+  hosted?: boolean;
   favorites?: Fav[];
   active: boolean;
   triggerClassName?: string;
@@ -36,7 +37,7 @@ export function MobileMoreSheet({
   const { highContrast, toggle } = useHighContrast();
   const [open, setOpen] = useState(false);
 
-  const canShare = (userRole === "admin" || userRole === "manager") && !isHousehold;  // ADR 046
+  const canShare = (userRole === "admin" || userRole === "manager") && !isHousehold && !hosted;  // ADR 046
   const showGroups = (canShare || hasGroups) && !isHousehold;
 
   const nav = [
@@ -46,7 +47,7 @@ export function MobileMoreSheet({
     ...(canShare ? [{ href: "/admin/sharing", label: t("DataSharing"), Icon: Share2 }] : []),
     { href: "/settings", label: t("Settings"), Icon: Settings },
   ];
-  const adminItems = userRole === "admin" ? [
+  const allAdminItems = userRole === "admin" ? [
     { href: "/admin/system", label: t("System"), Icon: MonitorDot },
     { href: "/admin/organization", label: t("Organization"), Icon: Building },
     ...(isHousehold ? [] : [
@@ -60,6 +61,7 @@ export function MobileMoreSheet({
     { href: "/admin/license", label: t("License"), Icon: BadgeCheck },
     { href: "/admin/data-governance", label: t("DataGovernance"), Icon: Shield },
   ] : [];
+  const adminItems = hosted ? allAdminItems.filter((i) => ["/admin/invitations", "/admin/audit"].includes(i.href)) : allAdminItems;
 
   const row = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent";
 

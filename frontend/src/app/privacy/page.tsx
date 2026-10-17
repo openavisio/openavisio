@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getOrganization } from "@/lib/api";
 import { OperatorDetails, type Operator } from "@/components/OperatorDetails";
+import { UmamiOptOut } from "@/components/UmamiNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +104,9 @@ export default async function PrivacyPage() {
                 (berechtigtes Interesse an der Reichweitenmessung); ein
                 Einwilligungsbanner ist mangels Cookies und Profilbildung nicht
                 erforderlich.
+              </p>
+              <p>
+                Du kannst dem jederzeit widersprechen: <UmamiOptOut />
               </p>
             </>
           )}

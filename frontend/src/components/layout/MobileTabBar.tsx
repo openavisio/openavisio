@@ -12,12 +12,13 @@ type Fav = { id: string; given_name: string; family_name: string };
 // tabs. Patient sections are handled by the in-page section switcher, not here,
 // so the bar stays calm. The left sidebar is desktop-only.
 export function MobileTabBar({
-  userRole, userName, hasGroups, isHousehold, favorites = [],
+  userRole, userName, hasGroups, isHousehold, hosted, favorites = [],
 }: {
   userRole?: string;
   userName?: string;
   hasGroups?: boolean;
   isHousehold?: boolean;
+  hosted?: boolean;
   favorites?: Fav[];
 }) {
   const pathname = usePathname();
@@ -40,7 +41,7 @@ export function MobileTabBar({
           <Users className="size-6" />
           <span>{t("Patients")}</span>
         </Link>
-        <MobileMoreSheet userRole={userRole} userName={userName} hasGroups={hasGroups} isHousehold={isHousehold} favorites={favorites} active={moreActive} />
+        <MobileMoreSheet userRole={userRole} userName={userName} hasGroups={hasGroups} isHousehold={isHousehold} hosted={hosted} favorites={favorites} active={moreActive} />
       </div>
     </nav>
   );

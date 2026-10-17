@@ -20,14 +20,17 @@ interface Props {
   onSubmit: () => void;
   submitting: boolean;
   error: string;
+  hosted?: boolean;
   children: React.ReactNode;
 }
 
-export function WizardShell({ state, onNext, onBack, onSubmit, submitting, error, children }: Props) {
+export function WizardShell({ state, onNext, onBack, onSubmit, submitting, error, hosted = false, children }: Props) {
   const t = useTranslations("Setup");
   const { step } = state;
   const isLast = step === 4;
   const isDone = step === 5;
+  const first = hosted ? 3 : 0;
+  const shown = STEP_KEYS.slice(first, 5);  // the done step has no indicator
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
@@ -39,20 +42,23 @@ export function WizardShell({ state, onNext, onBack, onSubmit, submitting, error
               <Image src="/logo.png" alt="OpenAvisio" width={56} height={56} />
             </div>
             <div className="flex items-center gap-1 mb-4">
-              {STEP_KEYS.slice(0, 6).map((key, i) => (
+              {shown.map((key, n) => {
+                const i = first + n;
+                return (
                 <div key={key} className="flex items-center flex-1">
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors
                       ${i < step ? "bg-primary text-primary-foreground" : i === step ? "bg-primary text-primary-foreground ring-2 ring-primary/30" : "bg-muted text-muted-foreground"}`}
                   >
-                    {i < step ? "✓" : i + 1}
+                    {i < step ? "✓" : n + 1}
                   </div>
-                  {i < 5 && <div className={`h-0.5 flex-1 mx-1 transition-colors ${i < step ? "bg-primary" : "bg-muted"}`} />}
+                  {i < 4 && <div className={`h-0.5 flex-1 mx-1 transition-colors ${i < step ? "bg-primary" : "bg-muted"}`} />}
                 </div>
-              ))}
+                );
+              })}
             </div>
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              {t(STEP_KEYS[step])}
+              {t(hosted && step === 3 ? "StepAccount" : STEP_KEYS[step])}
             </h2>
           </div>
         )}
@@ -73,7 +79,7 @@ export function WizardShell({ state, onNext, onBack, onSubmit, submitting, error
             <button
               type="button"
               onClick={onBack}
-              disabled={step === 0}
+              disabled={step === first}
               className="px-4 py-2 text-sm rounded-lg border hover:bg-muted disabled:opacity-0 disabled:pointer-events-none transition-colors"
             >
               {t("Back")}

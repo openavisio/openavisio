@@ -1,4 +1,5 @@
 import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 import { getOrganization, getGroups, getFavoritePatients } from "@/lib/api"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -19,13 +20,23 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
     isHousehold = org?.is_household ?? false
   } catch {}
 
+  // a hosted Deployment is run by the operator: the customer's admin sees invitations and the audit log
+  const hosted = process.env.HOSTED_SETUP === "true"
+
   const user = session?.user as any
 
   let hasGroups = false
   try { hasGroups = (await getGroups()).length > 0 } catch {}
 
   let favorites: { id: string; given_name: string; family_name: string }[] = []
-  try { favorites = await getFavoritePatients() } catch {}
+  try {
+    favorites = await getFavoritePatients()
+  } catch (e) {
+    // The cookie is valid but the backend no longer knows the session (account
+    // gone, database reset). Until the access token expired that showed "server
+    // could not be reached" on every page; it means "log in again".
+    if (String(e).includes("API error 401")) redirect("/login?error=SessionExpired")
+  }
 
   // SidebarProvider writes the collapsed state to a cookie but never read it
   // back, so every navigation re-rendered the sidebar expanded.
@@ -33,7 +44,7 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
-      <AppSidebar orgName={orgName} userRole={user?.role} userName={user?.name} hasGroups={hasGroups} isHousehold={isHousehold} favorites={favorites} />
+      <AppSidebar orgName={orgName} userRole={user?.role} userName={user?.name} hasGroups={hasGroups} isHousehold={isHousehold} hosted={hosted} favorites={favorites} />
       <SidebarInset>
         {/* No chrome header — the collapse toggle now lives in the sidebar
             itself, and on mobile the bottom nav is the sole navigation (ADR 030) */}
@@ -49,10 +60,11 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <AppFooter orgName={orgName} />
+          {/* ADR 046: a household's name is not who runs the instance */}
+          <AppFooter orgName={isHousehold ? undefined : orgName} />
         </div>
       </SidebarInset>
-      <MobileTabBar userRole={user?.role} userName={user?.name} hasGroups={hasGroups} isHousehold={isHousehold} favorites={favorites} />
+      <MobileTabBar userRole={user?.role} userName={user?.name} hasGroups={hasGroups} isHousehold={isHousehold} hosted={hosted} favorites={favorites} />
     </SidebarProvider>
   )
 }

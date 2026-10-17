@@ -1,0 +1,38 @@
+# Hosted Deployments pull the images CI built, they never build (ADR 045).
+# Layered over the prod file; self-hosters keep building from source without it:
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.hosted.yml pull
+#   docker compose -f docker-compose.prod.yml -f docker-compose.hosted.yml up -d --no-build
+#
+# Memory caps, about 2.5x the peaks measured with five stacks on one 8 GB box (14 Oct 2026),
+# so one Deployment cannot starve its neighbours. Caps, not reservations.
+#
+# REGISTRY and TAG come from .env. Images are pushed by .forgejo/workflows/release-images.yml.
+services:
+  aiservice:
+    mem_limit: 512m
+    image: ${REGISTRY}/openavisio/aiservice:${TAG}
+  backend:
+    mem_limit: 512m
+    image: ${REGISTRY}/openavisio/backend:${TAG}
+  celery-worker:
+    mem_limit: 768m
+    image: ${REGISTRY}/openavisio/backend:${TAG}
+  celery-worker-gpu:
+    mem_limit: 512m
+    image: ${REGISTRY}/openavisio/backend:${TAG}
+  celery-beat:
+    mem_limit: 192m
+    image: ${REGISTRY}/openavisio/backend:${TAG}
+  frontend:
+    mem_limit: 384m
+    image: ${REGISTRY}/openavisio/frontend:${TAG}
+  backup:
+    mem_limit: 256m
+    image: ${REGISTRY}/openavisio/backup:${TAG}
+  postgres:
+    mem_limit: 512m
+  redis:
+    mem_limit: 128m
+  caddy:
+    mem_limit: 128m

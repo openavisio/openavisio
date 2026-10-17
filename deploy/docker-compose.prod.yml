@@ -49,6 +49,7 @@ services:
       VLLM_VISION_URL: ${VLLM_VISION_URL:-}
       VLLM_VISION_MODEL: ${VLLM_VISION_MODEL:-}
       VLLM_EMBED_URL: ${VLLM_EMBED_URL:-}
+      VLLM_EMBED_MODEL: ${VLLM_EMBED_MODEL:-}
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
       interval: 10s
@@ -67,6 +68,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       AI_SERVICE_URL: http://aiservice:8000
       AISERVICE_TOKEN: ${AISERVICE_TOKEN:-}
+      # hosted Deployments: AI, license and system are the operator's, not the customer admin's
+      HOSTED: ${HOSTED_SETUP:-false}
       APP_SECRET: ${APP_SECRET}
       DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
       # Fallback only: the admin UI still wins once SMTP is configured there (#249)
@@ -199,6 +202,8 @@ services:
       API_URL: http://backend:8000
       # "preview, not ready for production" banner — set true on test instances (#110)
       PREVIEW_BANNER: ${PREVIEW_BANNER:-false}
+      # hosted Deployments: the setup wizard shrinks to e-mail and password (ADR 0010)
+      HOSTED_SETUP: ${HOSTED_SETUP:-false}
       # demo instances only: upload panel offers the bundled sample instead of a dropzone
       DEMO_MODE: ${DEMO_MODE:-false}
       # opt-in self-hosted analytics — unset means none (the default and the promise)

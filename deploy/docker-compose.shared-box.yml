@@ -1,0 +1,18 @@
+# A Deployment on a box with a shared Caddy (deploy/hosted/). Third file after prod and hosted:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.hosted.yml -f docker-compose.shared-box.yml up -d --no-build
+# .env needs INSTANCE_ID (the eight characters) and a COMPOSE_PROJECT_NAME that is unique on the box.
+#
+# A Deployment shares no network with another. Caddy is attached to each Deployment's own default
+# network (provision.sh), and reaches it under the aliases below, which are unique because no other
+# Deployment is on that network. deploy/hosted/isolation-check.sh proves it.
+services:
+  caddy:
+    profiles: ["off"]
+  frontend:
+    networks:
+      default:
+        aliases: ["${INSTANCE_ID}-frontend"]
+  backend:
+    networks:
+      default:
+        aliases: ["${INSTANCE_ID}-backend"]

@@ -28,15 +28,18 @@ export function PasskeyButton() {
       const { startAuthentication } = await import("@simplewebauthn/browser");
       const assertion = await startAuthentication({ optionsJSON: options });
 
+      const target = params.get("callbackUrl") || "/";
+      // redirectTo: see LoginForm, the current URL may carry ?error=SessionExpired
       const result = await signIn("passkey", {
         credential: JSON.stringify(assertion),
         redirect: false,
+        redirectTo: target,
       });
 
       if (result?.error) {
         setError(t("PasskeyError"));
       } else {
-        router.push(params.get("callbackUrl") || "/patients");
+        router.push(target);
       }
     } catch (e: any) {
       if (e?.name !== "NotAllowedError") {

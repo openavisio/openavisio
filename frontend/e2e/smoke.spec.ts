@@ -29,6 +29,11 @@ test("login, open a patient, and keep navigating", async ({ page, request }) => 
   await page.locator('input[type="password"]').fill("Admin123!Admin");
   await page.locator('button[type="submit"]').click();
 
+  // #327: one Patient, so the landing opens it; the list stays one click away
+  // (ADR 046: a second Patient must remain creatable).
+  await expect(page).toHaveURL(/\/patients\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole("heading", { name: "Demo Patient" })).toBeVisible();
+  await page.locator('a[href="/patients"]:visible').first().click();
   await expect(page).toHaveURL(/\/patients$/);
   await page.getByRole("link", { name: /Demo Patient/ }).click();
   await expect(page.getByRole("heading", { name: "Demo Patient" })).toBeVisible();
@@ -103,6 +108,16 @@ test("login, open a patient, and keep navigating", async ({ page, request }) => 
   await page.goBack();
   await page.goBack();
 
+  // Upload on the overview (#328): after it the family is told what happens and
+  // where to watch it. Unique bytes, the backend refuses a duplicate by hash.
+  await page.locator('input[type="file"][multiple]').setInputFiles({
+    name: "letter.pdf", mimeType: "application/pdf", buffer: Buffer.from(`%PDF-1.4 ${Date.now()}`),
+  });
+  await expect(page.getByText(/ein paar Minuten|a few minutes/)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("link", { name: /Fortschritt in den Dokumenten|See progress in Documents/ }).click();
+  await page.waitForURL(/\/documents$/);
+  await page.goBack();
+
   // The chat, all the way through (#201). Opening the overlay proves nothing:
   // the payload sent to the aiservice was rejected for months and the user only
   // ever saw "AI service unavailable". So: ask, and read the answer.
@@ -123,6 +138,23 @@ test("login, open a patient, and keep navigating", async ({ page, request }) => 
   // each of those broke *this* click while the first one still worked.
   await page.locator('a[href="/settings"]').first().click();
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+
+  expect(errors).toEqual([]);
+});
+
+// An expired session lands on /login?error=SessionExpired. next-auth read that
+// "error" back out of the page URL and reported the successful sign-in as a
+// failure, so the user was stuck until they cleared their cookies.
+test("signing in from an expired-session page works", async ({ page, request }) => {
+  await request.post(`${BACKEND}/api/dev/seed`);
+  const errors = failOnConsoleErrors(page);
+
+  await page.goto("/login?error=SessionExpired");
+  await expect(page.getByText(/Sitzung ist abgelaufen|session has expired/)).toBeVisible();
+  await page.locator('input[type="email"]').fill("admin@openavisio.dev");
+  await page.locator('input[type="password"]').fill("Admin123!Admin");
+  await page.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/patients\/[0-9a-f-]{36}$/, { timeout: 15_000 });
 
   expect(errors).toEqual([]);
 });
@@ -169,4 +201,14 @@ test("the setup wizard takes the bootstrap token from the fragment", async ({ pa
   expect(JSON.stringify(await context.cookies())).not.toContain("qxz-setup");
 
   expect(errors).toEqual([]);
+});
+
+// §5 DDG: the Impressum and the privacy notice must open for anyone, signed in or not.
+test("the Impressum and the privacy notice open without signing in", async ({ page }) => {
+  await page.goto("/imprint");
+  await expect(page).toHaveURL(/\/imprint$/);
+  await expect(page.getByRole("heading", { name: "Impressum" })).toBeVisible();
+
+  await page.goto("/privacy");
+  await expect(page).toHaveURL(/\/privacy$/);
 });
