@@ -1,6 +1,6 @@
 # ADR 023: Mobile app via Capacitor shell around the web app, not a native rebuild
 
-**Status:** Accepted
+**Status:** Accepted · **Superseded by ADR 051** (2026-10-17): PWA only, no mobile app.
 
 ## Context
 

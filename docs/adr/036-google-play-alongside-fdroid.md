@@ -1,6 +1,16 @@
 # ADR 036: The mobile app ships to Google Play alongside F-Droid
 
-**Status:** Accepted (2026-07-19)
+**Status:** Accepted (2026-07-19) · **Superseded by ADR 051** (2026-10-17): PWA only, no mobile app.
+
+**Amended 2026-10-17: F-Droid is withdrawn.** The app sat on f-droid.org at `0.1.0-beta`
+from July with `UpdateCheckMode: Static`, so every install stayed on that build, while the
+app itself went unmaintained (the APK build has been red since beta9). A visibly stale beta
+next to medical records does more harm than no listing, and paying families reach their
+Deployment through the QR code and home-screen icon (avisiohub ADR 0010), not F-Droid. The
+listing is disabled at our request in fdroiddata and `docs/fdroid/` is gone (the recipe stays
+in git history). Play stays as decided below. Back on F-Droid when the app is maintained again,
+then with `UpdateCheckMode: Tags`: since tags are plain SemVer (`docs/releasing.md`) every
+release would reach it without a hand-made MR.
 
 ## Context
 

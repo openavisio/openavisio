@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { RegisterForm } from "./RegisterForm";
-import { OpenInAppLink } from "./OpenInAppLink";
 
 async function RegisterContent({ token }: { token: string }) {
   const t = await getTranslations("Auth");
@@ -45,12 +44,7 @@ async function RegisterContent({ token }: { token: string }) {
     );
   }
 
-  return (
-    <>
-      <RegisterForm email={email!} />
-      <OpenInAppLink token={token} />
-    </>
-  );
+  return <RegisterForm email={email!} />;
 }
 
 export default async function RegisterPage({

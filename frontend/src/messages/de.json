@@ -51,7 +51,6 @@
     "SignInWithPasskey": "Mit Passkey anmelden",
     "PasskeyError": "Passkey-Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
     "PasskeyNotSupported": "Dein Browser unterstützt keine Passkeys.",
-    "OpenInApp": "In der OpenAvisio-App öffnen",
     "DemoTitle": "Demo-Zugang, zum Ausfüllen anklicken",
     "DemoHint": "Offene Demo mit erfundenen Daten. Bitte keine echten Gesundheitsdaten eingeben.",
     "LostAccess": "Passwort und Passkey verloren?",

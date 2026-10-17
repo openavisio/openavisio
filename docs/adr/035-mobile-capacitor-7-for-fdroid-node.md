@@ -1,6 +1,9 @@
 # ADR 035: The mobile app stays on Capacitor 7 until F-Droid's Node catches up
 
-**Status:** Accepted (2026-07-19)
+**Status:** Accepted (2026-07-19) · **Superseded by ADR 051** (2026-10-17): PWA only, no mobile app.
+
+**Amended 2026-10-17:** F-Droid is withdrawn (ADR 036, amended), so the reason for staying on
+Capacitor 7 is gone. Moving to 8 is its own step, taken when the app is worked on again.
 
 ## Context
 

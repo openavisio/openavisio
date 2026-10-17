@@ -21,6 +21,10 @@ git tag -a vX.Y.Z -m "Release vX.Y.Z — <one-line summary>"
 git push origin vX.Y.Z
 ```
 
+Every tag is a plain `vX.Y.Z`, never a pre-release suffix like `-beta3`: the tag is also the
+image tag a customer's Deployment runs. Pre-1.0 already says "not yet stable". The
+`v0.1.0-beta*` tags up to `v0.1.0-beta17` (17 Oct 2026) stay as history; `v0.2.0` follows them.
+
 The tag is annotated (not lightweight) so it carries a message and a date. Then
 publish it to the public repository (ADR 032):
 

@@ -1,8 +1,0 @@
-{
-  "appId": "org.openavisio.app",
-  "appName": "OpenAvisio",
-  "webDir": "www",
-  "server": {
-    "allowNavigation": ["*"]
-  }
-}
