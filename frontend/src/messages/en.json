@@ -245,6 +245,9 @@
     "RemovePhoto": "Remove photo",
     "PhotoUploadFailed": "Could not upload the photo.",
     "Manage": "Management",
+    "ExportTitle": "Export data",
+    "ExportHint": "All entries as FHIR and every document as its file, in one ZIP. With many documents this takes a moment.",
+    "ExportButton": "Download ZIP",
     "DangerZone": "Danger zone",
     "EraseWarning": "Permanently erase this patient record and all associated clinical data. This cannot be undone.",
     "Overview": "Overview",
@@ -1134,7 +1137,7 @@
     "Address": "Your record",
     "Operator": "Run by",
     "Billing": "Payment details and invoices are behind the link in your welcome mail. You can cancel at any time, effective at the end of the billing period.",
-    "AfterCancel": "After you cancel, you get a mail to export your data. Your record is deleted 30 days later, and we remind you once more before that.",
+    "AfterCancel": "A week before the contract ends you get a mail on how to export your data. When it ends, your record is deleted.",
     "Cancel": "Cancel subscription"
   },
   "Footer": {

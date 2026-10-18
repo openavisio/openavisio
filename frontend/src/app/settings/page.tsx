@@ -102,7 +102,7 @@ export default async function SettingsPage() {
             <dt className="text-muted-foreground">{t("Operator")}</dt>
             <dd>
               Martin Riedel ·{" "}
-              <a href="mailto:openavisio@mailbox.org" className="text-primary hover:underline">openavisio@mailbox.org</a>
+              <a href="mailto:info@openavisio.app" className="text-primary hover:underline">info@openavisio.app</a>
               <div className="text-xs mt-0.5">
                 <a href="/imprint" className="text-muted-foreground hover:underline">Impressum</a> ·{" "}
                 <a href="/privacy" className="text-muted-foreground hover:underline">Datenschutz</a>

@@ -245,6 +245,9 @@
     "RemovePhoto": "Foto entfernen",
     "PhotoUploadFailed": "Foto konnte nicht hochgeladen werden.",
     "Manage": "Verwaltung",
+    "ExportTitle": "Daten exportieren",
+    "ExportHint": "Alle Einträge im Format FHIR und alle Dokumente als Dateien, in einer ZIP-Datei. Bei vielen Dokumenten dauert das einen Moment.",
+    "ExportButton": "ZIP herunterladen",
     "DangerZone": "Gefahrenzone",
     "EraseWarning": "Diese Patientenakte und alle zugehörigen klinischen Daten unwiderruflich löschen. Das kann nicht rückgängig gemacht werden.",
     "Overview": "Übersicht",
@@ -1134,7 +1137,7 @@
     "Address": "Deine Akte",
     "Operator": "Betrieben von",
     "Billing": "Zahlungsdaten und Rechnungen findest du über den Link in deiner Willkommensmail. Kündigen kannst du jederzeit zum Ende des Abrechnungszeitraums.",
-    "AfterCancel": "Nach der Kündigung bekommst du eine Mail, mit der du deine Daten exportieren kannst. 30 Tage danach wird deine Akte gelöscht, vorher erinnern wir dich noch einmal.",
+    "AfterCancel": "Eine Woche vor dem Vertragsende bekommst du eine Mail, wie du deine Daten exportierst. Mit dem Vertragsende wird deine Akte gelöscht.",
     "Cancel": "Vertrag kündigen"
   },
   "Footer": {

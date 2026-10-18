@@ -1,13 +1,22 @@
 import json
+import logging
+import re
+import tempfile
 import uuid
+import zipfile
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import require_patient_access
 from app.core.database import get_db
+from app.core.encryption import decrypt_document
+from app.core.patient_keys import get_patient_kek
+from app.core.storage import get_storage
+from app.models.audit import AuditLog
 from app.deps import get_current_user
 from app.models.calendar import CalendarEvent
 from app.models.chat import ChatMessage
@@ -24,6 +33,7 @@ from app.models.diary import DiaryEntry
 from app.models.user import User
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 _PATIENT_REF = lambda pid: {"reference": f"urn:uuid:{pid}"}  # noqa: E731
 
@@ -35,7 +45,72 @@ async def export_fhir(
     db: AsyncSession = Depends(get_db),
 ):
     await require_patient_access(patient_id, user, db)
+    return Response(
+        content=json.dumps(await _bundle(patient_id, db), indent=2),
+        media_type="application/fhir+json",
+        headers={"Content-Disposition": f'attachment; filename="patient-{patient_id}-fhir.json"'},
+    )
 
+
+@router.get("/patients/{patient_id}/export/zip")
+async def export_zip(
+    patient_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Everything a family takes with it (ADR 052): the FHIR bundle and every Document as its file."""
+    await require_patient_access(patient_id, user, db)
+    bundle = await _bundle(patient_id, db)
+    docs = (await db.execute(select(DocumentReference).where(
+        DocumentReference.patient_id == patient_id, DocumentReference.is_deleted == False,  # noqa: E712
+        DocumentReference.storage_path != None,  # noqa: E711
+    ).order_by(DocumentReference.created_at))).scalars().all()
+    kek = await get_patient_kek(db, patient_id) if docs else None
+
+    # a temp file, not memory: a record with years of scans would not fit next to five Deployments
+    out = tempfile.TemporaryFile()
+    used: set[str] = set()
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("fhir.json", json.dumps(bundle, indent=2))
+        missing = []
+        for doc in docs:
+            name = _unique(f"documents/{_safe(doc.file_name or str(doc.id))}", used)
+            try:
+                zf.writestr(name, decrypt_document(get_storage().read(doc.storage_path), doc.encrypted_dek, kek))
+            except Exception:  # one unreadable file must not cost the family the rest of its export
+                log.exception("export: document %s unreadable", doc.id)
+                missing.append(name)
+        if missing:
+            zf.writestr("documents/MISSING.txt", "These documents could not be read:\n" + "\n".join(missing) + "\n")
+    out.seek(0)
+
+    name = " ".join(filter(None, [user.first_name, user.last_name])) or user.email
+    db.add(AuditLog(timestamp=datetime.now(UTC), user_id=user.id, user_name=name, entity_type="Patient",
+                    entity_id=str(patient_id), action="exported", changes={"documents": len(docs)}))
+    await db.commit()
+
+    def chunks():
+        with out:
+            while block := out.read(1 << 20):
+                yield block
+    return StreamingResponse(chunks(), media_type="application/zip",
+                             headers={"Content-Disposition": f'attachment; filename="openavisio-{patient_id}.zip"'})
+
+
+def _safe(name: str) -> str:
+    return re.sub(r'[\\/:*?"<>|\x00-\x1f]', "_", name).strip(". ") or "document"
+
+
+def _unique(path: str, used: set[str]) -> str:
+    stem, dot, ext = path.rpartition(".") if "." in path.rsplit("/", 1)[-1] else (path, "", "")
+    candidate, n = path, 2
+    while candidate in used:
+        candidate, n = f"{stem} ({n}){dot}{ext}", n + 1
+    used.add(candidate)
+    return candidate
+
+
+async def _bundle(patient_id: uuid.UUID, db: AsyncSession) -> dict:
     entries = []
 
     # --- Patient ---
@@ -316,17 +391,12 @@ async def export_fhir(
         ],
     }
 
-    bundle = {
+    return {
         "resourceType": "Bundle",
         "type": "collection",
-        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(UTC).replace(tzinfo=None).isoformat() + "Z",
         "total": len(entries),
         "entry": entries,
         "_governance": governance,
     }
-    return Response(
-        content=json.dumps(bundle, indent=2),
-        media_type="application/fhir+json",
-        headers={"Content-Disposition": f'attachment; filename="patient-{patient_id}-fhir.json"'},
-    )
 

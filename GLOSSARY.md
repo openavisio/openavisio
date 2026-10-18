@@ -28,6 +28,10 @@ _Avoid_: account, member, actor
 A system role. A Coordinator can onboard new Patients and assign access to other Users. One person can be both a Coordinator and a Caregiver for the same Patient.
 _Avoid_: manager, staff manager, system manager
 
+**Household Manager**:
+The one User who manages a household Organization: its members, invitations, name, mails and audit log. Whoever sets up the household is it until they hand it to another member. In code the role is `admin`; the UI never calls it that (ADR 052).
+_Avoid_: admin, owner, account holder (in a household)
+
 **Caregiver**:
 A person responsible for a specific Patient's day-to-day care. Caregiver is a patient-level relationship, not a system role — any User can be a Caregiver for a Patient regardless of their system role. Covers family members, nurses, paid carers, legal guardians, and anyone else in a Patient's care circle. A legal relationship (power of attorney, guardianship) is a flag on the Caregiver's access grant (`is_legal_representative`), recorded for compliance, not a separate access path (ADR 027).
 _Avoid_: family member, nurse, caretaker, responsible person, representative

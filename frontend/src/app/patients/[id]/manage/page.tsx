@@ -72,6 +72,15 @@ export default async function PatientManagePage({ params }: { params: Promise<{ 
         </div>
       )}
 
+      {/* ADR 052: everyone who can see the Patient can take it with them */}
+      <div className="mb-6 rounded-xl border bg-card p-4">
+        <h2 className="text-sm font-semibold mb-1">{t("ExportTitle")}</h2>
+        <p className="text-xs text-muted-foreground mb-3">{t("ExportHint")}</p>
+        <a href={`/api/patients/${id}/export`} download className="inline-block rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-muted">
+          {t("ExportButton")}
+        </a>
+      </div>
+
       {isAdmin && (
         <div className="mt-8 rounded-xl border border-red-200 dark:border-red-900 p-4">
           <h2 className="text-sm font-semibold text-destructive mb-1">{t("DangerZone")}</h2>
