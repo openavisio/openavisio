@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -11,6 +12,7 @@ const LANGUAGES = [
 export function LanguagePicker({ current, isSystem }: { current: string; isSystem: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const t = useTranslations("SettingsPage");
 
   function pick(code: string) {
     if (code === "system") {
@@ -32,7 +34,7 @@ export function LanguagePicker({ current, isSystem }: { current: string; isSyste
             : "hover:bg-muted"
           }`}
       >
-        System
+        {t("System")}
       </button>
       {LANGUAGES.map((l) => (
         <button

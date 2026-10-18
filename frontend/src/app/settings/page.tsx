@@ -1,19 +1,13 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
-import { getLocale } from "next-intl/server";
-import { cookies } from "next/headers";
+import { getLocale, getTranslations } from "next-intl/server";
+import { cookies, headers } from "next/headers";
 import { getMe, getMyPasskeys } from "@/lib/api";
 import { PasswordForm } from "./PasswordForm";
 import { ProfileForm } from "./ProfileForm";
 import { LanguagePicker } from "./LanguagePicker";
 import { PasskeysSection } from "./PasskeysSection";
 import { formatDate } from "@/lib/utils";
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrator",
-  manager: "Manager",
-  user: "User",
-};
 
 export default async function SettingsPage() {
   const [session, locale, profile, cookieStore, passkeys] = await Promise.all([
@@ -23,31 +17,34 @@ export default async function SettingsPage() {
     cookies(),
     getMyPasskeys().catch(() => []),
   ]);
+  const t = await getTranslations("Subscription");
+  const s = await getTranslations("SettingsPage");
+  const host = (await headers()).get("host");
   const isSystem = !cookieStore.has("NEXT_LOCALE");
   const user = session?.user as any;
 
   return (
     <AppLayout>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage your account preferences</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{s("Title")}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{s("Subtitle")}</p>
       </div>
 
       {/* Account info */}
       <div className="rounded-xl border bg-card p-6 max-w-lg space-y-3">
-        <h2 className="font-medium text-sm">Account</h2>
+        <h2 className="font-medium text-sm">{s("Account")}</h2>
         <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-          <dt className="text-muted-foreground">Email</dt>
+          <dt className="text-muted-foreground">{s("Email")}</dt>
           <dd className="font-medium">{user?.email ?? "—"}</dd>
-          <dt className="text-muted-foreground">Role</dt>
+          <dt className="text-muted-foreground">{s("Role")}</dt>
           <dd>
             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-              {ROLE_LABELS[user?.role] ?? user?.role ?? "—"}
+              {["admin", "manager", "user"].includes(user?.role) ? s(`Roles.${user.role}`) : user?.role ?? "—"}
             </span>
           </dd>
           {profile?.last_login_at && (
             <>
-              <dt className="text-muted-foreground">Last login</dt>
+              <dt className="text-muted-foreground">{s("LastLogin")}</dt>
               <dd className="text-muted-foreground text-xs">{formatDate(profile.last_login_at)}</dd>
             </>
           )}
@@ -57,8 +54,8 @@ export default async function SettingsPage() {
       {/* Profile */}
       <div className="rounded-xl border bg-card p-6 max-w-lg space-y-4">
         <div>
-          <h2 className="font-medium text-sm">Profile</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Your display name across the app</p>
+          <h2 className="font-medium text-sm">{s("Profile")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{s("ProfileHint")}</p>
         </div>
         <ProfileForm
           initialFirstName={profile?.first_name ?? null}
@@ -69,8 +66,8 @@ export default async function SettingsPage() {
       {/* Language */}
       <div className="rounded-xl border bg-card p-6 max-w-lg space-y-3">
         <div>
-          <h2 className="font-medium text-sm">Language</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Choose the display language for the interface</p>
+          <h2 className="font-medium text-sm">{s("Language")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{s("LanguageHint")}</p>
         </div>
         <LanguagePicker current={locale} isSystem={isSystem} />
       </div>
@@ -78,8 +75,8 @@ export default async function SettingsPage() {
       {/* Security */}
       <div className="rounded-xl border bg-card p-6 max-w-lg space-y-4">
         <div>
-          <h2 className="font-medium text-sm">Security</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Change your login password</p>
+          <h2 className="font-medium text-sm">{s("Security")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{s("SecurityHint")}</p>
         </div>
         <PasswordForm />
       </div>
@@ -89,11 +86,36 @@ export default async function SettingsPage() {
         <div>
           <h2 className="font-medium text-sm">Passkeys</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Sign in faster using your device&apos;s biometrics or a security key
+            {s("PasskeysHint")}
           </p>
         </div>
         <PasskeysSection initialPasskeys={passkeys} />
       </div>
+
+      {/* § 312k BGB: a hosted household cancels on the operator's page (avisiohub site/kuendigung.html) */}
+      {process.env.HOSTED_SETUP === "true" && (
+        <div className="rounded-xl border bg-card p-6 max-w-lg space-y-3">
+          <h2 className="font-medium text-sm">{t("Title")}</h2>
+          <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
+            <dt className="text-muted-foreground">{t("Address")}</dt>
+            <dd className="font-medium break-all">{host}</dd>
+            <dt className="text-muted-foreground">{t("Operator")}</dt>
+            <dd>
+              Martin Riedel ·{" "}
+              <a href="mailto:openavisio@mailbox.org" className="text-primary hover:underline">openavisio@mailbox.org</a>
+              <div className="text-xs mt-0.5">
+                <a href="/imprint" className="text-muted-foreground hover:underline">Impressum</a> ·{" "}
+                <a href="/privacy" className="text-muted-foreground hover:underline">Datenschutz</a>
+              </div>
+            </dd>
+          </dl>
+          <p className="text-xs text-muted-foreground">{t("Billing")}</p>
+          <p className="text-xs text-muted-foreground">{t("AfterCancel")}</p>
+          <a href="https://openavisio.app/kuendigung.html" className="inline-block text-sm font-medium text-primary hover:underline">
+            {t("Cancel")}
+          </a>
+        </div>
+      )}
     </AppLayout>
   );
 }

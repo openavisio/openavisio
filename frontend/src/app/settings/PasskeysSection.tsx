@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { registerPasskeyAction, renamePasskeyAction, deletePasskeyAction } from "./actions";
 import { formatDate } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface Passkey {
   id: string;
@@ -23,10 +24,11 @@ export function PasskeysSection({ initialPasskeys }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [error, setError] = useState("");
+  const t = useTranslations("SettingsPage");
 
   async function handleAdd() {
     if (!window.PublicKeyCredential) {
-      setError("Your browser doesn't support passkeys.");
+      setError(t("PasskeyUnsupported"));
       return;
     }
     setAdding(true);
@@ -51,7 +53,7 @@ export function PasskeysSection({ initialPasskeys }: Props) {
       }
     } catch (e: any) {
       if (e?.name !== "NotAllowedError") {
-        setError("Failed to add passkey. Please try again.");
+        setError(t("Errors.PasskeyAdd"));
       }
     } finally {
       setAdding(false);
@@ -107,15 +109,15 @@ export function PasskeysSection({ initialPasskeys }: Props) {
                       onKeyDown={(e) => e.key === "Escape" && setEditingId(null)}
                       className="rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background w-40"
                     />
-                    <button type="submit" className="text-xs text-primary hover:underline">Save</button>
-                    <button type="button" onClick={() => setEditingId(null)} className="text-xs text-muted-foreground hover:underline">Cancel</button>
+                    <button type="submit" className="text-xs text-primary hover:underline">{t("Save")}</button>
+                    <button type="button" onClick={() => setEditingId(null)} className="text-xs text-muted-foreground hover:underline">{t("Cancel")}</button>
                   </form>
                 ) : (
                   <>
                     <p className="text-sm font-medium truncate">{p.label}</p>
                     <p className="text-xs text-muted-foreground">
-                      Added {formatDate(p.created_at)}
-                      {p.last_used_at && ` · Last used ${formatDate(p.last_used_at)}`}
+                      {t("PasskeyAdded", { date: formatDate(p.created_at) })}
+                      {p.last_used_at && ` · ${t("PasskeyLastUsed", { date: formatDate(p.last_used_at) })}`}
                     </p>
                   </>
                 )}
@@ -126,7 +128,7 @@ export function PasskeysSection({ initialPasskeys }: Props) {
                     type="button"
                     onClick={() => { setEditingId(p.id); setEditLabel(p.label); }}
                     className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    title="Rename"
+                    title={t("Rename")}
                   >
                     <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" />
@@ -136,7 +138,7 @@ export function PasskeysSection({ initialPasskeys }: Props) {
                     type="button"
                     onClick={() => handleDelete(p.id)}
                     className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
-                    title="Delete"
+                    title={t("Delete")}
                   >
                     <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16" />
@@ -152,7 +154,7 @@ export function PasskeysSection({ initialPasskeys }: Props) {
       <div className="flex items-center gap-2">
         <input
           type="text"
-          placeholder="Passkey name (e.g. MacBook Touch ID)"
+          placeholder={t("PasskeyName")}
           value={addLabel}
           onChange={(e) => setAddLabel(e.target.value)}
           className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background flex-1"
@@ -163,7 +165,7 @@ export function PasskeysSection({ initialPasskeys }: Props) {
           disabled={adding}
           className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 shrink-0"
         >
-          {adding ? "..." : "Add passkey"}
+          {adding ? "..." : t("AddPasskey")}
         </button>
       </div>
     </div>

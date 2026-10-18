@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateProfileAction } from "./actions";
+import { useTranslations } from "next-intl";
 
 export function ProfileForm({
   initialFirstName,
@@ -15,6 +16,7 @@ export function ProfileForm({
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const t = useTranslations("SettingsPage");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +40,7 @@ export function ProfileForm({
       )}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">First name</label>
+          <label className="text-sm font-medium">{t("FirstName")}</label>
           <input
             type="text"
             value={firstName}
@@ -47,7 +49,7 @@ export function ProfileForm({
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">Last name</label>
+          <label className="text-sm font-medium">{t("LastName")}</label>
           <input
             type="text"
             value={lastName}
@@ -62,9 +64,9 @@ export function ProfileForm({
           disabled={pending}
           className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Save"}
+          {pending ? t("Saving") : t("Save")}
         </button>
-        {saved && <span className="text-sm text-green-600">Saved</span>}
+        {saved && <span className="text-sm text-green-600">{t("Saved")}</span>}
       </div>
     </form>
   );

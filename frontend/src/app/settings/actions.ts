@@ -5,6 +5,7 @@ import { updateMe } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { verifyChallenge } from "@/lib/passkey-challenge";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -12,12 +13,13 @@ export async function updateProfileAction(
   firstName: string,
   lastName: string
 ): Promise<{ error?: string }> {
+  const t = await getTranslations("SettingsPage.Errors");
   try {
     await updateMe({ first_name: firstName || undefined, last_name: lastName || undefined });
     revalidatePath("/settings");
     return {};
   } catch {
-    return { error: "Could not save profile. Please try again." };
+    return { error: t("ProfileSave") };
   }
 }
 
@@ -25,11 +27,12 @@ export async function changePasswordAction(
   currentPassword: string,
   newPassword: string
 ): Promise<{ error?: string }> {
+  const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
 
   if (!token) {
-    return { error: "Session expired. Please log in again." };
+    return { error: t("SessionExpired") };
   }
 
   let res: Response;
@@ -49,32 +52,33 @@ export async function changePasswordAction(
       }
     );
   } catch {
-    return { error: "Could not reach the server. Please try again." };
+    return { error: t("Unreachable") };
   }
 
   if (res.status === 204) return {};
 
   if (res.status === 400) {
-    return { error: "Current password is incorrect." };
+    return { error: t("WrongPassword") };
   }
 
-  return { error: "Something went wrong. Please try again." };
+  return { error: t("Generic") };
 }
 
 export async function registerPasskeyAction(
   credential: unknown,
   label: string
 ): Promise<{ error?: string; passkey?: any }> {
+  const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Session expired. Please log in again." };
+  if (!token) return { error: t("SessionExpired") };
 
   const cookieStore = await cookies();
   const signed = cookieStore.get("passkey-challenge")?.value;
-  if (!signed) return { error: "Challenge expired. Please try again." };
+  if (!signed) return { error: t("Challenge") };
 
   const challenge = verifyChallenge(signed, process.env.NEXTAUTH_SECRET!);
-  if (!challenge) return { error: "Challenge invalid or expired. Please try again." };
+  if (!challenge) return { error: t("Challenge") };
 
   cookieStore.delete("passkey-challenge");
 
@@ -86,10 +90,10 @@ export async function registerPasskeyAction(
       body: JSON.stringify({ credential, expected_challenge: challenge, label }),
     });
   } catch {
-    return { error: "Could not reach the server. Please try again." };
+    return { error: t("Unreachable") };
   }
 
-  if (!res.ok) return { error: "Failed to register passkey. Please try again." };
+  if (!res.ok) return { error: t("PasskeyAdd") };
 
   const passkey = await res.json();
   revalidatePath("/settings");
@@ -100,29 +104,31 @@ export async function renamePasskeyAction(
   id: string,
   label: string
 ): Promise<{ error?: string }> {
+  const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Session expired." };
+  if (!token) return { error: t("SessionExpired") };
 
   const res = await fetch(`${API}/api/auth/passkey/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ label }),
   });
-  if (!res.ok) return { error: "Could not rename passkey." };
+  if (!res.ok) return { error: t("PasskeyRename") };
   return {};
 }
 
 export async function deletePasskeyAction(id: string): Promise<{ error?: string }> {
+  const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Session expired." };
+  if (!token) return { error: t("SessionExpired") };
 
   const res = await fetch(`${API}/api/auth/passkey/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return { error: "Could not delete passkey." };
+  if (!res.ok) return { error: t("PasskeyDelete") };
   revalidatePath("/settings");
   return {};
 }
