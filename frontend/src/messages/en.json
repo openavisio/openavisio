@@ -54,7 +54,7 @@
     "PasskeyError": "Passkey sign-in failed. Please try again.",
     "PasskeyNotSupported": "Your browser doesn't support passkeys.",
     "DemoTitle": "Demo access, click to fill in",
-    "DemoHint": "Public demo with fictional data. Please do not enter real health data.",
+    "DemoHint": "Public demo with made-up data. You can upload the sample letter and ask questions, but not your own documents.",
     "LostAccess": "Lost your password and passkey?",
     "RecoverTitle": "Recover access",
     "RecoverBody": "Enter the recovery code you wrote down during setup and set a new password.",
@@ -214,7 +214,7 @@
     "LoadErrorTitle": "Failed to load patients",
     "LoadErrorHint": "The server could not be reached. Try refreshing the page.",
     "EmptyTitle": "No patients you can access",
-    "EmptyBody": "Only patients you are a caregiver for appear here — a role alone does not grant access to a patient's record.",
+    "EmptyBody": "The records you have been given access to appear here.",
     "EmptyActionCreate": "Create a patient, or ask a caregiver to grant you access.",
     "EmptyActionAsk": "Ask a caregiver to grant you access.",
     "Favorites": "Favorites",
@@ -475,11 +475,11 @@
     "History": "Chat History",
     "You": "You",
     "Assistant": "Assistant",
-    "Disabled": "AI chat is not available (AI service not configured)",
+    "Disabled": "The AI chat is not available right now.",
     "Thinking": "Thinking",
     "Close": "Close",
     "Failed": "The answer could not be loaded. Please try again later.",
-    "Empty": "I look through what stands in this record and tell you where I found it. Just ask.",
+    "Empty": "Ask something about this record. The answer tells you which document it comes from.",
     "Sources": "Documents searched",
     "suggestions": {
       "s1": "When did unaided walking start?",
@@ -513,7 +513,7 @@
   },
   "Home": {
     "Welcome": "Welcome to OpenAvisio",
-    "Subtitle": "Your health data vault"
+    "Subtitle": "All your documents in one place."
   },
   "Setup": {
     "StepLanguage": "Language",
@@ -577,14 +577,14 @@
     "KindOrganizationHint": "A care service, home, practice or association with several Patients.",
     "HouseholdName": "My household",
     "RecoveryTitle": "Your recovery code",
-    "RecoveryBody": "This code is shown exactly once. It is the only way back into your account if you forget your password and lose the device holding your passkey. Print it out or file it with your documents.",
+    "RecoveryBody": "This code is shown exactly once. With it you get back into your account yourself if you forget your password and lose the device holding your passkey. Print it out or file it with your documents.",
     "RecoveryConfirm": "I have written the code down and stored it safely.",
     "Copy": "Copy",
     "Copied": "Copied"
   },
   "Preview": {
-    "banner": "Preview — This version is not yet ready for production use.",
-    "demo": "Public demo: look around, upload the sample letter and ask questions. Nothing here can be changed."
+    "banner": "Test server, not for real data.",
+    "demo": "Public demo with made-up data. You can upload the sample letter and ask questions, but not your own documents."
   },
   "Sharing": {
     "title": "Data sharing",
@@ -707,7 +707,7 @@
     "deleteWarning": "This document and all its extracted data will be permanently removed. This cannot be undone.",
     "cancel": "Cancel",
     "demoUploadButton": "Upload the sample document",
-    "demoUploadHint": "Public demo — your own uploads are disabled. The sample letter runs through the real pipeline."
+    "demoUploadHint": "Public demo with made-up data. You can upload the sample letter and ask questions, but not your own documents."
   },
   "Access": {
     "Caregivers": "Access & caregivers",
@@ -1277,7 +1277,7 @@
   },
   "ErrorPage": {
     "Title": "Something went wrong",
-    "Body": "It is not your fault. Please try again. If the error stays, report it so we can find it.",
+    "Body": "Try again. If the error stays, please report it.",
     "Number": "Error number:",
     "Retry": "Try again",
     "Report": "Report the error",

@@ -83,6 +83,8 @@ async def send_document_processed_notification(doc_id: str) -> None:
             smtp_cfg = await _get_smtp_config(db)
             if not smtp_cfg:
                 return
+            if not await _document_mail_on(db):
+                return
             include_content = await _include_content(db)
 
             doc_result = await db.execute(
@@ -217,6 +219,14 @@ async def _is_notify_enabled(db, key: str) -> bool:
     result = await db.execute(select(SystemSetting).where(SystemSetting.key == key))
     setting = result.scalar_one_or_none()
     return setting is None or (setting.value or "true").lower() != "false"
+
+
+async def _document_mail_on(db) -> bool:
+    """Off unless switched on: nobody asked for a mail per upload (#329)."""
+    from sqlalchemy import select
+    from app.models.system import SystemSetting
+    value = await db.scalar(select(SystemSetting.value).where(SystemSetting.key == "notify.document_processed"))
+    return (value or "").lower() == "true"
 
 
 async def _include_content(db) -> bool:

@@ -644,6 +644,7 @@ _NOTIFY = {
     "caregiver_added": True,
     "invitation": True,
     "include_content": False,  # #251: no health data in mails unless an admin decides so
+    "document_processed": False,  # off until #329 settles which mails a family gets
 }
 
 

@@ -54,7 +54,7 @@
     "PasskeyError": "Passkey-Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
     "PasskeyNotSupported": "Dein Browser unterstützt keine Passkeys.",
     "DemoTitle": "Demo-Zugang, zum Ausfüllen anklicken",
-    "DemoHint": "Offene Demo mit erfundenen Daten. Bitte keine echten Gesundheitsdaten eingeben.",
+    "DemoHint": "Öffentliche Demo mit erfundenen Daten. Du kannst den Beispielbrief hochladen und Fragen stellen, eigene Unterlagen nicht.",
     "LostAccess": "Passwort und Passkey verloren?",
     "RecoverTitle": "Zugang wiederherstellen",
     "RecoverBody": "Gib den Wiederherstellungscode ein, den du bei der Einrichtung notiert hast, und setze ein neues Passwort.",
@@ -214,7 +214,7 @@
     "LoadErrorTitle": "Patienten konnten nicht geladen werden",
     "LoadErrorHint": "Der Server ist nicht erreichbar. Bitte Seite neu laden.",
     "EmptyTitle": "Keine Patienten mit Zugriff",
-    "EmptyBody": "Hier erscheinen nur Patienten, für die du als Betreuer freigegeben bist — eine Rolle allein gewährt keinen Zugriff auf eine Patientenakte.",
+    "EmptyBody": "Hier erscheinen die Akten, für die du freigegeben bist.",
     "EmptyActionCreate": "Lege einen Patienten an oder lass dir von einem Betreuer Zugriff geben.",
     "EmptyActionAsk": "Lass dir von einem Betreuer Zugriff geben.",
     "Favorites": "Favoriten",
@@ -475,11 +475,11 @@
     "History": "Chatverlauf",
     "You": "Du",
     "Assistant": "Assistent",
-    "Disabled": "KI-Chat nicht verfügbar (kein KI-Dienst konfiguriert)",
+    "Disabled": "Der KI-Chat ist gerade nicht verfügbar.",
     "Thinking": "Denke nach",
     "Close": "Schließen",
     "Failed": "Die Antwort konnte nicht geladen werden. Bitte später erneut versuchen.",
-    "Empty": "Ich sehe, was in dieser Akte steht, und sage dir dazu, wo es steht. Frag einfach.",
+    "Empty": "Frag etwas zu dieser Akte. Die Antwort sagt dir, aus welchem Dokument sie stammt.",
     "Sources": "Durchsuchte Dokumente",
     "suggestions": {
       "s1": "Wann klappte das freie Laufen?",
@@ -513,7 +513,7 @@
   },
   "Home": {
     "Welcome": "Willkommen bei OpenAvisio",
-    "Subtitle": "Dein Gesundheitsdatentresor"
+    "Subtitle": "Alle Unterlagen an einem Ort."
   },
   "Setup": {
     "StepLanguage": "Sprache",
@@ -577,14 +577,14 @@
     "KindOrganizationHint": "Pflegedienst, Heim, Praxis oder Selbsthilfegruppe mit mehreren Betreuten.",
     "HouseholdName": "Mein Haushalt",
     "RecoveryTitle": "Dein Wiederherstellungscode",
-    "RecoveryBody": "Dieser Code wird genau einmal angezeigt. Er ist der einzige Weg zurück in dein Konto, wenn du dein Passwort vergisst und das Gerät mit deinem Passkey verlierst. Druck ihn aus oder leg ihn zu deinen Unterlagen.",
+    "RecoveryBody": "Dieser Code wird genau einmal angezeigt. Damit kommst du selbst wieder in dein Konto, wenn du dein Passwort vergisst und das Gerät mit deinem Passkey verlierst. Druck ihn aus oder leg ihn zu deinen Unterlagen.",
     "RecoveryConfirm": "Ich habe den Code notiert und sicher abgelegt.",
     "Copy": "Kopieren",
     "Copied": "Kopiert"
   },
   "Preview": {
-    "banner": "Vorschau — Diese Version ist noch nicht für den Produktiveinsatz bereit.",
-    "demo": "Öffentliche Demo: Sieh dich um, lade den Beispielbrief hoch und stell Fragen. Ändern lässt sich hier nichts."
+    "banner": "Testserver, nicht für echte Daten.",
+    "demo": "Öffentliche Demo mit erfundenen Daten. Du kannst den Beispielbrief hochladen und Fragen stellen, eigene Unterlagen nicht."
   },
   "Sharing": {
     "title": "Datenfreigabe",
@@ -707,7 +707,7 @@
     "deleteWarning": "Das Dokument und alle daraus extrahierten Daten werden endgültig entfernt. Das lässt sich nicht rückgängig machen.",
     "cancel": "Abbrechen",
     "demoUploadButton": "Beispieldokument hochladen",
-    "demoUploadHint": "Öffentliche Demo — eigene Uploads sind deaktiviert. Der Beispiel-Arztbrief durchläuft die echte Pipeline."
+    "demoUploadHint": "Öffentliche Demo mit erfundenen Daten. Du kannst den Beispielbrief hochladen und Fragen stellen, eigene Unterlagen nicht."
   },
   "Access": {
     "Caregivers": "Zugriff & Betreuer",
@@ -1277,7 +1277,7 @@
   },
   "ErrorPage": {
     "Title": "Da ist etwas schiefgelaufen",
-    "Body": "Das liegt nicht an dir. Versuch es bitte noch einmal. Wenn der Fehler bleibt, melde ihn uns, dann können wir ihn finden.",
+    "Body": "Versuch es noch einmal. Wenn der Fehler bleibt, melde ihn bitte.",
     "Number": "Fehlernummer:",
     "Retry": "Noch einmal versuchen",
     "Report": "Fehler melden",

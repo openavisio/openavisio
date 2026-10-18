@@ -21,7 +21,8 @@ async def test_content_is_off_until_an_admin_turns_it_on(client: AsyncClient, db
     assert await _include_content(db) is False
     h = await _admin(client, db)
     r = await client.get("/api/admin/notification-settings", headers=h)
-    assert r.json() == {"event_reminder": True, "caregiver_added": True, "invitation": True, "include_content": False}
+    assert r.json() == {"event_reminder": True, "caregiver_added": True, "invitation": True, "include_content": False,
+                         "document_processed": False}
 
     r = await client.put("/api/admin/notification-settings", headers=h, json={"include_content": True})
     assert r.json()["include_content"] is True and r.json()["event_reminder"] is True
