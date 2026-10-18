@@ -20,7 +20,9 @@
     "Favorites": "Favoriten",
     "More": "Mehr",
     "Collapse": "Einklappen",
-    "Expand": "Ausklappen"
+    "Expand": "Ausklappen",
+    "Family": "Familie",
+    "Server": "Server"
   },
   "Auth": {
     "Login": "Anmelden",
@@ -1078,7 +1080,8 @@
     "NotifyInvitation": "Einladungen",
     "NotifyInvitationHint": "Den Registrierungslink per E-Mail versenden, sobald eine Einladung erstellt wird.",
     "NotifyIncludeContent": "Details in E-Mails",
-    "NotifyIncludeContentHint": "Patientenname, Dokument und Termin in Betreff und Text nennen. Aus: nur ein Hinweis mit Link. Diese Angaben liegen dann beim Mailanbieter und im Postfach der Empfänger."
+    "NotifyIncludeContentHint": "Patientenname, Dokument und Termin in Betreff und Text nennen. Aus: nur ein Hinweis mit Link. Diese Angaben liegen dann beim Mailanbieter und im Postfach der Empfänger.",
+    "SaveFailed": "Konnte nicht gespeichert werden."
   },
   "SettingsPage": {
     "Title": "Einstellungen",
@@ -1227,5 +1230,58 @@
     "object": "Widersprechen",
     "optOut": "Diesen Browser nicht mehr zählen",
     "optOutDone": "Widerspruch gespeichert, dieser Browser wird nicht mehr gezählt."
+  },
+  "Invite": {
+    "Button": "Einladen",
+    "Title": "Jemanden einladen",
+    "Placeholder": "name@beispiel.de",
+    "Sending": "Wird gesendet…",
+    "Send": "Senden",
+    "Created": "Einladung erstellt. Diesen Link weitergeben:",
+    "Another": "Noch jemanden einladen",
+    "Failed": "Die Einladung konnte nicht erstellt werden.",
+    "Copied": "Kopiert",
+    "CopyLink": "Link kopieren"
+  },
+  "Family": {
+    "Title": "Familie",
+    "Subtitle": "Wer dabei ist, wer eingeladen ist und wie eure Akte heißt.",
+    "Members": "Wer dabei ist",
+    "You": "(du)",
+    "Remove": "Entfernen",
+    "RemoveConfirm": "{name} entfernen? Die Anmeldung und der Zugriff auf alle Kinder enden sofort. Was {name} eingetragen hat, bleibt stehen.",
+    "Invitations": "Einladungen",
+    "InvitationsHint": "Eine Einladung gilt 7 Tage. Du kannst sie bis dahin zurückziehen.",
+    "ValidUntil": "Gültig bis {date}",
+    "Revoke": "Zurückziehen",
+    "Record": "Eure Akte",
+    "Name": "Name",
+    "Language": "Sprache",
+    "Save": "Speichern",
+    "Saved": "Gespeichert",
+    "Failed": "Das hat nicht geklappt. Bitte versuch es noch einmal.",
+    "Audit": "Protokoll",
+    "AuditHint": "Wer wann was in der Akte gemacht hat.",
+    "AuditOpen": "Protokoll ansehen"
+  },
+  "Audit": {
+    "Title": "Protokoll",
+    "Empty": "Noch keine Einträge.",
+    "When": "Wann",
+    "User": "Wer",
+    "Action": "Aktion",
+    "Entity": "Bereich",
+    "EntityId": "Kennung",
+    "System": "System",
+    "Showing": "{shown} von {total} Einträgen"
+  },
+  "ErrorPage": {
+    "Title": "Da ist etwas schiefgelaufen",
+    "Body": "Das liegt nicht an dir. Versuch es bitte noch einmal. Wenn der Fehler bleibt, melde ihn uns, dann können wir ihn finden.",
+    "Number": "Fehlernummer:",
+    "Retry": "Noch einmal versuchen",
+    "Report": "Fehler melden",
+    "MailSubject": "Fehler {id}",
+    "MailBody": "Hallo,\n\nin meiner Akte ist ein Fehler aufgetreten.\n\nFehlernummer: {id}\nSeite: {page}\n\nWas ich gerade gemacht habe:\n"
   }
 }

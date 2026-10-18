@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cookies, headers } from "next/headers";
-import { getMe, getMyPasskeys } from "@/lib/api";
+import { getMe, getMyPasskeys, getOrganization } from "@/lib/api";
 import { PasswordForm } from "./PasswordForm";
 import { ProfileForm } from "./ProfileForm";
 import { LanguagePicker } from "./LanguagePicker";
@@ -17,6 +17,7 @@ export default async function SettingsPage() {
     cookies(),
     getMyPasskeys().catch(() => []),
   ]);
+  const isHousehold = (await getOrganization().catch(() => null))?.is_household ?? false;
   const t = await getTranslations("Subscription");
   const s = await getTranslations("SettingsPage");
   const host = (await headers()).get("host");
@@ -36,12 +37,17 @@ export default async function SettingsPage() {
         <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
           <dt className="text-muted-foreground">{s("Email")}</dt>
           <dd className="font-medium">{user?.email ?? "—"}</dd>
-          <dt className="text-muted-foreground">{s("Role")}</dt>
-          <dd>
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-              {["admin", "manager", "user"].includes(user?.role) ? s(`Roles.${user.role}`) : user?.role ?? "—"}
-            </span>
-          </dd>
+          {/* ADR 052: a household never reads "admin" */}
+          {!isHousehold && (
+            <>
+              <dt className="text-muted-foreground">{s("Role")}</dt>
+              <dd>
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  {["admin", "manager", "user"].includes(user?.role) ? s(`Roles.${user.role}`) : user?.role ?? "—"}
+                </span>
+              </dd>
+            </>
+          )}
           {profile?.last_login_at && (
             <>
               <dt className="text-muted-foreground">{s("LastLogin")}</dt>
@@ -93,7 +99,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* § 312k BGB: a hosted household cancels on the operator's page (avisiohub site/kuendigung.html) */}
-      {process.env.HOSTED_SETUP === "true" && (
+      {process.env.HOSTED_SETUP === "true" && user?.role === "admin" && (
         <div className="rounded-xl border bg-card p-6 max-w-lg space-y-3">
           <h2 className="font-medium text-sm">{t("Title")}</h2>
           <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">

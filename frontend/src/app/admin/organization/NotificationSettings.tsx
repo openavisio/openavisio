@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { updateNotificationSettings } from "@/lib/api";
 
 type Settings = {
   event_reminder: boolean;
@@ -23,19 +24,22 @@ export function NotificationSettings({ initial }: { initial: Settings }) {
   const [settings, setSettings] = useState(initial);
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   function toggle(key: keyof Settings) {
     const next = { ...settings, [key]: !settings[key] };
     setSettings(next);
     setSaved(false);
+    setFailed(false);
     startTransition(async () => {
-      await fetch("/api/admin/notification-settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [key]: next[key] }),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      try {
+        await updateNotificationSettings({ [key]: next[key] });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } catch {
+        setSettings(settings);
+        setFailed(true);
+      }
     });
   }
 
@@ -74,6 +78,7 @@ export function NotificationSettings({ initial }: { initial: Settings }) {
       </div>
 
       {saved && <p className="text-xs text-green-600">{t("Saved")}</p>}
+      {failed && <p className="text-xs text-destructive">{t("SaveFailed")}</p>}
     </div>
   );
 }

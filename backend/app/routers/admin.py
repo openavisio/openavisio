@@ -125,6 +125,38 @@ async def set_user_active(user_id: uuid.UUID, body: SetUserActiveRequest, admin:
     return {"ok": True}
 
 
+@router.post("/users/{user_id}/remove")
+async def remove_member(user_id: uuid.UUID, admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Take a member out (ADR 052): no login, no access to any Patient; what they wrote stays theirs."""
+    from app.models.access import PatientAccess
+    if user_id == admin.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot remove yourself.")
+    target = (await db.execute(select(User).where(User.id == user_id, User.is_deleted == False))).scalar_one_or_none()  # noqa: E712
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    target.is_active = False
+    now = datetime.now(UTC)
+    active = lambda: (PatientAccess.revoked_at == None, PatientAccess.is_deleted == False)  # noqa: E711, E712, E731
+    grants = (await db.execute(select(PatientAccess).where(PatientAccess.user_id == user_id, *active()))).scalars().all()
+    for g in grants:
+        g.revoked_at = now
+    await db.flush()
+    # a Patient whose only admin-level grant just went is handed to whoever removed them
+    for pid in {g.patient_id for g in grants if g.access_level == "admin"}:
+        if await db.scalar(select(func.count()).select_from(PatientAccess).where(
+                PatientAccess.patient_id == pid, PatientAccess.access_level == "admin", *active())):
+            continue
+        own = (await db.execute(select(PatientAccess).where(
+            PatientAccess.patient_id == pid, PatientAccess.user_id == admin.id, *active()))).scalars().first()
+        if own:
+            own.access_level = "admin"
+        else:
+            db.add(PatientAccess(patient_id=pid, user_id=admin.id, access_level="admin",
+                                 granted_by_user_id=admin.id, granted_at=now))
+    await db.commit()
+    return {"ok": True}
+
+
 @router.get("/groups", response_model=list[AdminGroupDto])
 async def list_groups(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Group).where(Group.is_deleted == False))  # noqa: E712
@@ -167,6 +199,17 @@ async def create_invitation(body: CreateInvitationRequest, background_tasks: Bac
     background_tasks.add_task(send_invitation_email, body.email, token)
 
     return inv
+
+
+@router.delete("/invitations/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def revoke_invitation(invitation_id: uuid.UUID, admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    inv = await db.get(UserInvitation, invitation_id)
+    if not inv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if inv.is_used:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This invitation was already accepted.")
+    await db.delete(inv)
+    await db.commit()
 
 
 @router.get("/audit", response_model=PagedResult[AuditLogDto])

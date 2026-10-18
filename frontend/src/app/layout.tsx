@@ -65,7 +65,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale} suppressHydrationWarning className={`h-full ${atkinson.variable}`}>
-      <body className="h-full bg-background text-foreground antialiased">
+      {/* ADR 053: the error page offers a report to the operator; only a hosted Deployment has one to name */}
+      <body className="h-full bg-background text-foreground antialiased"
+        data-support={process.env.HOSTED_SETUP === "true" ? "info@openavisio.app" : undefined}>
         {umamiUrl && umamiId && (
           <script defer src={`${umamiUrl}/script.js`} data-website-id={umamiId} />
         )}

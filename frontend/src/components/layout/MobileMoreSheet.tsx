@@ -7,6 +7,7 @@ import {
   Home, Users, UsersRound, Share2, Settings, Star, Shield, Menu,
   Sun, Moon, Contrast, LogOut, MonitorDot, Building, UserCog, Building2,
   UserPlus, ClipboardList, ScrollText, Bot, BadgeCheck,
+  HeartHandshake,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
@@ -43,6 +44,7 @@ export function MobileMoreSheet({
   const nav = [
     { href: "/", label: t("Home"), Icon: Home },
     { href: "/patients", label: t("Patients"), Icon: Users },
+    ...(isHousehold && userRole === "admin" ? [{ href: "/family", label: t("Family"), Icon: HeartHandshake }] : []),
     ...(showGroups ? [{ href: "/group", label: t("Group"), Icon: UsersRound }] : []),
     ...(canShare ? [{ href: "/admin/sharing", label: t("DataSharing"), Icon: Share2 }] : []),
     { href: "/settings", label: t("Settings"), Icon: Settings },
@@ -61,7 +63,10 @@ export function MobileMoreSheet({
     { href: "/admin/license", label: t("License"), Icon: BadgeCheck },
     { href: "/admin/data-governance", label: t("DataGovernance"), Icon: Shield },
   ] : [];
-  const adminItems = hosted ? allAdminItems.filter((i) => ["/admin/invitations", "/admin/audit"].includes(i.href)) : allAdminItems;
+  const familyPages = ["/admin/invitations", "/admin/audit"];  // ADR 052, as in AppSidebar
+  const adminItems = isHousehold
+    ? (hosted ? [] : allAdminItems.filter((i) => !familyPages.includes(i.href)))
+    : hosted ? allAdminItems.filter((i) => familyPages.includes(i.href)) : allAdminItems;
 
   const row = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent";
 
@@ -105,7 +110,7 @@ export function MobileMoreSheet({
             <>
               <div className="mt-3 mb-1 flex items-center gap-1.5 px-3 text-xs font-medium text-muted-foreground">
                 <Shield className="size-3" />
-                {t("Admin")}
+                {t(isHousehold ? "Server" : "Admin")}
               </div>
               {adminItems.map(({ href, label, Icon }) => (
                 <Link key={href} href={href} className={row}>

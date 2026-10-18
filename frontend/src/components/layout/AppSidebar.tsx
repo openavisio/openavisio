@@ -23,6 +23,7 @@ import {
   Star,
   ChevronsLeft,
   ChevronsRight,
+  HeartHandshake,
 } from "lucide-react"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -99,6 +100,7 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold
   const navMain = [
     { href: "/", label: t("Home"), icon: Home, color: "text-teal-600 dark:text-teal-400" },
     { href: "/patients", label: t("Patients"), icon: Users, color: "text-amber-600 dark:text-amber-400" },
+    ...(isHousehold && userRole === "admin" ? [{ href: "/family", label: t("Family"), icon: HeartHandshake, color: "text-rose-600 dark:text-rose-400" }] : []),
     ...(showGroups ? [{ href: "/group", label: t("Group"), icon: UsersRound, color: "text-sky-600 dark:text-sky-400" }] : []),
     ...(canShare ? [{ href: "/admin/sharing", label: t("DataSharing"), icon: Share2, color: "text-emerald-600 dark:text-emerald-400" }] : []),
     { href: "/settings", label: t("Settings"), icon: Settings, color: "text-slate-500 dark:text-slate-400" },
@@ -119,7 +121,11 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold
     { href: "/admin/data-governance", label: t("DataGovernance"), icon: Shield, color: "text-rose-600 dark:text-rose-400" },
   ]
 
-  const adminItems = hosted ? allAdminItems.filter((i) => ["/admin/invitations", "/admin/audit"].includes(i.href)) : allAdminItems
+  // ADR 052: a household's own pages live on "Familie"; what is left is the server, which on hosted is the operator's
+  const familyPages = ["/admin/invitations", "/admin/audit"]
+  const adminItems = isHousehold
+    ? (hosted ? [] : allAdminItems.filter((i) => !familyPages.includes(i.href)))
+    : hosted ? allAdminItems.filter((i) => familyPages.includes(i.href)) : allAdminItems
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
@@ -258,13 +264,13 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, isHousehold
         )}
 
         {/* Admin section */}
-        {userRole === "admin" && (
+        {userRole === "admin" && adminItems.length > 0 && (
           <>
             <SidebarSeparator />
             <SidebarGroup>
               <SidebarGroupLabel>
                 <Shield className="mr-1.5 size-3" />
-                {t("Admin")}
+                {t(isHousehold ? "Server" : "Admin")}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

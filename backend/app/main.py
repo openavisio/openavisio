@@ -59,6 +59,9 @@ app = FastAPI(
     redoc_url="/redoc" if settings.is_dev else None,
 )
 
+from app.core.error_report import unhandled_error  # noqa: E402
+app.add_exception_handler(Exception, unhandled_error)
+
 from app.demo import read_only  # noqa: E402 — a no-op unless this is the public demo
 app.middleware("http")(read_only)
 
