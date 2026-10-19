@@ -20,7 +20,7 @@ from ocr import ocr_pdf, ocr_image
 from vision_ocr import vision_ocr
 from classification import classify_document
 from intake import answer_questions, read_questions
-from backend import get_backend, get_embed_backend, get_model, get_num_ctx, get_ollama_url, get_vision_backend
+from backend import ContextOverflow, get_backend, get_embed_backend, get_model, get_num_ctx, get_ollama_url, get_vision_backend
 
 _PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 _MODELS_JSON = os.path.join(os.path.dirname(__file__), "models.json")
@@ -251,6 +251,10 @@ async def extract_entities_endpoint(request: ExtractEntitiesRequest):
             entities=result.get("entities"),
             confidence=result.get("confidence"),
         )
+    except ContextOverflow as e:
+        # a cut document would yield a record that looks complete and is not (#239)
+        logger.warning("Entity extraction refused: %s", e)
+        return ExtractEntitiesResult(error="document_too_long", confidence=0.0)
     except Exception as e:
         logger.exception("Entity extraction failed")
         return ExtractEntitiesResult(error=str(e), confidence=0.0)

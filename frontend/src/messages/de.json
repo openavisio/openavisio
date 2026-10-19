@@ -795,6 +795,7 @@
     "added": "Hinzugefügt",
     "ocrConfidence": "OCR-Konfidenz",
     "error": "Fehler",
+    "errorTooLong": "Das Dokument ist zu lang, um es auf einmal auszuwerten. Es liegt vollständig in der Akte, nur die Daten daraus wurden nicht übernommen.",
     "showText": "Extrahierten Text anzeigen (technisch)",
     "document": "Dokument",
     "file": "Datei",

@@ -103,7 +103,6 @@ export function DocumentsExplorer({
   const [sortBy, setSortBy] = useState<SortKey>("doc");
   const [action, setAction] = useState(false);
   const [onlyFavs, setOnlyFavs] = useState(false);
-  const [revealed, setRevealed] = useState<string | null>(null);
   const router = useRouter();
   const isMobile = useIsMobile();
   const [searching, setSearching] = useState(false);
@@ -278,14 +277,12 @@ export function DocumentsExplorer({
                   ins?.diagnoses && t("countDiagnoses", { count: ins.diagnoses }),
                   ins?.recommendations && t("countRecommendations", { count: ins.recommendations }),
                 ].filter(Boolean);
-                const open = revealed === doc.id;
                 return (
             <div key={doc.id} className="overflow-hidden rounded-xl border bg-card">
              <div className="flex items-stretch">
-              {/* On a phone the first tap reveals the actions, the second opens
-                  the document — the action column has no room next to the text. */}
+              {/* On a phone one tap opens the document; download and favourite live there */}
               <div
-                onClick={isMobile ? () => (open ? router.push(`/patients/${patientId}/documents/${doc.id}`) : setRevealed(doc.id)) : undefined}
+                onClick={isMobile ? () => router.push(`/patients/${patientId}/documents/${doc.id}`) : undefined}
                 className="flex flex-1 items-center gap-3 min-w-0 p-4 lg:items-start"
               >
                 <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${tint}`}>
@@ -297,7 +294,7 @@ export function DocumentsExplorer({
                       {docTitle(doc, t, tc)}
                       {issuer && <span className="text-muted-foreground font-normal">{" · "}{issuer}</span>}
                     </span>
-                    {(!isMobile || open) && (
+                    {!isMobile && (
                       <FavoriteButton docId={doc.id} patientId={patientId} initial={!!doc.is_favorite} />
                     )}
                   </div>
@@ -316,6 +313,22 @@ export function DocumentsExplorer({
                   )}
                   {ins?.summary && (
                     <p className="hidden text-sm text-muted-foreground line-clamp-2 lg:block">{ins.summary}</p>
+                  )}
+
+                  {/* phone: only what asks for something, without opening the document */}
+                  {(doc.verification_status === "extracted" || doc.processing_status === "failed") && (
+                    <div className="flex flex-wrap items-center gap-2 lg:hidden" onClick={(e) => e.stopPropagation()}>
+                      {doc.processing_status === "failed" && <RetryButton docId={doc.id} />}
+                      {doc.verification_status === "extracted" && (
+                        <Link
+                          href={`/patients/${patientId}/documents/${doc.id}/verify`}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-3 py-1.5 text-sm font-medium text-amber-700 dark:text-amber-400"
+                        >
+                          <ClipboardCheck className="h-4 w-4" />
+                          {t("verify")}
+                        </Link>
+                      )}
+                    </div>
                   )}
 
                   {counts.length > 0 && (
@@ -376,46 +389,6 @@ export function DocumentsExplorer({
               </div>
              </div>
 
-              {/* Phone: the actions appear under the card once it is tapped */}
-              {open && (
-                <div className="flex items-stretch divide-x border-t lg:hidden [&>*]:min-h-12 [&>*]:flex-1 [&>*]:justify-center [&>*]:rounded-none [&>*]:border-0">
-                  {doc.processing_status === "failed" && <RetryButton docId={doc.id} />}
-
-                  {doc.verification_status === "extracted" && (
-                    <Link
-                      href={`/patients/${patientId}/documents/${doc.id}/verify`}
-                      aria-label={t("verify")}
-                      className="inline-flex items-center bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                    >
-                      <ClipboardCheck className="h-5 w-5" />
-                    </Link>
-                  )}
-
-                  <Link
-                    href={`/patients/${patientId}/documents/${doc.id}`}
-                    aria-label={t("view")}
-                    className="inline-flex items-center bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                  >
-                    <Eye className="h-5 w-5" />
-                  </Link>
-
-                  <a
-                    href={`/api/documents/${doc.id}/file`}
-                    aria-label={t("download")}
-                    className="inline-flex items-center text-foreground"
-                  >
-                    <Download className="h-5 w-5" />
-                  </a>
-
-                  <DeleteDocumentButton
-                    docId={doc.id}
-                    patientId={patientId}
-                    stayOnList
-                    iconOnly
-                    className="bg-transparent text-destructive shadow-none"
-                  />
-                </div>
-              )}
             </div>
                 );
               })}

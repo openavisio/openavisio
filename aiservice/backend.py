@@ -110,6 +110,23 @@ def _parse_urls(raw: str) -> list[str]:
 _DETERMINISTIC = {"temperature": 0}
 
 
+class ContextOverflow(RuntimeError):
+    """The prompt did not fit the model's context window (#239)."""
+
+
+def _is_overflow(exc: Exception) -> bool:
+    # ponytail: matched on the provider's wording (vLLM, OpenAI: "maximum context length");
+    # a provider that words it differently still fails, only not as ContextOverflow
+    return "context length" in str(exc).lower()
+
+
+def _check_fit(response, num_ctx: int | None) -> None:
+    """Ollama cuts an over-long prompt to exactly num_ctx tokens and answers anyway (#239)."""
+    used = getattr(response, "prompt_eval_count", None) or 0
+    if num_ctx and used >= num_ctx:
+        raise ContextOverflow(f"prompt filled the whole context window ({used} of {num_ctx} tokens) and was truncated")
+
+
 class InferenceBackend(ABC):
     """Abstract base class for inference backends."""
 
@@ -223,8 +240,9 @@ class OllamaBackend(InferenceBackend):
             self._pool.mark_healthy(url)
             if not self._pool.is_single:
                 logger.info("Ollama chat handled by %s", url)
-            return response.message.content
-        except Exception:
+        except Exception as exc:
+            if _is_overflow(exc):  # newer Ollama builds may refuse instead of cutting
+                raise ContextOverflow(str(exc)) from exc
             self._pool.mark_unhealthy(url)
             if self._pool.is_single:
                 raise
@@ -233,7 +251,8 @@ class OllamaBackend(InferenceBackend):
             logger.info("Retrying chat on %s after %s failed", url2, url)
             response = client2.chat(model=model, messages=msgs, options=opts, **think_kw)
             self._pool.mark_healthy(url2)
-            return response.message.content
+        _check_fit(response, num_ctx)
+        return response.message.content
 
     def chat_stream(self, model: str, messages: list[dict], num_ctx: int | None = None,
                     think: bool | None = None) -> Generator[str, None, None]:
@@ -251,6 +270,12 @@ class OllamaBackend(InferenceBackend):
             content = chunk.message.content
             if content:
                 yield content
+            if chunk.done:
+                # a chat answer writes nothing into the record, so a cut prompt only warns (#239)
+                try:
+                    _check_fit(chunk, num_ctx)
+                except ContextOverflow as e:
+                    logger.warning("Chat %s", e)
 
     def embed(self, model: str, texts: list[str], dimensions: int | None = None) -> list[list[float]]:
         url, client = self._get_client()
@@ -385,6 +410,8 @@ class VllmBackend(InferenceBackend):
         try:
             return client.chat.completions.create(model=model, messages=messages, temperature=0, **opts, **kw)
         except Exception as exc:
+            if _is_overflow(exc):
+                raise ContextOverflow(str(exc)) from exc
             if opts.get("reasoning_effort") != "none" or "reasoning_effort" not in str(exc):
                 raise
             opts = {**opts, "reasoning_effort": "low"}
@@ -402,6 +429,8 @@ class VllmBackend(InferenceBackend):
             if not self._pool.is_single:
                 logger.info("vLLM chat handled by %s", url)
             return response.choices[0].message.content
+        except ContextOverflow:
+            raise
         except Exception:
             self._pool.mark_unhealthy(url)
             if self._pool.is_single:

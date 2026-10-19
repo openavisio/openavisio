@@ -1,11 +1,14 @@
 """4-stage document processing pipeline: OCR → Classify → Extract → Embed."""
 
 import asyncio
+import logging
 import uuid
 
 import httpx
 
 from app.workers.celery_app import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 def _run(coro):
@@ -167,7 +170,12 @@ def extraction_stage(self, doc_id: str):
                     f"{settings.ai_service_url}/extract-entities",
                     json={"text": plain, "document_type": doc.document_classification, "model": extract_model, "language": language},
                 )
-                if resp.status_code == 200:
+                if resp.status_code == 200 and resp.json().get("error"):
+                    # the aiservice reports a failed extraction as 200 with an error; it is not a result
+                    error = resp.json()["error"]
+                    logger.warning("Extraction of document %s failed: %s", doc_id, error)
+                    await _update_doc(doc_id, processing_status="failed", processing_error=error)
+                elif resp.status_code == 200:
                     extraction = resp.json()
                     entities = extraction.get("entities") or extraction
                     issued_date = None

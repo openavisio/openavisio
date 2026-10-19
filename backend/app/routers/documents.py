@@ -216,6 +216,7 @@ async def get_document_detail(doc_id: uuid.UUID, user: User = Depends(get_curren
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     await require_patient_access(doc.patient_id, user, db)
+    doc.is_favorite = doc.id in await _favorite_doc_ids(db, user.id)  # not a column; the DTO reads it
     return await _reveal(doc, db)
 
 

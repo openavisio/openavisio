@@ -795,6 +795,7 @@
     "added": "Added",
     "ocrConfidence": "OCR confidence",
     "error": "Error",
+    "errorTooLong": "The document is too long to analyse in one go. It is fully stored in the record; only its data was not taken over.",
     "showText": "Show extracted text (technical)",
     "document": "Document",
     "file": "File",

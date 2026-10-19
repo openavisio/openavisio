@@ -73,6 +73,7 @@ class DocumentDetailDto(OrmBase):
     extraction_confidence: float | None
     extraction_json: dict | None
     created_at: datetime
+    is_favorite: bool = False
 
 
 class UpdateDocumentRequest(BaseModel):

@@ -9,12 +9,14 @@ import { DeleteDocumentButton } from "./DeleteDocumentButton";
 import { EditIssuedDate } from "./EditIssuedDate";
 import { CorrespondentSelect } from "./CorrespondentSelect";
 import { DocumentViewer } from "@/components/DocumentViewer";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Download } from "lucide-react";
+import { FavoriteButton } from "../FavoriteButton";
 import { AiNotice } from "@/components/AiNotice";
 
 export default async function DocumentDetailPage({ params }: { params: Promise<{ id: string; docId: string }> }) {
   const { id, docId } = await params;
   const t = await getTranslations("DocDetail");
+  const td = await getTranslations("DocumentsPage");
   const [patient, doc, correspondents, allObs] = await Promise.all([
     getPatient(id).catch(() => null),
     getDocumentDetail(docId).catch(() => null),
@@ -97,7 +99,16 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
           }
           className=""
         />
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <FavoriteButton docId={docId} patientId={id} initial={!!doc.is_favorite} />
+          <a
+            href={`/api/documents/${docId}/file`}
+            aria-label={td("download")}
+            title={td("download")}
+            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Download className="h-4 w-4" />
+          </a>
           <DeleteDocumentButton docId={docId} patientId={id} />
         </div>
       </div>
@@ -271,7 +282,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
                 </div>
               )}
               <Row label={t("ocrConfidence")} value={doc.ocr_confidence != null ? `${(doc.ocr_confidence * 100).toFixed(0)}%` : null} />
-              {doc.processing_error && <Row label={t("error")} value={doc.processing_error} className="text-destructive" />}
+              {doc.processing_error && <Row label={t("error")} value={doc.processing_error === "document_too_long" ? t("errorTooLong") : doc.processing_error} className="text-destructive" />}
             </dl>
           </Section>
 
