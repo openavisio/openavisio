@@ -157,6 +157,21 @@ async def remove_member(user_id: uuid.UUID, admin: User = Depends(require_admin)
     return {"ok": True}
 
 
+@router.post("/users/{user_id}/make-manager")
+async def make_manager(user_id: uuid.UUID, admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Hand the Household Manager role to another member (ADR 052); the caller becomes a member."""
+    from app.services.household import transfer_manager
+    target = await db.get(User, user_id)
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    name = " ".join(filter(None, [admin.first_name, admin.last_name])) or admin.email
+    try:
+        await transfer_manager(db, target, by_name=name, by_id=admin.id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    return {"ok": True}
+
+
 @router.get("/groups", response_model=list[AdminGroupDto])
 async def list_groups(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Group).where(Group.is_deleted == False))  # noqa: E712
@@ -196,7 +211,7 @@ async def create_invitation(body: CreateInvitationRequest, background_tasks: Bac
     await db.refresh(inv)
 
     from app.services.email import send_invitation_email
-    background_tasks.add_task(send_invitation_email, body.email, token)
+    background_tasks.add_task(send_invitation_email, body.email, token, str(admin.id))
 
     return inv
 
@@ -638,23 +653,6 @@ async def delete_license(admin: User = Depends(require_admin), db: AsyncSession 
 # Notification settings
 # ---------------------------------------------------------------------------
 
-# field -> default; stored under notify.<field>
-_NOTIFY = {
-    "event_reminder": True,
-    "caregiver_added": True,
-    "invitation": True,
-    "include_content": False,  # #251: no health data in mails unless an admin decides so
-    "document_processed": False,  # off until #329 settles which mails a family gets
-}
-
-
-async def _get_notify_settings(db) -> dict:
-    from app.models.system import SystemSetting
-    result = await db.execute(select(SystemSetting).where(SystemSetting.key.in_([f"notify.{f}" for f in _NOTIFY])))
-    cfg = {s.key: s.value for s in result.scalars().all()}
-    return {f: (cfg.get(f"notify.{f}") or str(default)).lower() == "true" for f, default in _NOTIFY.items()}
-
-
 async def _upsert_notify(db, key: str, value: bool) -> None:
     from app.models.system import SystemSetting
     result = await db.execute(select(SystemSetting).where(SystemSetting.key == key))
@@ -667,7 +665,8 @@ async def _upsert_notify(db, key: str, value: bool) -> None:
 
 @router.get("/notification-settings")
 async def get_notification_settings(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
-    return await _get_notify_settings(db)
+    from app.services.email import notify_settings
+    return await notify_settings(db)
 
 
 @router.put("/notification-settings")
@@ -676,8 +675,9 @@ async def update_notification_settings(
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    for field in _NOTIFY:
+    from app.services.email import NOTIFY_DEFAULTS, notify_settings
+    for field in NOTIFY_DEFAULTS:
         if field in body:
             await _upsert_notify(db, f"notify.{field}", bool(body[field]))
     await db.commit()
-    return await _get_notify_settings(db)
+    return await notify_settings(db)

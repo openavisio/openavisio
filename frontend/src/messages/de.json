@@ -488,7 +488,8 @@
       "s4": "Welche Diagnosen sind eingetragen?"
     },
     "Unavailable": "Der KI-Dienst antwortet gerade nicht. Deine Frage wurde nicht gespeichert, frag später noch einmal.",
-    "OpenEmergencyPlan": "Notfallplan öffnen"
+    "OpenEmergencyPlan": "Notfallplan öffnen",
+    "Notice": "Die KI kann Fehler machen. Prüf Wichtiges im Originaldokument."
   },
   "Verify": {
     "reaction": "Reaktion",
@@ -1079,6 +1080,8 @@
     "NotifyCaregiverAddedHint": "Nutzer per E-Mail benachrichtigen, wenn sie Zugriff auf einen Betreuten bekommen.",
     "NotifyInvitation": "Einladungen",
     "NotifyInvitationHint": "Den Registrierungslink per E-Mail versenden, sobald eine Einladung erstellt wird.",
+    "NotifyDocumentProcessed": "Dokument fertig",
+    "NotifyDocumentProcessedHint": "Eine E-Mail, wenn ein hochgeladenes Dokument fertig verarbeitet ist.",
     "NotifyIncludeContent": "Details in E-Mails",
     "NotifyIncludeContentHint": "Patientenname, Dokument und Termin in Betreff und Text nennen. Aus: nur ein Hinweis mit Link. Diese Angaben liegen dann beim Mailanbieter und im Postfach der Empfänger.",
     "SaveFailed": "Konnte nicht gespeichert werden."
@@ -1139,9 +1142,13 @@
     "Title": "Vertrag",
     "Address": "Deine Akte",
     "Operator": "Betrieben von",
-    "Billing": "Zahlungsdaten und Rechnungen findest du über den Link in deiner Willkommensmail. Kündigen kannst du jederzeit zum Ende des Abrechnungszeitraums.",
+    "Billing": "Tarif, nächste Abbuchung, Zahlungsdaten und Rechnungen siehst du bei Stripe. Melde dich dort mit der Mailadresse an, mit der du bestellt hast. Kündigen kannst du jederzeit zum Ende des Abrechnungszeitraums.",
     "AfterCancel": "Eine Woche vor dem Vertragsende bekommst du eine Mail, wie du deine Daten exportierst. Mit dem Vertragsende wird deine Akte gelöscht.",
-    "Cancel": "Vertrag kündigen"
+    "Cancel": "Vertrag kündigen",
+    "Portal": "Zahlung und Rechnungen",
+    "MailCancel": "Per Mail kündigen",
+    "MailSubject": "Kündigung meiner Akte",
+    "MailBody": "Hallo,\n\nich kündige meine Akte {host} zum Ende des Abrechnungszeitraums.\n\nViele Grüße"
   },
   "Footer": {
     "RunBy": "Betrieben von {org}",
@@ -1249,6 +1256,8 @@
     "Members": "Wer dabei ist",
     "You": "(du)",
     "Remove": "Entfernen",
+    "HandOver": "Verwaltung übergeben",
+    "HandOverConfirm": "{name} übernimmt die Verwaltung der Familie. Du bleibst dabei und siehst weiter alle Kinder, verwaltest aber nichts mehr. Danach meldest du dich neu an.",
     "RemoveConfirm": "{name} entfernen? Die Anmeldung und der Zugriff auf alle Kinder enden sofort. Was {name} eingetragen hat, bleibt stehen.",
     "Invitations": "Einladungen",
     "InvitationsHint": "Eine Einladung gilt 7 Tage. Du kannst sie bis dahin zurückziehen.",

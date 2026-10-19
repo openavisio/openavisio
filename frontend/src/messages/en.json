@@ -488,7 +488,8 @@
       "s4": "Which diagnoses are recorded?"
     },
     "Unavailable": "The AI service is not responding right now. Your question was not saved — please ask again later.",
-    "OpenEmergencyPlan": "Open emergency plan"
+    "OpenEmergencyPlan": "Open emergency plan",
+    "Notice": "The AI can make mistakes. Check anything important against the original document."
   },
   "Verify": {
     "reaction": "Reaction",
@@ -1079,6 +1080,8 @@
     "NotifyCaregiverAddedHint": "Notify a user by email when they are granted access to a patient.",
     "NotifyInvitation": "User invitations",
     "NotifyInvitationHint": "Send the registration link by email when an invitation is created.",
+    "NotifyDocumentProcessed": "Document ready",
+    "NotifyDocumentProcessedHint": "An email when an uploaded document has been processed.",
     "NotifyIncludeContent": "Details in emails",
     "NotifyIncludeContentHint": "Name the patient, document and appointment in subject and body. Off: only a notice with a link. These details then sit with the mail provider and in the recipients' inboxes.",
     "SaveFailed": "Could not be saved."
@@ -1139,9 +1142,13 @@
     "Title": "Subscription",
     "Address": "Your record",
     "Operator": "Run by",
-    "Billing": "Payment details and invoices are behind the link in your welcome mail. You can cancel at any time, effective at the end of the billing period.",
+    "Billing": "Your plan, next charge, payment details and invoices are at Stripe. Sign in there with the email address you ordered with. You can cancel any time, effective at the end of the billing period.",
     "AfterCancel": "A week before the contract ends you get a mail on how to export your data. When it ends, your record is deleted.",
-    "Cancel": "Cancel subscription"
+    "Cancel": "Cancel subscription",
+    "Portal": "Payment and invoices",
+    "MailCancel": "Cancel by email",
+    "MailSubject": "Cancelling my record",
+    "MailBody": "Hello,\n\nI am cancelling my record {host}, effective at the end of the billing period.\n\nKind regards"
   },
   "Footer": {
     "RunBy": "Run by {org}",
@@ -1249,6 +1256,8 @@
     "Members": "Who is in",
     "You": "(you)",
     "Remove": "Remove",
+    "HandOver": "Hand over managing",
+    "HandOverConfirm": "{name} takes over managing the family. You stay in and still see every child, but manage nothing any more. Afterwards you sign in again.",
     "RemoveConfirm": "Remove {name}? Their login and access to every child end at once. What {name} entered stays.",
     "Invitations": "Invitations",
     "InvitationsHint": "An invitation is valid for 7 days. You can take it back until then.",

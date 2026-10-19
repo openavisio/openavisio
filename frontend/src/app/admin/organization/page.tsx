@@ -29,7 +29,7 @@ export default async function AdminOrganizationPage() {
 
   const org = await res.json();
 
-  let notifySettings = { event_reminder: true, caregiver_added: true, invitation: true, include_content: false };
+  let notifySettings = { event_reminder: true, caregiver_added: true, invitation: true, include_content: false, document_processed: false };
   try {
     const nRes = await fetch(`${API}/api/admin/notification-settings`, {
       headers: { Authorization: `Bearer ${token}` },

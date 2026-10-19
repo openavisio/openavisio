@@ -222,6 +222,7 @@ export const getAdminInvitations = async () => api.get<any[]>("/api/admin/invita
 export const createInvitation = async (email: string) => api.post<any>("/api/admin/invitations", { email });
 export const revokeInvitation = async (id: string) => api.delete<void>(`/api/admin/invitations/${id}`);
 export const removeMember = async (id: string) => api.post<any>(`/api/admin/users/${id}/remove`);
+export const makeManager = async (id: string) => api.post<any>(`/api/admin/users/${id}/make-manager`);
 export const getNotificationSettings = async () => api.get<any>("/api/admin/notification-settings");
 export const updateNotificationSettings = async (patch: Record<string, boolean>) => api.put<any>("/api/admin/notification-settings", patch);
 export const getAdminGroups = async () => api.get<any[]>("/api/admin/groups");

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import hash_password
 from app.models.system import SystemSetting
 from app.models.user import User
-from app.services.email import _contentless, _include_content
+from app.services.email import _contentless, notify_settings
 
 
 async def _admin(client: AsyncClient, db: AsyncSession) -> dict:
@@ -18,7 +18,7 @@ async def _admin(client: AsyncClient, db: AsyncSession) -> dict:
 
 
 async def test_content_is_off_until_an_admin_turns_it_on(client: AsyncClient, db: AsyncSession):
-    assert await _include_content(db) is False
+    assert (await notify_settings(db))["include_content"] is False
     h = await _admin(client, db)
     r = await client.get("/api/admin/notification-settings", headers=h)
     assert r.json() == {"event_reminder": True, "caregiver_added": True, "invitation": True, "include_content": False,
@@ -26,13 +26,13 @@ async def test_content_is_off_until_an_admin_turns_it_on(client: AsyncClient, db
 
     r = await client.put("/api/admin/notification-settings", headers=h, json={"include_content": True})
     assert r.json()["include_content"] is True and r.json()["event_reminder"] is True
-    assert await _include_content(db) is True
+    assert (await notify_settings(db))["include_content"] is True
 
 
 async def test_anything_but_true_keeps_content_out(db: AsyncSession):
     db.add(SystemSetting(key="notify.include_content", value="yes"))
     await db.commit()
-    assert await _include_content(db) is False
+    assert (await notify_settings(db))["include_content"] is False
 
 
 async def _sent(monkeypatch, db, send) -> list[tuple[str, str, str]]:
@@ -83,7 +83,7 @@ async def test_reminders_and_access_mails_name_no_patient_unless_turned_on(monke
     mails = await _sent(monkeypatch, db, both)
     assert len(mails) == 2
     for subject, html, text in mails:
-        assert subject == "OpenAvisio: new notification"
+        assert subject.startswith("OpenAvisio: ")
         for secret in ("Geheim", "Widerspruch"):
             assert secret not in subject + html + text
 
@@ -93,11 +93,12 @@ async def test_reminders_and_access_mails_name_no_patient_unless_turned_on(monke
     assert len(mails) == 2 and all("Geheim" in html for _, html, _ in mails)
 
 
-def test_the_contentless_mail_names_nothing_but_the_link():
+def test_the_contentless_mail_names_the_occasion_and_the_link():
     url = "https://app.example/patients/1b2c/documents/3d4e"
-    subject, html, text = _contentless(url)
-    assert subject == "OpenAvisio: new notification"
+    subject, html, text = _contentless(url, "en", "document")
+    assert subject == "OpenAvisio: a document is ready"
     assert url in text and url in html
-    assert "please log in" in text
-    _, html, text = _contentless(None)
+    assert "Log in" in text
+    subject, html, text = _contentless(None, "de", "deadline", "in 5 Tagen")
+    assert subject == "OpenAvisio: Eine Frist endet in 5 Tagen"
     assert "href" not in html and "None" not in text

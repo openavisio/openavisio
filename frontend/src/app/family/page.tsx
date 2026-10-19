@@ -9,7 +9,7 @@ import { InviteUserButton } from "../admin/invitations/InviteUserButton";
 import { CopyLinkButton } from "../admin/invitations/CopyLinkButton";
 import { NotificationSettings } from "../admin/organization/NotificationSettings";
 import { FamilyNameForm } from "./FamilyNameForm";
-import { RemoveMemberButton, RevokeInvitationButton } from "./FamilyActions";
+import { HandOverButton, RemoveMemberButton, RevokeInvitationButton } from "./FamilyActions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ export default async function FamilyPage() {
   const [users, invitations, notify] = await Promise.all([
     getAdminUsers().catch(() => []),
     getAdminInvitations().catch(() => []),
-    getNotificationSettings().catch(() => ({ event_reminder: true, caregiver_added: true, invitation: true, include_content: false })),
+    getNotificationSettings().catch(() => ({ event_reminder: true, caregiver_added: true, invitation: true, include_content: false, document_processed: false })),
   ]);
   const members = users.filter((u: any) => u.is_active);
   const open = invitations.filter((i: any) => !i.is_used && new Date(i.expires_at) > new Date());
@@ -49,6 +49,7 @@ export default async function FamilyPage() {
                   </p>
                   <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                 </div>
+                {u.id !== me.id && <HandOverButton id={u.id} name={u.first_name || u.email} />}
                 {u.id !== me.id && <RemoveMemberButton id={u.id} name={u.first_name || u.email} />}
               </li>
             ))}

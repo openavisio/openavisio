@@ -213,7 +213,7 @@ export function ChatOverlay({ patientId, notice }: { patientId: string; notice: 
 
       <form
         onSubmit={(e) => { e.preventDefault(); send(input.trim()); }}
-        className="flex gap-2 border-t p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="flex gap-2 border-t px-3 pt-3"
       >
         <input
           value={input}
@@ -231,6 +231,7 @@ export function ChatOverlay({ patientId, notice }: { patientId: string; notice: 
           <Send className="size-4" />
         </button>
       </form>
+      <p className="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1.5 text-center text-xs text-muted-foreground">{t("Notice")}</p>
     </div>
   );
 }

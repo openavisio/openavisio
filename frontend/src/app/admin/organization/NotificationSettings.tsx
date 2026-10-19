@@ -9,6 +9,7 @@ type Settings = {
   caregiver_added: boolean;
   invitation: boolean;
   include_content: boolean;
+  document_processed: boolean;
 };
 
 // label/description are message keys in the Org namespace, not text.
@@ -16,6 +17,7 @@ const LABELS: { key: keyof Settings; label: string; description: string }[] = [
   { key: "event_reminder", label: "NotifyEventReminder", description: "NotifyEventReminderHint" },
   { key: "caregiver_added", label: "NotifyCaregiverAdded", description: "NotifyCaregiverAddedHint" },
   { key: "invitation", label: "NotifyInvitation", description: "NotifyInvitationHint" },
+  { key: "document_processed", label: "NotifyDocumentProcessed", description: "NotifyDocumentProcessedHint" },
   { key: "include_content", label: "NotifyIncludeContent", description: "NotifyIncludeContentHint" },
 ];
 

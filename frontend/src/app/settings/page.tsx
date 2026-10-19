@@ -117,9 +117,13 @@ export default async function SettingsPage() {
           </dl>
           <p className="text-xs text-muted-foreground">{t("Billing")}</p>
           <p className="text-xs text-muted-foreground">{t("AfterCancel")}</p>
-          <a href="https://openavisio.app/kuendigung.html" className="inline-block text-sm font-medium text-primary hover:underline">
-            {t("Cancel")}
-          </a>
+          <div className="flex flex-col items-start gap-1 text-sm font-medium text-primary">
+            <a href="https://billing.stripe.com/p/login/8x228qbDI4pH8Hk63P7Vm00" className="hover:underline">{t("Portal")}</a>
+            <a href="https://openavisio.app/kuendigung.html" className="hover:underline">{t("Cancel")}</a>
+            <a href={`mailto:info@openavisio.app?subject=${encodeURIComponent(t("MailSubject"))}&body=${encodeURIComponent(t("MailBody", { host: host ?? "" }))}`} className="hover:underline">
+              {t("MailCancel")}
+            </a>
+          </div>
         </div>
       )}
     </AppLayout>
