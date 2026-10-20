@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export function CreatedBanner() {
   const t = useTranslations("Patient");
   const params = useSearchParams();
-  const router = useRouter();
   const created = params.get("created") === "1";
 
   useEffect(() => {

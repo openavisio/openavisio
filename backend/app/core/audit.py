@@ -3,11 +3,10 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import event, inspect, text
+from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit import AuditLog
-from app.models.base import BaseModel
 
 _SKIP_TYPES = {"AuditLog", "SystemSetting"}
 _SKIP_ATTRS = {"hashed_password", "failed_login_attempts", "locked_until"}

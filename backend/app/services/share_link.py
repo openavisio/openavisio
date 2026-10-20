@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import resolve_patient_access
 from app.models.audit import AuditLog
-from app.models.patient import Patient
 from app.models.access import PatientAccess
 from app.models.share_link import DocumentShareLink, ShareLinkStatus
 from app.models.user import User, UserRole

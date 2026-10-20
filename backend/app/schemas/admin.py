@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-from app.schemas.common import OrmBase, PagedResult
+from app.schemas.common import OrmBase
 
 
 class AdminUserDto(OrmBase):

@@ -20,3 +20,7 @@ On a hosted Deployment neither the family nor the operator can widen a provider'
 
 - Ollama builds that report `prompt_eval_count` without the cached part can miss a cut prompt after a cache hit. They never report one that fit.
 - An extraction that fails for any other reason no longer passes as a result: the pipeline now reads the aiservice's `error` field instead of storing it as entities.
+
+## Amendment (2026-10-20): hosted Deployments are not affected
+
+The 32768 tokens are the Ollama default for extraction (`OLLAMA_EXTRACT_NUM_CTX`). The vLLM backend sends no window, so a hosted Deployment gets the provider's: IONOS refuses Qwen/Qwen3.8-27B only above 262144 tokens, several hundred pages. The sentence above about hosted Deployments was wrong. Extraction in parts (#369) is not built; on Ollama the operator widens the window instead, and the log line for `document_too_long` names the variable. Reopen #369 when a real document fails.

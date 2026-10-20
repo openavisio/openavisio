@@ -1,7 +1,6 @@
 """FastAPI dependency injection."""
 
 import uuid
-from collections.abc import AsyncGenerator
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer

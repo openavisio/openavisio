@@ -1,6 +1,5 @@
 """ownership retired: backfill admin grants, rename patients.owner_id to created_by (ADR 026)"""
 
-import sqlalchemy as sa
 from alembic import op
 
 revision = "v2q3r4s5t6u7"

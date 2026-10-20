@@ -73,9 +73,9 @@ async def rotate(new_key_b64: str) -> None:
 
         await db.commit()
         print(f"Rotated {rotated} DEK(s) successfully.")
-        print(f"\nNext steps (services should already be stopped):")
+        print("\nNext steps (services should already be stopped):")
         print(f"  1. Set DOCUMENT_ENCRYPTION_KEY in .env to: {new_key_b64}")
-        print(f"  2. Start backend and celery workers.")
+        print("  2. Start backend and celery workers.")
 
 
 def main() -> None:

@@ -107,7 +107,9 @@ if __name__ == "__main__":
     from PIL import ImageDraw
 
     def png(img: Image.Image) -> bytes:
-        b = io.BytesIO(); img.save(b, "PNG"); return b.getvalue()
+        b = io.BytesIO()
+        img.save(b, "PNG")
+        return b.getvalue()
 
     # Sharp high-frequency pattern vs its blurred copy → sharpness must drop.
     sharp = Image.new("L", (200, 200), 255)

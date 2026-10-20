@@ -570,7 +570,8 @@ async def verify_document(
         await db.commit()
         await db.refresh(doc)
     except Exception:
-        import traceback, sys
+        import traceback
+        import sys
         traceback.print_exc(file=sys.stdout)
         raise
     return await _reveal(doc, db)

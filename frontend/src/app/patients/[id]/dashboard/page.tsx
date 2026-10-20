@@ -4,7 +4,6 @@ import { Breadcrumb } from "@/components/Breadcrumb"
 import { getTranslations } from "next-intl/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge, badgeVariants } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 import type { VariantProps } from "class-variance-authority"
 
 type BadgeVariant = VariantProps<typeof badgeVariants>["variant"]

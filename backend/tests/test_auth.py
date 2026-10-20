@@ -1,6 +1,5 @@
 from datetime import UTC, datetime, timedelta
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -153,7 +152,6 @@ async def test_refresh_rejects_garbage(client: AsyncClient):
 
 
 async def test_refresh_rejects_inactive_user(client: AsyncClient, db: AsyncSession):
-    import uuid as _uuid
     user = await _create_user(db, email="inactref@test.com", password="Pass1!")
     token = create_refresh_token({"sub": str(user.id), "email": user.email, "role": user.role})
     user.is_active = False
@@ -399,7 +397,6 @@ async def test_expired_lockout_clears_the_counter(client: AsyncClient, db: Async
     another 15 minutes. Anyone who knew a caregiver's e-mail could keep them
     locked out indefinitely with one wrong password every quarter of an hour.
     """
-    from sqlalchemy import select
 
     user = await _create_user(db, email="expired@test.com", password="Correct1!")
     user.failed_login_attempts = 5

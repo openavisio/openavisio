@@ -1,6 +1,5 @@
 """ADR 026: creation auto-grant, last-admin-grant rules, user-erasure block."""
 
-from datetime import UTC, datetime
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -8,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.models.access import PatientAccess
-from app.models.patient import Patient
 from app.models.user import User
 
 

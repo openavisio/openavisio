@@ -1,8 +1,6 @@
 """Tests for consent-gated file sharing (Sharing Purposes / Shares)."""
 
-import uuid
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +11,7 @@ from datetime import UTC, datetime
 
 from app.models.access import PatientAccess
 from app.models.patient import Patient
-from app.models.sharing import Share, ShareDecline, SharingPurpose
+from app.models.sharing import Share, ShareDecline
 from app.models.user import User
 from app.services.erasure import erase_patient
 
@@ -72,7 +70,7 @@ async def test_create_purpose_requires_manager(client: AsyncClient, db: AsyncSes
 
 
 async def test_open_request_consent_and_collection(client: AsyncClient, db: AsyncSession):
-    mgr = await _user(db, "mgr2@test.com", role="manager")
+    await _user(db, "mgr2@test.com", role="manager")
     owner = await _user(db, "owner2@test.com", role="user")
     patient = await _patient(db, owner)
     doc = await _document(db, patient, owner)
@@ -111,7 +109,7 @@ async def test_open_request_consent_and_collection(client: AsyncClient, db: Asyn
 
 
 async def test_terms_freeze_after_first_share(client: AsyncClient, db: AsyncSession):
-    mgr = await _user(db, "mgr3@test.com", role="manager")
+    await _user(db, "mgr3@test.com", role="manager")
     owner = await _user(db, "owner3@test.com", role="user")
     patient = await _patient(db, owner)
     doc = await _document(db, patient, owner)

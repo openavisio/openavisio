@@ -246,7 +246,7 @@ async def test_commercial_tier_bypasses_patient_limit(client: AsyncClient, db: A
 
 async def test_invitation_not_limited_on_personal_tier(client: AsyncClient, db: AsyncSession):
     """POST /admin/invitations always succeeds on personal tier — no user cap."""
-    admin = await _create_user(db, "inv_admin@test.com", role="admin")
+    await _create_user(db, "inv_admin@test.com", role="admin")
     await db.commit()
 
     tokens = await _login(client, "inv_admin@test.com")

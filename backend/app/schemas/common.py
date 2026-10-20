@@ -1,5 +1,3 @@
-import uuid
-from datetime import datetime
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict

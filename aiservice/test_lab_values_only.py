@@ -58,7 +58,6 @@ def test_lab_report_survives_a_model_returning_nothing():
 
 
 if __name__ == "__main__":
-    import copy
     original = (extraction.call_ollama_text, extraction.parse_lab_tables)
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

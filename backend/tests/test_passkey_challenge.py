@@ -1,6 +1,5 @@
 """#45: WebAuthn challenges are bound server-side and single-use."""
 
-import pytest
 from httpx import AsyncClient
 
 from app.routers.passkey import _consume_challenge, _store_challenge

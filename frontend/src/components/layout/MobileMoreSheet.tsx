@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Home, Users, UsersRound, Share2, Settings, Star, Shield, Menu,
@@ -33,7 +32,6 @@ export function MobileMoreSheet({
   triggerClassName?: string;
 }) {
   const t = useTranslations("Nav");
-  const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const { highContrast, toggle } = useHighContrast();
   const [open, setOpen] = useState(false);

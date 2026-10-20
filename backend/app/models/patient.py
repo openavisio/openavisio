@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Date, ForeignKey, LargeBinary, String
+from sqlalchemy import Boolean, ForeignKey, LargeBinary, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

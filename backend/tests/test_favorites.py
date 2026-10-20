@@ -59,7 +59,7 @@ async def test_add_remove_favorite_and_flag(client: AsyncClient, db: AsyncSessio
 
 async def test_cannot_favorite_without_access(client: AsyncClient, db: AsyncSession):
     owner = await _user(db, "fav_owner2@t.com")
-    stranger = await _user(db, "fav_stranger@t.com")
+    await _user(db, "fav_stranger@t.com")
     p = await _patient(db, owner)
     h = await _auth(client, "fav_stranger@t.com")
     assert (await client.put(f"/api/patients/{p.id}/favorite", headers=h)).status_code == 404

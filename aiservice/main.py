@@ -270,7 +270,7 @@ async def extract_entities_endpoint(request: ExtractEntitiesRequest):
         raise
     except ContextOverflow as e:
         # a cut document would yield a record that looks complete and is not (#239)
-        logger.warning("Entity extraction refused: %s", e)
+        logger.warning("Entity extraction refused: %s (OLLAMA_EXTRACT_NUM_CTX widens it on Ollama)", e)
         return ExtractEntitiesResult(error="document_too_long", confidence=0.0)
     except Exception as e:
         logger.exception("Entity extraction failed")

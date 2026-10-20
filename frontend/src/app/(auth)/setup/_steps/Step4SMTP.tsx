@@ -11,7 +11,7 @@ interface Props {
 
 export function Step4SMTP({ state, onChange, onSkip }: Props) {
   const t = useTranslations("Setup");
-  const { host, port, user, password, from, skip } = state.smtp;
+  const { host, port, skip } = state.smtp;
 
   if (skip) {
     return (

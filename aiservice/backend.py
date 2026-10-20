@@ -600,7 +600,7 @@ class MockBackend(InferenceBackend):
         for msg in messages:
             if msg["role"] == "system" and "CONTEXT" in msg["content"]:
                 lines = msg["content"].split("\n")
-                context_lines = [l for l in lines if l.strip() and "CONTEXT" not in l and "medical assistant" not in l.lower()]
+                context_lines = [ln for ln in lines if ln.strip() and "CONTEXT" not in ln and "medical assistant" not in ln.lower()]
                 context_summary = " ".join(context_lines[:3])
                 break
         if context_summary:

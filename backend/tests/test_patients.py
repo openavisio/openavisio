@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -101,7 +100,7 @@ async def test_get_patient_as_owner(client: AsyncClient, db: AsyncSession):
 
 async def test_get_patient_as_unrelated_user_returns_404(client: AsyncClient, db: AsyncSession):
     owner = await _create_user(db, "owner_read2@test.com", role="admin")
-    other = await _create_user(db, "other_read@test.com", role="user")
+    await _create_user(db, "other_read@test.com", role="user")
     patient = await _create_patient(db, owner)
     tokens = await _login(client, "other_read@test.com")
     r = await client.get(f"/api/patients/{patient.id}", headers=_auth(tokens))
@@ -163,7 +162,7 @@ async def test_delete_patient_as_owner(client: AsyncClient, db: AsyncSession):
 
 async def test_delete_patient_as_unrelated_user_returns_404(client: AsyncClient, db: AsyncSession):
     owner = await _create_user(db, "owner_del2@test.com", role="admin")
-    other = await _create_user(db, "other_del@test.com", role="user")
+    await _create_user(db, "other_del@test.com", role="user")
     patient = await _create_patient(db, owner)
     tokens = await _login(client, "other_del@test.com")
     r = await client.delete(f"/api/patients/{patient.id}", headers=_auth(tokens))
@@ -202,7 +201,7 @@ async def test_list_patients_returns_only_accessible(client: AsyncClient, db: As
 
 async def test_list_patients_excludes_inaccessible(client: AsyncClient, db: AsyncSession):
     owner = await _create_user(db, "owner_excl@test.com", role="admin")
-    stranger = await _create_user(db, "stranger_excl@test.com", role="user")
+    await _create_user(db, "stranger_excl@test.com", role="user")
     patient = await _create_patient(db, owner, given="Private")
 
     tokens = await _login(client, "stranger_excl@test.com")

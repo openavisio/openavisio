@@ -1,5 +1,4 @@
 import asyncio
-import json
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -13,7 +12,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.log_handler import REDIS_CHANNEL, get_log_history
+from app.core.log_handler import REDIS_CHANNEL
 from app.deps import get_current_user, operator_only, require_admin
 from app.models.audit import AuditLog
 from app.models.document import DocumentReference
@@ -95,7 +94,6 @@ async def erase_user(
     actor: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from app.models.user import UserRole
     from app.services.erasure import erase_user as _erase
 
     # Allow admin or self-erasure only
@@ -506,7 +504,6 @@ async def get_system_info(admin: User = Depends(require_admin), db: AsyncSession
     import os
     import platform
     import sys
-    import time
 
     import fastapi
     import pydantic
@@ -559,7 +556,6 @@ async def get_system_info(admin: User = Depends(require_admin), db: AsyncSession
         pass
 
     # Process uptime
-    process_start = time.time() - (time.monotonic() - 0)
     try:
         with open(f"/proc/{os.getpid()}/stat") as f:
             parts = f.read().split()

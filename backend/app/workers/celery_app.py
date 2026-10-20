@@ -1,5 +1,4 @@
 from celery import Celery
-from celery.schedules import crontab
 from celery.signals import worker_process_init
 
 from app.core.config import settings

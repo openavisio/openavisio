@@ -1,8 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { getMedications, getPatient } from "@/lib/api";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { formatDate } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
 import { AddMedicationPanel } from "./AddMedicationPanel";
 import { MedicationsTable } from "./MedicationsTable";
@@ -11,7 +10,6 @@ import { AiNotice } from "@/components/AiNotice";
 export default async function MedicationsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const t = await getTranslations("Med");
-  const locale = await getLocale();
   let patient: any = null;
   let medications: any[] = [];
   let fetchError = false;
