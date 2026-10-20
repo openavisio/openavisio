@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -25,7 +26,7 @@ export async function updateOrganizationAction(fields: {
 }): Promise<{ error?: string }> {
   const session = await auth();
   const token = (session as any)?.accessToken;
-  if (!token) return { error: "Not authenticated" };
+  if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/organization`, {
     method: "PUT",

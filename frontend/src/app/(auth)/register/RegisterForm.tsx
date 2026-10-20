@@ -30,7 +30,7 @@ export function RegisterForm({ email }: { email: string }) {
       return;
     }
     if (!consent) {
-      setError("Please consent to the processing of your data.");
+      setError(t("ConsentRequired"));
       return;
     }
     setLoading(true);
@@ -111,9 +111,7 @@ export function RegisterForm({ email }: { email: string }) {
           className="mt-0.5 size-4 shrink-0"
         />
         <span>
-          I consent to the processing of my personal and health data by this OpenAvisio installation
-          for the purpose of keeping care records. I understand I can withdraw consent by deleting my
-          account and data at any time.
+          {t("ConsentText")}
         </span>
       </label>
       <button

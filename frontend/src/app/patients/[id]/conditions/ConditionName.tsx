@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { Info } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function ConditionName({ name }: { name: string }) {
+  const t = useTranslations("Conditions");
   const [expanded, setExpanded] = useState(false);
   const isLong = name.length > 40;
 
@@ -21,7 +23,7 @@ export function ConditionName({ name }: { name: string }) {
         <button
           onClick={() => setExpanded((v) => !v)}
           className="lg:hidden shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label="Show full name"
+          aria-label={t("showFullName")}
         >
           <Info className="h-3.5 w-3.5" />
         </button>

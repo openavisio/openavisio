@@ -2,9 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { Lock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { closePurposeAction } from "./sharing-admin-actions";
 
 export function ClosePurposeButton({ purposeId }: { purposeId: string }) {
+  const t = useTranslations("AdminSharing");
+  const tc = useTranslations("Common");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
 
@@ -23,7 +26,7 @@ export function ClosePurposeButton({ purposeId }: { purposeId: string }) {
         disabled={pending}
         className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
       >
-        <Lock className="size-3.5" /> {pending ? "Closing…" : "Close"}
+        <Lock className="size-3.5" /> {pending ? t("Closing") : tc("Close")}
       </button>
       {error && <span className="text-xs text-destructive mt-1">{error}</span>}
     </span>

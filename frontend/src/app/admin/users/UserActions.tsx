@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { setRoleAction, setActiveAction } from "./actions";
 import { EraseUserButton } from "./EraseUserButton";
 
@@ -19,6 +20,8 @@ export function UserActions({
   isSelf: boolean;
   userEmail: string;
 }) {
+  const t = useTranslations("AdminUsers");
+  const ts = useTranslations("SettingsPage");
   const [role, setRole] = useState(currentRole);
   const [active, setActive] = useState(isActive);
   const [pending, startTransition] = useTransition();
@@ -51,7 +54,7 @@ export function UserActions({
           className="text-xs border rounded px-2 py-1 bg-background disabled:opacity-50"
         >
           {ROLES.map((r) => (
-            <option key={r} value={r}>{r}</option>
+            <option key={r} value={r}>{ts(`Roles.${r}`)}</option>
           ))}
         </select>
         <button
@@ -63,7 +66,7 @@ export function UserActions({
               : "text-green-600 border-green-200 hover:bg-green-50 dark:hover:bg-green-950"
             }`}
         >
-          {active ? "Disable" : "Enable"}
+          {active ? t("Disable") : t("Enable")}
         </button>
         {!isSelf && <EraseUserButton userId={userId} userEmail={userEmail} />}
         {error && <span className="text-xs text-destructive">{error}</span>}

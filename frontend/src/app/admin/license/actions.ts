@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -17,7 +18,7 @@ export type LicenseInfo = {
 export async function uploadLicenseAction(token: string): Promise<{ error?: string; info?: LicenseInfo }> {
   const session = await auth();
   const accessToken = (session as any)?.accessToken;
-  if (!accessToken) return { error: "Not authenticated" };
+  if (!accessToken) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/admin/license`, {
     method: "POST",
@@ -46,7 +47,7 @@ const PERSONAL_INFO: LicenseInfo = {
 export async function deleteLicenseAction(): Promise<{ error?: string; info?: LicenseInfo }> {
   const session = await auth();
   const accessToken = (session as any)?.accessToken;
-  if (!accessToken) return { error: "Not authenticated" };
+  if (!accessToken) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/admin/license`, {
     method: "DELETE",

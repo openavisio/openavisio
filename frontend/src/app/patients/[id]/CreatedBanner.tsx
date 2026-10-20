@@ -3,8 +3,10 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function CreatedBanner() {
+  const t = useTranslations("Patient");
   const params = useSearchParams();
   const router = useRouter();
   const created = params.get("created") === "1";
@@ -23,7 +25,7 @@ export function CreatedBanner() {
   return (
     <div className="flex items-center gap-2 rounded-lg bg-green-500/10 text-green-700 dark:text-green-400 px-4 py-3 text-sm">
       <CheckCircle className="size-4 shrink-0" />
-      Patient created successfully.
+      {t("Created")}
     </div>
   );
 }

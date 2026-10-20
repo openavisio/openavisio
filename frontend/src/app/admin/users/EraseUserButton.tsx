@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { eraseUserAction } from "./actions";
 
 export function EraseUserButton({
@@ -10,6 +11,9 @@ export function EraseUserButton({
   userId: string;
   userEmail: string;
 }) {
+  const t = useTranslations("AdminUsers");
+  const tc = useTranslations("Common");
+  const tp = useTranslations("Patient");
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -33,19 +37,18 @@ export function EraseUserButton({
         onClick={() => setOpen(true)}
         className="text-xs px-2 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
       >
-        Erase
+        {t("Erase")}
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-background border rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
-            <h2 className="text-lg font-semibold text-destructive mb-2">Erase user account</h2>
+            <h2 className="text-lg font-semibold text-destructive mb-2">{t("EraseTitle")}</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              This permanently anonymises all personal data for <strong>{userEmail}</strong> and removes
-              their login credentials and access grants. This action cannot be undone.
+              {t.rich("EraseBody", { email: userEmail, b: (c) => <strong>{c}</strong> })}
             </p>
             <p className="text-sm mb-2">
-              Type <strong>{userEmail}</strong> to confirm:
+              {tp.rich("EraseConfirmPrompt", { name: userEmail, b: (c) => <strong>{c}</strong> })}
             </p>
             <input
               type="text"
@@ -62,14 +65,14 @@ export function EraseUserButton({
                 disabled={pending}
                 className="text-sm px-4 py-2 rounded border hover:bg-muted transition-colors"
               >
-                Cancel
+                {tc("Cancel")}
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={pending || input !== userEmail}
                 className="text-sm px-4 py-2 rounded bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
               >
-                {pending ? "Erasing…" : "Erase permanently"}
+                {pending ? tp("Erasing") : tp("EraseSubmit")}
               </button>
             </div>
           </div>

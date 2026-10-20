@@ -6,7 +6,8 @@ Supports Ollama (default) and vLLM or any OpenAI-compatible endpoint.
 
 from fastapi import Depends, FastAPI, UploadFile, File, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from openai import RateLimitError
 from pydantic import BaseModel
 from typing import Optional
 import asyncio
@@ -74,6 +75,14 @@ app = FastAPI(
     version="0.3.0",
     dependencies=[Depends(require_service_token)],
 )
+
+
+@app.exception_handler(RateLimitError)
+async def provider_busy(request: Request, exc: RateLimitError):
+    # The provider's limit is per contract, shared by every Deployment (#374):
+    # pass it on as 429 so the caller waits and retries instead of failing.
+    retry_after = exc.response.headers.get("retry-after") or "5"
+    return JSONResponse(status_code=429, content={"detail": "provider_busy"}, headers={"Retry-After": retry_after})
 
 # Server-to-server service: no browser origin is allowed unless explicitly configured.
 _cors_origins = [o.strip() for o in os.getenv("AISERVICE_CORS_ORIGINS", "").split(",") if o.strip()]
@@ -179,6 +188,8 @@ async def ocr_endpoint(file: UploadFile = File(...)):
         if result.get("text", "").strip():
             return OcrResult(**result)
         logger.warning("Vision OCR empty for %s — falling back to Tesseract", file.filename)
+    except RateLimitError:
+        raise
     except Exception:
         logger.exception("Vision OCR failed for %s — falling back to Tesseract", file.filename)
 
@@ -200,6 +211,8 @@ async def ocr_vision_endpoint(file: UploadFile = File(...)):
     try:
         result = vision_ocr(file_bytes, content_type)
         return OcrResult(**result)
+    except RateLimitError:
+        raise
     except Exception as e:
         logger.exception("Vision OCR failed for %s", file.filename)
         raise HTTPException(status_code=500, detail=str(e))
@@ -224,6 +237,8 @@ async def classify_endpoint(request: ClassifyRequest):
     try:
         result = classify_document(request.text, request.filename, model=request.model, language=request.language)
         return ClassifyResult(**result)
+    except RateLimitError:
+        raise
     except Exception as e:
         logger.exception("Classification failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -251,6 +266,8 @@ async def extract_entities_endpoint(request: ExtractEntitiesRequest):
             entities=result.get("entities"),
             confidence=result.get("confidence"),
         )
+    except RateLimitError:
+        raise
     except ContextOverflow as e:
         # a cut document would yield a record that looks complete and is not (#239)
         logger.warning("Entity extraction refused: %s", e)
@@ -278,6 +295,8 @@ async def intake_questions_endpoint(request: IntakeQuestionsRequest):
     """Read an Intake Form's questions in order (ADR 047)."""
     try:
         return {"questions": await asyncio.to_thread(read_questions, request.text, request.model, request.language)}
+    except RateLimitError:
+        raise
     except Exception as e:
         logger.exception("Intake question reading failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -289,6 +308,8 @@ async def intake_answer_endpoint(request: IntakeAnswerRequest):
     try:
         return {"answers": await asyncio.to_thread(
             answer_questions, request.questions, request.context, request.model, request.language)}
+    except RateLimitError:
+        raise
     except Exception as e:
         logger.exception("Intake answering failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -526,6 +547,8 @@ async def embed_endpoint(request: EmbedRequest):
         texts = _as_query(request.texts, model, request.language) if request.is_query else request.texts
         embeddings = await asyncio.to_thread(backend.embed, model, texts, EMBED_DIMENSIONS)
         return {"embeddings": embeddings}
+    except RateLimitError:
+        raise
     except Exception as e:
         logger.exception("Embedding failed")
         raise HTTPException(status_code=500, detail=str(e))
@@ -588,6 +611,8 @@ async def chat_endpoint(request: ChatRequest):
             think=False,
         )
         return {"answer": answer}
+    except RateLimitError:
+        raise
     except Exception as e:
         logger.exception("Chat failed")
         raise HTTPException(status_code=500, detail=str(e))

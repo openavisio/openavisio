@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { saveAiModelsAction } from "./actions";
 
 interface ModelInfo {
@@ -22,25 +23,18 @@ interface Props {
   };
 }
 
-const TASK_LABELS: Record<string, { label: string; description: string }> = {
-  extract: { label: "Extraction", description: "Pulls diagnoses, medications, and appointments from documents" },
-  classify: { label: "Classification", description: "Detects document type and provider" },
-  chat: { label: "Chat", description: "Powers the AI Health Assistant" },
-  vision: { label: "Vision OCR", description: "Reads image-only PDFs and scans" },
-};
-
 function ModelSelect({
   task,
   models,
   value,
   onChange,
 }: {
-  task: string;
+  task: "extract" | "classify" | "chat" | "vision";
   models: ModelInfo[];
   value: string;
   onChange: (v: string) => void;
 }) {
-  const { label, description } = TASK_LABELS[task];
+  const t = useTranslations("AdminAi");
   const recommended = models.filter((m) => m.tasks.includes(task));
   const others = models.filter((m) => !m.tasks.includes(task));
 
@@ -48,17 +42,17 @@ function ModelSelect({
     <div className="py-3 border-b last:border-0">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="text-sm font-medium">{label}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
+          <div className="text-sm font-medium">{t(`Task_${task}`)}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{t(`Task_${task}_Desc`)}</div>
         </div>
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="text-xs font-mono border rounded px-2 py-1.5 bg-background min-w-[200px] max-w-[280px]"
         >
-          <option value="">— not set —</option>
+          <option value="">{t("NotSet")}</option>
           {recommended.length > 0 && (
-            <optgroup label="Recommended">
+            <optgroup label={t("Recommended")}>
               {recommended.map((m) => (
                 <option key={m.name} value={m.name}>
                   {m.name}
@@ -67,7 +61,7 @@ function ModelSelect({
             </optgroup>
           )}
           {others.length > 0 && (
-            <optgroup label="Other available models">
+            <optgroup label={t("OtherModels")}>
               {others.map((m) => (
                 <option key={m.name} value={m.name}>
                   {m.name}
@@ -82,13 +76,13 @@ function ModelSelect({
         return selected?.hint ? (
           <div className="mt-1.5 text-xs text-muted-foreground pl-0">
             {selected.tags.includes("medical") && (
-              <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-[10px] font-medium">medical</span>
+              <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-[10px] font-medium">{t("TagMedical")}</span>
             )}
             {selected.tags.includes("vision") && (
-              <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-[10px] font-medium">vision</span>
+              <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-[10px] font-medium">{t("TagVision")}</span>
             )}
             {selected.tags.includes("cloud") && (
-              <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 text-[10px] font-medium">cloud</span>
+              <span className="inline-block mr-1.5 px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 text-[10px] font-medium">{t("TagCloud")}</span>
             )}
             {selected.hint}
           </div>
@@ -99,6 +93,8 @@ function ModelSelect({
 }
 
 export function AiModelConfig({ models, initial }: Props) {
+  const t = useTranslations("AdminAi");
+  const tc = useTranslations("Common");
   const [config, setConfig] = useState({
     extract_model: initial.extract_model ?? "",
     classify_model: initial.classify_model ?? "",
@@ -132,7 +128,7 @@ export function AiModelConfig({ models, initial }: Props) {
 
   return (
     <div className="mt-6 rounded-xl border bg-card overflow-hidden">
-      <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">Model Configuration</div>
+      <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">{t("ModelConfiguration")}</div>
       <div className="px-4">
         {(["extract", "classify", "chat", "vision"] as const).map((task) => (
           <ModelSelect
@@ -150,9 +146,9 @@ export function AiModelConfig({ models, initial }: Props) {
           disabled={pending}
           className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Save"}
+          {pending ? tc("Saving") : tc("Save")}
         </button>
-        {saved && <span className="text-sm text-green-600">Saved</span>}
+        {saved && <span className="text-sm text-green-600">{t("Saved")}</span>}
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>
     </div>

@@ -439,6 +439,7 @@ async def chat(
 
     import httpx
     answer = None
+    busy = False
     try:
         # 60s turned every answer into "der KI-Dienst antwortet gerade nicht".
         # The ~50s warm that forced this up was the model thinking, not the model
@@ -455,6 +456,7 @@ async def chat(
                 "history": [{"role": m.role, "content": m.content} for m in history],
                 "model": await _chat_model(db),
             })
+            busy = resp.status_code == 429  # the provider's shared rate limit (#374)
             if resp.status_code == 200:
                 answer = resp.json().get("answer")
                 # filtered before it is returned and before it is stored: the
@@ -467,6 +469,8 @@ async def chat(
     # sentence was then stored as an assistant message under the patient KEK,
     # forever, in a record meant to hold what was actually said. It is an
     # outage, so it is a 503 and nothing is written.
+    if busy:
+        raise HTTPException(status_code=429, detail="ai_busy")
     if not answer:
         raise HTTPException(status_code=503, detail="ai_service_unavailable")
 

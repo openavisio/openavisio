@@ -16,6 +16,7 @@ import { Step7Done } from "./_steps/Step7Done";
 // server to choose; they land on e-mail and password.
 export function SetupWizard({ hosted }: { hosted: boolean }) {
   const t = useTranslations("Setup");
+  const tx = useTranslations("SetupExtra");
   const { state, dispatch } = useWizardState(hosted);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -102,7 +103,7 @@ export function SetupWizard({ hosted }: { hosted: boolean }) {
       dispatch({ type: "SET_STEP", step: 5 });
     } else {
       const data = await res.json().catch(() => ({}));
-      setError(data.detail || "Setup failed");
+      setError(data.detail || tx("SetupFailed"));
     }
   }
 

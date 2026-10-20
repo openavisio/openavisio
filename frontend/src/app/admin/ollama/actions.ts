@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { actionError } from "@/lib/action-errors";
 
 export async function saveAiModelsAction(config: {
   extract_model: string | null;
@@ -10,7 +11,7 @@ export async function saveAiModelsAction(config: {
 }): Promise<{ error?: string }> {
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Not authenticated." };
+  if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(
     `${process.env.API_URL || "http://localhost:8000"}/api/admin/ollama/models`,

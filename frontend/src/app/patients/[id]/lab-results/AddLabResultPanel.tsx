@@ -165,7 +165,7 @@ export function AddLabResultPanel({
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
                     className={inputCls}
-                    placeholder="e.g. mmol/L"
+                    placeholder={t("UnitPlaceholder")}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -202,7 +202,7 @@ export function AddLabResultPanel({
                   value={valueText}
                   onChange={(e) => setValueText(e.target.value)}
                   className={inputCls}
-                  placeholder="e.g. positive, negative, detected"
+                  placeholder={t("TextPlaceholder")}
                 />
               </div>
             )}

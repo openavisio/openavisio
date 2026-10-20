@@ -2,13 +2,27 @@
 
 import asyncio
 import logging
+import random
 import uuid
 
 import httpx
+from celery.exceptions import Retry
 
 from app.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
+
+# The provider's rate limit is per contract, shared by every Deployment (#374):
+# a 429 waits with a growing pause (15 s up to 4 min, about 20 min in all)
+# instead of failing the document.
+_BUSY_RETRIES = 8
+
+
+def _wait_if_busy(task, resp: httpx.Response) -> None:
+    if resp.status_code != 429 or task.request.retries >= _BUSY_RETRIES:
+        return
+    pause = max(float(resp.headers.get("retry-after") or 0), 15 * 2 ** min(task.request.retries, 4))
+    raise task.retry(countdown=pause + random.uniform(0, 10), max_retries=_BUSY_RETRIES)
 
 
 def _run(coro):
@@ -96,6 +110,7 @@ def ocr_stage(self, doc_id: str):
                     f"{settings.ai_service_url}/ocr",
                     files={"file": (doc.file_name or "file", file_data, doc.content_type or "application/octet-stream")},
                 )
+                _wait_if_busy(self, resp)
                 if resp.status_code == 200:
                     result = resp.json()
                     text = result.get("text", "")
@@ -104,6 +119,8 @@ def ocr_stage(self, doc_id: str):
                     classification_stage.delay(doc_id)
                 else:
                     await _update_doc(doc_id, processing_status="failed", processing_error=f"OCR failed: {resp.status_code}")
+        except Retry:
+            raise
         except Exception as e:
             await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
@@ -129,6 +146,7 @@ def classification_stage(self, doc_id: str):
                     f"{settings.ai_service_url}/classify",
                     json={"text": plain, "model": classify_model, "language": language},
                 )
+                _wait_if_busy(self, resp)
                 if resp.status_code == 200:
                     result = resp.json()
                     await _update_doc(
@@ -141,6 +159,8 @@ def classification_stage(self, doc_id: str):
                     extraction_stage.delay(doc_id)
                 else:
                     await _update_doc(doc_id, processing_status="failed", processing_error=f"Classification failed: {resp.status_code}")
+        except Retry:
+            raise
         except Exception as e:
             await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
@@ -170,6 +190,7 @@ def extraction_stage(self, doc_id: str):
                     f"{settings.ai_service_url}/extract-entities",
                     json={"text": plain, "document_type": doc.document_classification, "model": extract_model, "language": language},
                 )
+                _wait_if_busy(self, resp)
                 if resp.status_code == 200 and resp.json().get("error"):
                     # the aiservice reports a failed extraction as 200 with an error; it is not a result
                     error = resp.json()["error"]
@@ -218,6 +239,8 @@ def extraction_stage(self, doc_id: str):
                     embedding_stage.delay(doc_id)
                 else:
                     await _update_doc(doc_id, processing_status="failed", processing_error=f"Extraction failed: {resp.status_code}")
+        except Retry:
+            raise
         except Exception as e:
             await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
@@ -247,6 +270,7 @@ def embedding_stage(self, doc_id: str):
 
             async with httpx.AsyncClient(timeout=60, headers=settings.ai_service_headers) as client:
                 resp = await client.post(f"{settings.ai_service_url}/embed", json={"texts": chunks})
+                _wait_if_busy(self, resp)
                 if resp.status_code != 200:
                     await _update_doc(doc_id, processing_status="failed", processing_error="Embedding failed")
                     return
@@ -272,6 +296,8 @@ def embedding_stage(self, doc_id: str):
             await _update_doc(doc_id, processing_status="completed", pipeline_stage="done")
             from app.services.email import send_document_processed_notification
             await send_document_processed_notification(doc_id)
+        except Retry:
+            raise
         except Exception as e:
             await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise

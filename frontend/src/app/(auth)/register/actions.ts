@@ -1,5 +1,7 @@
 "use server";
 
+import { actionError } from "@/lib/action-errors";
+
 const API = process.env.API_URL || "http://localhost:8000";
 
 export async function registerAction(
@@ -23,17 +25,17 @@ export async function registerAction(
       }),
     });
   } catch {
-    return { error: "Could not reach the server. Please try again." };
+    return { error: await actionError("Auth.ServerUnavailable") };
   }
 
   if (res.status === 201) return {};
-  if (res.status === 409) return { error: "An account with this email already exists." };
-  if (res.status === 422) return { error: "You must consent to the processing of your data to create an account." };
+  if (res.status === 409) return { error: await actionError("Auth.AccountExists") };
+  if (res.status === 422) return { error: await actionError("Auth.ConsentRequired") };
   if (res.status === 400) {
     const data = await res.json().catch(() => ({}));
     const detail: string = data?.detail ?? "";
-    if (detail.toLowerCase().includes("expired")) return { error: "This invitation has expired." };
-    return { error: "Invalid invitation link." };
+    if (detail.toLowerCase().includes("expired")) return { error: await actionError("Auth.InvitationExpired") };
+    return { error: await actionError("Auth.InvalidInvitation") };
   }
-  return { error: "Something went wrong. Please try again." };
+  return { error: await actionError("Auth.SomethingWrong") };
 }

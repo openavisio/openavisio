@@ -63,7 +63,7 @@ export default async function RegisterPage({
             <Image src="/logo.png" alt="OpenAvisio" width={80} height={80} className="mx-auto mb-3" />
             <p className="text-muted-foreground">{t("CreateAccount")}</p>
           </div>
-          <Suspense fallback={<div className="text-center text-sm text-muted-foreground">Loading…</div>}>
+          <Suspense fallback={<div className="text-center text-sm text-muted-foreground">…</div>}>
             <RegisterContent token={token} />
           </Suspense>
         </div>

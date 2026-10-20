@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -29,14 +30,14 @@ export async function listCalendarFeedsAction(patientId: string): Promise<Calend
 
 export async function createCalendarFeedAction(patientId: string): Promise<{ url?: string; error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/patients/${patientId}/calendar/feeds`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/patients/${patientId}/calendar`);
   return { url: (await res.json()).url };
@@ -44,14 +45,14 @@ export async function createCalendarFeedAction(patientId: string): Promise<{ url
 
 export async function revokeCalendarFeedAction(patientId: string, feedId: string): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/patients/${patientId}/calendar/feeds/${feedId}/revoke`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/patients/${patientId}/calendar`);
   return {};

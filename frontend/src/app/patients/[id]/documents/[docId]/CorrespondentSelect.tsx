@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import { setCorrespondentAction, createCorrespondentAction } from "./doc-actions";
 import { Check, ChevronDown, Plus, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Correspondent = { id: string; name: string };
 
@@ -17,6 +18,7 @@ export function CorrespondentSelect({
   current: Correspondent | null;
   correspondents: Correspondent[];
 }) {
+  const t = useTranslations("DocumentsPage");
   const [list, setList] = useState(initialList);
   const [selected, setSelected] = useState<Correspondent | null>(current);
   const [open, setOpen] = useState(false);
@@ -69,7 +71,7 @@ export function CorrespondentSelect({
         className="flex items-center gap-1.5 text-sm font-medium hover:text-primary disabled:opacity-50 transition-colors"
       >
         <span className={selected ? "text-foreground" : "text-muted-foreground"}>
-          {selected ? selected.name : "None"}
+          {selected ? selected.name : t("correspondentNone")}
         </span>
         <ChevronDown className="size-3.5 text-muted-foreground" />
       </button>
@@ -82,7 +84,7 @@ export function CorrespondentSelect({
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search or create…"
+              placeholder={t("correspondentSearch")}
               className="w-full rounded-md border px-2.5 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -102,7 +104,7 @@ export function CorrespondentSelect({
                   className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50"
                 >
                   <X className="size-3.5" />
-                  Clear
+                  {t("correspondentClear")}
                 </button>
               </li>
             )}
@@ -131,12 +133,12 @@ export function CorrespondentSelect({
                   className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-primary hover:bg-muted/50 disabled:opacity-50"
                 >
                   <Plus className="size-3.5 shrink-0" />
-                  {creating ? "Creating…" : `Create "${query.trim()}"`}
+                  {creating ? t("correspondentCreating") : t("correspondentCreate", { name: query.trim() })}
                 </button>
               </li>
             )}
             {filtered.length === 0 && !query.trim() && (
-              <li className="px-3 py-2 text-xs text-muted-foreground">No correspondents yet. Type to create one.</li>
+              <li className="px-3 py-2 text-xs text-muted-foreground">{t("correspondentEmpty")}</li>
             )}
           </ul>
         </div>

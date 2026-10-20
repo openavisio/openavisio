@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
 import { AcceptButton } from "./AcceptButton";
 import { UserCheck } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -20,12 +21,14 @@ export default async function CaregiverInvitePage({
 }) {
   const { token } = await searchParams;
   const session = await auth();
+  const t = await getTranslations("Access");
+  const ta = await getTranslations("Auth");
 
   if (!token) {
     return (
       <AppLayout>
         <div className="max-w-md mx-auto mt-16 text-center">
-          <p className="text-muted-foreground">Invalid invite link — no token found.</p>
+          <p className="text-muted-foreground">{t("InviteNoToken")}</p>
         </div>
       </AppLayout>
     );
@@ -47,13 +50,16 @@ export default async function CaregiverInvitePage({
             <>
               <div className="space-y-1">
                 <p className="text-muted-foreground text-sm">
-                  {info.org_name} has invited you to access
+                  {t("InvitedBy", { org: info.org_name })}
                 </p>
                 <h1 className="text-2xl font-bold">
                   {info.patient_given_name} {info.patient_family_name}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Access level: <span className="font-medium capitalize">{info.access_level}</span>
+                  {t.rich("InviteLevel", {
+                    level: ["view", "contribute", "full", "admin"].includes(info.access_level) ? t(`levelShort_${info.access_level}`) : info.access_level,
+                    b: (c) => <span className="font-medium">{c}</span>,
+                  })}
                 </p>
               </div>
 
@@ -62,22 +68,22 @@ export default async function CaregiverInvitePage({
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Please sign in to accept this invitation.
+                    {t("InviteSignInHint")}
                   </p>
                   <a
                     href={`/login?callbackUrl=${encodeURIComponent(`/patients/invite?token=${token}`)}`}
                     className="inline-block rounded-lg bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90"
                   >
-                    Sign in
+                    {ta("SignIn")}
                   </a>
                 </div>
               )}
             </>
           ) : (
             <div className="space-y-2">
-              <h1 className="text-xl font-bold">Invalid or expired invite</h1>
+              <h1 className="text-xl font-bold">{t("InviteInvalidTitle")}</h1>
               <p className="text-muted-foreground text-sm">
-                This invite link has already been used, has expired, or is not valid.
+                {t("InviteInvalidBody")}
               </p>
             </div>
           )}

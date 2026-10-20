@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -16,8 +17,8 @@ export async function consentShareAction(
   documentIds: string[],
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
-  if (documentIds.length === 0) return { error: "Select at least one file." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
+  if (documentIds.length === 0) return { error: await actionError("Common.SelectAtLeastOne") };
 
   const res = await fetch(`${API}/api/patients/${patientId}/sharing/purposes/${purposeId}/consent`, {
     method: "POST",
@@ -26,7 +27,7 @@ export async function consentShareAction(
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/patients/${patientId}`);
   return {};
@@ -37,7 +38,7 @@ export async function declineShareAction(
   purposeId: string,
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients/${patientId}/sharing/purposes/${purposeId}/decline`, {
     method: "POST",
@@ -45,7 +46,7 @@ export async function declineShareAction(
   });
   if (!res.ok && res.status !== 204) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/patients/${patientId}`);
   return {};
@@ -56,7 +57,7 @@ export async function revokeShareAction(
   shareId: string,
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients/${patientId}/sharing/shares/${shareId}/revoke`, {
     method: "POST",
@@ -64,7 +65,7 @@ export async function revokeShareAction(
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/patients/${patientId}`);
   return {};

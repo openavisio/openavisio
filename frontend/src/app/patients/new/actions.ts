@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -13,7 +14,7 @@ export async function createPatientAction(data: {
 }): Promise<{ id?: string; error?: string }> {
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Not authenticated." };
+  if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients`, {
     method: "POST",
@@ -23,7 +24,7 @@ export async function createPatientAction(data: {
 
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
-    return { error: detail?.detail ?? `Failed to create patient (${res.status}).` };
+    return { error: detail?.detail ?? await actionError("Patient.CreateError", { status: res.status }) };
   }
 
   const patient = await res.json();

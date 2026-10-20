@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -16,7 +17,7 @@ export async function inviteMemberAction(
   role: string
 ): Promise<{ token?: string; invite_url?: string; error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/groups/${groupId}/members/invite`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
@@ -24,7 +25,7 @@ export async function inviteMemberAction(
   });
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    return { error: d?.detail ?? `Failed (${res.status}).` };
+    return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/group/${groupId}`);
   return await res.json();
@@ -35,12 +36,12 @@ export async function removeMemberAction(
   membershipId: string
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/groups/${groupId}/members/${membershipId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${t}` },
   });
-  if (!res.ok && res.status !== 204) return { error: `Failed (${res.status}).` };
+  if (!res.ok && res.status !== 204) return { error: await actionError("Common.RequestFailed", { status: res.status }) };
   revalidatePath(`/group/${groupId}`);
   return {};
 }
@@ -51,7 +52,7 @@ export async function updateMemberRoleAction(
   role: string
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/groups/${groupId}/members/${membershipId}/role`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
@@ -59,7 +60,7 @@ export async function updateMemberRoleAction(
   });
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    return { error: d?.detail ?? `Failed (${res.status}).` };
+    return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/group/${groupId}`);
   return {};
@@ -70,7 +71,7 @@ export async function assignPatientAction(
   groupId: string
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/patients/${patientId}/group`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
@@ -78,7 +79,7 @@ export async function assignPatientAction(
   });
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    return { error: d?.detail ?? `Failed (${res.status}).` };
+    return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   revalidatePath(`/group/${groupId}`);
   return {};
@@ -89,12 +90,12 @@ export async function removePatientAction(
   groupId: string
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/patients/${patientId}/group`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${t}` },
   });
-  if (!res.ok && res.status !== 204) return { error: `Failed (${res.status}).` };
+  if (!res.ok && res.status !== 204) return { error: await actionError("Common.RequestFailed", { status: res.status }) };
   revalidatePath(`/group/${groupId}`);
   return {};
 }
@@ -103,14 +104,14 @@ export async function acceptGroupInviteAction(
   inviteToken: string
 ): Promise<{ group_id?: string; error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
   const res = await fetch(`${API}/api/groups/invite/accept?token=${encodeURIComponent(inviteToken)}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    return { error: d?.detail ?? `Failed (${res.status}).` };
+    return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
   return await res.json();
 }

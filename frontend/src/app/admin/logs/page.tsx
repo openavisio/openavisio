@@ -1,10 +1,12 @@
 import { AppLayout } from "@/components/layout/AppLayout";
+import { getTranslations } from "next-intl/server";
 import { LogsClient } from "./LogsClient";
 
-export default function AdminLogsPage() {
+export default async function AdminLogsPage() {
+  const t = await getTranslations("Nav");
   return (
     <AppLayout>
-      <h1 className="text-xl font-bold">Logs</h1>
+      <h1 className="text-xl font-bold">{t("Logs")}</h1>
       <LogsClient />
     </AppLayout>
   );

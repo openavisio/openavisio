@@ -3,16 +3,19 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { createPatientAction } from "./actions";
 
 const GENDERS = [
-  { value: "", label: "— not specified —" },
+  { value: "", label: "NotSpecified" },
   { value: "male", label: "Male" },
   { value: "female", label: "Female" },
   { value: "other", label: "Other" },
 ];
 
 export function NewPatientForm() {
+  const t = useTranslations("Patient");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [givenName, setGivenName] = useState("");
@@ -50,7 +53,7 @@ export function NewPatientForm() {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-sm font-medium">
-            First name <span className="text-destructive">*</span>
+            {t("GivenName")} <span className="text-destructive">*</span>
           </label>
           <input
             type="text"
@@ -62,7 +65,7 @@ export function NewPatientForm() {
         </div>
         <div className="space-y-1.5">
           <label className="text-sm font-medium">
-            Last name <span className="text-destructive">*</span>
+            {t("FamilyName")} <span className="text-destructive">*</span>
           </label>
           <input
             type="text"
@@ -75,7 +78,7 @@ export function NewPatientForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Date of birth</label>
+        <label className="text-sm font-medium">{t("BirthDate")}</label>
         <input
           type="date"
           value={birthDate}
@@ -85,25 +88,25 @@ export function NewPatientForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Gender</label>
+        <label className="text-sm font-medium">{t("Gender")}</label>
         <select
           value={gender}
           onChange={(e) => setGender(e.target.value)}
           className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
         >
           {GENDERS.map((g) => (
-            <option key={g.value} value={g.value}>{g.label}</option>
+            <option key={g.value} value={g.value}>{g.value ? t(g.label) : `— ${t(g.label)} —`}</option>
           ))}
         </select>
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Patient ID / reference number</label>
+        <label className="text-sm font-medium">{t("IdentifierLabel")}</label>
         <input
           type="text"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
-          placeholder="Optional internal identifier"
+          placeholder={t("IdentifierPlaceholder")}
           className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
         />
       </div>
@@ -114,13 +117,13 @@ export function NewPatientForm() {
           disabled={pending}
           className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {pending ? "Creating…" : "Create patient"}
+          {pending ? t("Creating") : t("CreateSubmit")}
         </button>
         <Link
           href="/patients"
           className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
         >
-          Cancel
+          {tc("Cancel")}
         </Link>
       </div>
     </form>

@@ -206,8 +206,8 @@ function DirectRow({ caregiver, patientId, currentUserEmail }: { caregiver: Care
         )}
       </td>
       <td className="px-4 py-3">
-        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
-          {caregiver.access_level}
+        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+          {["view", "contribute", "full", "admin"].includes(caregiver.access_level ?? "") ? t(`levelShort_${caregiver.access_level}`) : caregiver.access_level}
         </span>
       </td>
       <td className="px-4 py-3 text-xs text-muted-foreground">

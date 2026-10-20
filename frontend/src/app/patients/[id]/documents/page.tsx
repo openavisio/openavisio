@@ -12,6 +12,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const t = await getTranslations("DocumentsPage");
   const tp = await getTranslations("Patient");
+  const tc = await getTranslations("Common");
   let patient: any = null;
   let documents: any[] = [];
   let fetchError = false;
@@ -22,7 +23,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
   if (!patient) {
     return (
       <AppLayout>
-        <div className="text-center py-12 text-muted-foreground">Patient not found.</div>
+        <div className="text-center py-12 text-muted-foreground">{tc("PatientNotFound")}</div>
       </AppLayout>
     );
   }

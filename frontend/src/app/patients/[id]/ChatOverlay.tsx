@@ -88,7 +88,7 @@ export function ChatOverlay({ patientId, notice }: { patientId: string; notice: 
         body: JSON.stringify({ question }),
       });
       // An outage is not an answer: it gets its own line and is never stored.
-      if (!res.ok) setError(t(res.status === 503 ? "Unavailable" : "Failed"));
+      if (!res.ok) setError(t(res.status === 429 ? "Busy" : res.status === 503 ? "Unavailable" : "Failed"));
       else {
         const data: ChatAnswer = await res.json();
         setAnswer(data);

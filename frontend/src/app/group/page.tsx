@@ -4,6 +4,7 @@ import { getGroups } from "@/lib/api";
 import Link from "next/link";
 import { Users, AlertCircle } from "lucide-react";
 import { CreateGroupButton } from "../admin/groups/CreateGroupButton";
+import { getTranslations } from "next-intl/server";
 
 export default async function GroupPage() {
   let groups: any[] = [], fetchError = false;
@@ -13,21 +14,22 @@ export default async function GroupPage() {
   ]);
   const role = (session?.user as any)?.role;
   const canManage = role === "admin" || role === "manager";
+  const t = await getTranslations("GroupPage");
 
   return (
     <AppLayout>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Groups</h1>
+        <h1 className="text-xl font-bold">{t("Groups")}</h1>
         {canManage && <CreateGroupButton />}
       </div>
 
       {fetchError ? (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
-          Failed to load groups. The server may be unavailable.
+          {t("LoadFailed")}
         </div>
       ) : groups.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">No groups found.</div>
+        <div className="text-center py-12 text-muted-foreground">{t("NoGroups")}</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {groups.map((g: any) => (
@@ -42,11 +44,11 @@ export default async function GroupPage() {
                 </div>
                 <div>
                   <div className="font-semibold group-hover:underline">{g.name}</div>
-                  <div className="text-xs text-muted-foreground">{g.member_count ?? 0} members</div>
+                  <div className="text-xs text-muted-foreground">{t("MemberCount", { count: g.member_count ?? 0 })}</div>
                 </div>
               </div>
               {g.patient_count !== undefined && (
-                <div className="text-xs text-muted-foreground">{g.patient_count} patients shared</div>
+                <div className="text-xs text-muted-foreground">{t("PatientsShared", { count: g.patient_count })}</div>
               )}
             </Link>
           ))}

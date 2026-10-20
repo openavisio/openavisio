@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -16,7 +17,7 @@ export async function setCorrespondentAction(
   correspondentId: string | null
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/documents/${docId}`, {
     method: "PATCH",
@@ -26,7 +27,7 @@ export async function setCorrespondentAction(
 
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    return { error: d?.detail ?? `Failed (${res.status}).` };
+    return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   revalidatePath(`/patients/${patientId}/documents/${docId}`);
@@ -37,7 +38,7 @@ export async function createCorrespondentAction(
   name: string
 ): Promise<{ id?: string; name?: string; error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/correspondents`, {
     method: "POST",
@@ -47,7 +48,7 @@ export async function createCorrespondentAction(
 
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
-    return { error: d?.detail ?? `Failed (${res.status}).` };
+    return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   return await res.json();

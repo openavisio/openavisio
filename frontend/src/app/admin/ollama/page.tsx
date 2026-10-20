@@ -1,13 +1,15 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { getOllamaStatus } from "@/lib/api";
+import { getTranslations } from "next-intl/server";
 import { AiModelConfig } from "./AiModelConfig";
 
 export default async function AdminOllamaPage() {
   const status = await getOllamaStatus().catch(() => null);
+  const t = await getTranslations("AdminAi");
 
   return (
     <AppLayout>
-      <h1 className="text-xl font-bold mb-6">Ollama / AI Backend</h1>
+      <h1 className="text-xl font-bold mb-6">{t("Title")}</h1>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
         <div className="rounded-xl border bg-card p-5">
@@ -15,9 +17,9 @@ export default async function AdminOllamaPage() {
           <div className="text-sm font-mono truncate">{status?.backend ?? "—"}</div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-xs text-muted-foreground mb-1">Status</div>
+          <div className="text-xs text-muted-foreground mb-1">{t("Status")}</div>
           <div className={`text-lg font-semibold ${status?.connected ? "text-green-600" : "text-red-500"}`}>
-            {status?.connected ? "Connected" : "Disconnected"}
+            {status?.connected ? t("Connected") : t("Disconnected")}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5">
@@ -28,13 +30,13 @@ export default async function AdminOllamaPage() {
 
       {status?.models && status.models.length > 0 && (
         <div className="rounded-xl border bg-card overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">Available Models</div>
+          <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">{t("AvailableModels")}</div>
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/30">
               <tr>
-                <th className="px-4 py-2 text-left font-medium text-xs">Model</th>
-                <th className="px-4 py-2 text-left font-medium text-xs">Size</th>
-                <th className="px-4 py-2 text-left font-medium text-xs">Modified</th>
+                <th className="px-4 py-2 text-left font-medium text-xs">{t("Model")}</th>
+                <th className="px-4 py-2 text-left font-medium text-xs">{t("Size")}</th>
+                <th className="px-4 py-2 text-left font-medium text-xs">{t("Modified")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">

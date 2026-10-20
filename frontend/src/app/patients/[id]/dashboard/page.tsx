@@ -40,19 +40,19 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
       />
 
       {!dashboard ? (
-        <p className="text-sm text-muted-foreground">Failed to load dashboard data.</p>
+        <p className="text-sm text-muted-foreground">{tp("DashboardLoadError")}</p>
       ) : (
         <div className="space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard label="Documents" value={dashboard.total_documents} />
-            <StatCard label="Verified" value={dashboard.verified_documents} />
+            <StatCard label={tp("Documents")} value={dashboard.total_documents} />
+            <StatCard label={tp("StatVerified")} value={dashboard.verified_documents} />
             <StatCard
-              label="Active Conditions"
+              label={tp("StatActiveConditions")}
               value={dashboard.condition_timeline?.filter((c: any) => c.status === "active").length ?? 0}
             />
             <StatCard
-              label="Active Medications"
+              label={tp("StatActiveMedications")}
               value={dashboard.medication_timeline?.filter((m: any) => m.status === "active").length ?? 0}
             />
           </div>
@@ -61,7 +61,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
           {dashboard.condition_timeline?.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Condition Timeline</CardTitle>
+                <CardTitle className="text-base">{tp("ConditionTimeline")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {dashboard.condition_timeline.map((c: any) => (
@@ -70,7 +70,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
                       <p className="text-sm font-medium truncate">{c.display}</p>
                       {c.onset && (
                         <p className="text-xs text-muted-foreground">
-                          Onset {c.onset?.slice(0, 10)}
+                          {tp("Onset", { date: c.onset?.slice(0, 10) })}
                         </p>
                       )}
                     </div>
@@ -90,7 +90,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
           {dashboard.medication_timeline?.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Medication Timeline</CardTitle>
+                <CardTitle className="text-base">{tp("MedicationTimeline")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {dashboard.medication_timeline.map((m: any) => (

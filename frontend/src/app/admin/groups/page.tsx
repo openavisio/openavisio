@@ -3,36 +3,39 @@ import { getAdminGroups } from "@/lib/api";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { CreateGroupButton } from "./CreateGroupButton";
 
 export default async function AdminGroupsPage() {
   let groups: any[] = [], fetchError = false;
   try { groups = await getAdminGroups(); } catch { fetchError = true; }
+  const t = await getTranslations("AdminGroups");
+  const tc = await getTranslations("Common");
 
   return (
     <AppLayout>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Groups</h1>
+        <h1 className="text-xl font-bold">{t("Title")}</h1>
         <CreateGroupButton />
       </div>
 
       {fetchError && (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
-          Failed to load groups. The server may be unavailable.
+          {t("LoadError")}
         </div>
       )}
 
       {!fetchError && groups.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">No groups yet.</div>
+        <div className="text-center py-12 text-muted-foreground">{t("Empty")}</div>
       ) : !fetchError ? (
         <div className="rounded-xl border bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Name</th>
-                <th className="px-4 py-3 text-left font-medium">Members</th>
-                <th className="px-4 py-3 text-left font-medium">Created</th>
+                <th className="px-4 py-3 text-left font-medium">{tc("Name")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("Members")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("Created")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">

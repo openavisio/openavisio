@@ -125,11 +125,11 @@ export function MobileMoreSheet({
         <div className="mt-3 border-t pt-2">
           <button type="button" className={`${row} w-full`} onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
             {resolvedTheme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
-            <span>{resolvedTheme === "dark" ? "Light mode" : "Dark mode"}</span>
+            <span>{resolvedTheme === "dark" ? t("LightMode") : t("DarkMode")}</span>
           </button>
           <button type="button" className={`${row} w-full`} onClick={toggle}>
             <Contrast className="size-5" />
-            <span>{highContrast ? "Standard contrast" : "High contrast"}</span>
+            <span>{highContrast ? t("StandardContrast") : t("HighContrast")}</span>
           </button>
           <button
             type="button"

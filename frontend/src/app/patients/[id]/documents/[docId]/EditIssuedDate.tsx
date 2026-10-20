@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateIssuedDateAction } from "./actions";
 
 export function EditIssuedDate({
@@ -12,6 +13,8 @@ export function EditIssuedDate({
   patientId: string;
   value: string | null;
 }) {
+  const t = useTranslations("DocumentsPage");
+  const tc = useTranslations("Common");
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(value ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +24,7 @@ export function EditIssuedDate({
     startTransition(async () => {
       const result = await updateIssuedDateAction(docId, patientId, date || null);
       if (result.error) {
-        setError(result.error);
+        setError(tc("SaveError"));
       } else {
         setEditing(false);
         setError(null);
@@ -32,12 +35,12 @@ export function EditIssuedDate({
   if (!editing) {
     return (
       <div className="flex items-center gap-2">
-        <span className="font-medium">{value ?? <span className="text-muted-foreground italic">not set</span>}</span>
+        <span className="font-medium">{value ?? <span className="text-muted-foreground italic">{t("dateNotSet")}</span>}</span>
         <button
           onClick={() => setEditing(true)}
           className="text-xs text-muted-foreground hover:text-foreground underline"
         >
-          edit
+          {t("edit")}
         </button>
       </div>
     );
@@ -57,13 +60,13 @@ export function EditIssuedDate({
         disabled={pending}
         className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
       >
-        {pending ? "Saving…" : "Save"}
+        {pending ? tc("Saving") : tc("Save")}
       </button>
       <button
         onClick={() => { setEditing(false); setDate(value ?? ""); setError(null); }}
         className="text-xs text-muted-foreground hover:text-foreground"
       >
-        Cancel
+        {tc("Cancel")}
       </button>
       {error && <span className="text-xs text-destructive">{error}</span>}
     </div>

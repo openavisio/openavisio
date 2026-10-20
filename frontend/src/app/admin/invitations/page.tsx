@@ -2,46 +2,49 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { getAdminInvitations } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { CopyLinkButton } from "./CopyLinkButton";
 import { InviteUserButton } from "./InviteUserButton";
 
 export default async function AdminInvitationsPage() {
   let invitations: any[] = [], fetchError = false;
   try { invitations = await getAdminInvitations(); } catch { fetchError = true; }
+  const t = await getTranslations("AdminInvitations");
+  const tc = await getTranslations("Common");
 
   return (
     <AppLayout>
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <h1 className="text-xl font-bold">Invitations</h1>
+        <h1 className="text-xl font-bold">{t("Title")}</h1>
         <InviteUserButton />
       </div>
 
       {fetchError && (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
-          Failed to load invitations. The server may be unavailable.
+          {t("LoadError")}
         </div>
       )}
 
       {!fetchError && invitations.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">No invitations yet.</div>
+        <div className="text-center py-12 text-muted-foreground">{t("Empty")}</div>
       ) : !fetchError ? (
         <div className="rounded-xl border bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Email</th>
-                <th className="px-4 py-3 text-left font-medium">Status</th>
-                <th className="px-4 py-3 text-left font-medium">Expires</th>
-                <th className="px-4 py-3 text-left font-medium">Sent</th>
-                <th className="px-4 py-3 text-left font-medium">Link</th>
+                <th className="px-4 py-3 text-left font-medium">{t("Email")}</th>
+                <th className="px-4 py-3 text-left font-medium">{tc("Status")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("Expires")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("Sent")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("Link")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {invitations.map((inv: any) => {
                 const used = inv.is_used;
                 const expired = new Date(inv.expires_at) < new Date();
-                const statusLabel = used ? "Used" : expired ? "Expired" : "Pending";
+                const statusLabel = used ? t("Used") : expired ? t("Expired") : t("Pending");
                 const statusColor = used
                   ? "bg-muted text-muted-foreground"
                   : expired

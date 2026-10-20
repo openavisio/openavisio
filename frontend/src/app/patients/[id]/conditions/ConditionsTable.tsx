@@ -14,6 +14,7 @@ function sortedSources(sources: any[]) {
 
 function Sources({ sources, patientId }: { sources: any[]; patientId: string }) {
   const t = useTranslations("Conditions");
+  const td = useTranslations("DocDetail");
   const dates = sources.map((s: any) => s.issued_date).filter(Boolean).sort();
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap">
@@ -41,7 +42,7 @@ function Sources({ sources, patientId }: { sources: any[]; patientId: string }) 
               >
                 {s.doc_type ? `${s.doc_type} · ` : ""}
                 {s.issued_date ? `${formatDate(s.issued_date)} · ` : ""}
-                {s.label || "Document"}
+                {s.label || td("document")}
               </a>
             </li>
           ))}
@@ -60,6 +61,7 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
   // Phone: the documents-list look — one card per condition, a tap reveals the
   // icon action bar under the card. Desktop keeps the table.
   const t = useTranslations("Conditions");
+  const td = useTranslations("DocDetail");
   const [revealed, setRevealed] = useState<string | null>(null);
 
   return (
@@ -102,7 +104,7 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
                         <span className="min-w-0 truncate">
                           {s.doc_type && <span className="font-medium">{s.doc_type} · </span>}
                           {s.issued_date && <span className="text-muted-foreground">{formatDate(s.issued_date)} · </span>}
-                          {s.label || "Document"}
+                          {s.label || td("document")}
                         </span>
                       </a>
                     </li>

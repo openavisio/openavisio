@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { PanelLeft } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cva, type VariantProps } from "class-variance-authority"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -108,6 +109,7 @@ const Sidebar = React.forwardRef<
   }
 >(({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }, ref) => {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const t = useTranslations("Nav")
 
   if (collapsible === "none") {
     return (
@@ -133,8 +135,8 @@ const Sidebar = React.forwardRef<
           side={side}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Navigation</SheetDescription>
+            <SheetTitle>{t("Sidebar")}</SheetTitle>
+            <SheetDescription>{t("Navigation")}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -193,6 +195,7 @@ const SidebarTrigger = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar } = useSidebar()
+  const t = useTranslations("Nav")
   return (
     <Button
       ref={ref}
@@ -205,7 +208,7 @@ const SidebarTrigger = React.forwardRef<
       {...props}
     >
       <PanelLeft />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{t("ToggleSidebar")}</span>
     </Button>
   )
 })
@@ -214,12 +217,13 @@ SidebarTrigger.displayName = "SidebarTrigger"
 const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"button">>(
   ({ className, ...props }, ref) => {
     const { toggleSidebar } = useSidebar()
+    const t = useTranslations("Nav")
     return (
       <button
         ref={ref}
         data-slot="sidebar-rail"
         data-sidebar="rail"
-        aria-label="Toggle Sidebar"
+        aria-label={t("ToggleSidebar")}
         tabIndex={-1}
         onClick={toggleSidebar}
         className={cn(

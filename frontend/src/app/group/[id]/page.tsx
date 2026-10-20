@@ -3,9 +3,11 @@ import { getGroup, getGroupMembers, getGroupPatients, getPatients } from "@/lib/
 import Link from "next/link";
 import { MemberPanel } from "./MemberPanel";
 import { PatientPanel } from "./PatientPanel";
+import { getTranslations } from "next-intl/server";
 
 export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const t = await getTranslations("GroupPage");
   const [group, members, patients, allPatients] = await Promise.all([
     getGroup(id).catch(() => null),
     getGroupMembers(id).catch(() => []),
@@ -16,7 +18,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   if (!group) {
     return (
       <AppLayout>
-        <div className="text-center py-12 text-muted-foreground">Group not found.</div>
+        <div className="text-center py-12 text-muted-foreground">{t("NotFound")}</div>
       </AppLayout>
     );
   }
@@ -25,7 +27,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     <AppLayout>
       <div className="flex items-center gap-2 mb-6">
         <Link href="/group" className="text-muted-foreground hover:text-foreground text-sm">
-          Groups
+          {t("Groups")}
         </Link>
         <span className="text-muted-foreground">/</span>
         <h1 className="text-xl font-bold">{group.name}</h1>

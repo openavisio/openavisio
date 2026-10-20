@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -20,7 +21,7 @@ export async function grantAccessAction(
   isLegalRepresentative?: boolean,
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients/${patientId}/access`, {
     method: "POST",
@@ -30,7 +31,7 @@ export async function grantAccessAction(
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   revalidatePath(`/patients/${patientId}`);
@@ -43,7 +44,7 @@ export async function createCaregiverInviteAction(
   accessLevel: string
 ): Promise<{ token?: string; invite_url?: string; registration_url?: string | null; error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients/${patientId}/caregiver-invite`, {
     method: "POST",
@@ -53,7 +54,7 @@ export async function createCaregiverInviteAction(
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   const data = await res.json();
@@ -65,7 +66,7 @@ export async function acceptCaregiverInviteAction(
   inviteToken: string
 ): Promise<{ patient_id?: string; error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients/caregiver-invite/accept?token=${encodeURIComponent(inviteToken)}`, {
     method: "POST",
@@ -74,7 +75,7 @@ export async function acceptCaregiverInviteAction(
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   return await res.json();
@@ -86,7 +87,7 @@ export async function updateAccessAction(
   fields: { access_level?: string; expires_at?: string | null; purpose?: string | null; relationship?: string | null; is_legal_representative?: boolean },
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/access/${grantId}`, {
     method: "PATCH",
@@ -96,7 +97,7 @@ export async function updateAccessAction(
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data?.detail ?? `Failed (${res.status}).` };
+    return { error: data?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   revalidatePath(`/patients/${patientId}`);
@@ -108,7 +109,7 @@ export async function revokeAccessAction(
   grantId: string
 ): Promise<{ error?: string }> {
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/access/${grantId}`, {
     method: "DELETE",
@@ -116,7 +117,7 @@ export async function revokeAccessAction(
   });
 
   if (!res.ok && res.status !== 204) {
-    return { error: `Failed to revoke access (${res.status}).` };
+    return { error: await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   revalidatePath(`/patients/${patientId}`);

@@ -2,13 +2,14 @@
 
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { actionError } from "@/lib/action-errors";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
 export async function erasePatientAction(patientId: string, confirmName: string) {
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Not authenticated." };
+  if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients/${patientId}/erase`, {
     method: "POST",
@@ -16,13 +17,10 @@ export async function erasePatientAction(patientId: string, confirmName: string)
     body: JSON.stringify({ confirm_name: confirmName }),
   });
 
-  if (res.status === 422) {
-    const data = await res.json().catch(() => ({}));
-    return { error: data.detail ?? "Confirmation name does not match." };
-  }
+  if (res.status === 422) return { error: await actionError("Patient.EraseNameMismatch") };
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data.detail ?? `Request failed (${res.status}).` };
+    return { error: data.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
   }
 
   redirect("/patients");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 type Category = {
   code: string;
@@ -10,18 +11,20 @@ type Category = {
   retention_days: number | null;
 };
 
-const BASES: { value: string; label: string }[] = [
-  { value: "", label: "— not set —" },
-  { value: "art9_healthcare", label: "Art. 9(2)(h) — Health care" },
-  { value: "consent", label: "Art. 6(1)(a) / 9(2)(a) — Consent" },
-  { value: "legitimate_interest", label: "Art. 6(1)(f) — Legitimate interest" },
-  { value: "legal_obligation", label: "Art. 6(1)(c) — Legal obligation" },
-  { value: "vital_interest", label: "Art. 6(1)(d) — Vital interest" },
-  { value: "contract", label: "Art. 6(1)(b) — Contract" },
-  { value: "public_task", label: "Art. 6(1)(e) — Public task" },
+const BASES = [
+  "",
+  "art9_healthcare",
+  "consent",
+  "legitimate_interest",
+  "legal_obligation",
+  "vital_interest",
+  "contract",
+  "public_task",
 ];
 
 export function DataGovernanceClient({ categories: initial }: { categories: Category[] }) {
+  const t = useTranslations("AdminGovernance");
+  const tc = useTranslations("Common");
   const [cats, setCats] = useState(initial);
   const [pending, startTransition] = useTransition();
   const [savedCode, setSavedCode] = useState<string | null>(null);
@@ -44,7 +47,7 @@ export function DataGovernanceClient({ categories: initial }: { categories: Cate
         }),
       });
       if (!res.ok) {
-        setError(`Failed to save ${cat.label}.`);
+        setError(t("SaveFailed", { label: cat.label }));
         return;
       }
       setSavedCode(cat.code);
@@ -55,19 +58,18 @@ export function DataGovernanceClient({ categories: initial }: { categories: Cate
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       <div className="px-4 py-3 border-b bg-muted/50">
-        <div className="font-medium text-sm">Data categories</div>
+        <div className="font-medium text-sm">{t("Categories")}</div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Lawful basis (GDPR Art. 6/9) and retention per category. The retention purge runs daily and
-          soft-deletes records older than the window; an empty retention means data is kept indefinitely.
+          {t("CategoriesHint")}
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Category</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Lawful basis</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Retention (days)</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">{t("Category")}</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">{t("LawfulBasis")}</th>
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">{t("RetentionDays")}</th>
               <th className="px-4 py-2" />
             </tr>
           </thead>
@@ -82,7 +84,7 @@ export function DataGovernanceClient({ categories: initial }: { categories: Cate
                     className="rounded-lg border bg-background px-2 py-1 text-sm"
                   >
                     {BASES.map((b) => (
-                      <option key={b.value} value={b.value}>{b.label}</option>
+                      <option key={b} value={b}>{t(`Basis_${b || "none"}`)}</option>
                     ))}
                   </select>
                 </td>
@@ -102,7 +104,7 @@ export function DataGovernanceClient({ categories: initial }: { categories: Cate
                     disabled={pending}
                     className="rounded-lg border px-3 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
                   >
-                    {savedCode === cat.code ? "Saved" : "Save"}
+                    {savedCode === cat.code ? t("Saved") : tc("Save")}
                   </button>
                 </td>
               </tr>

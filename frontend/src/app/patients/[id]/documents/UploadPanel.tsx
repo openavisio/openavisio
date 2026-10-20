@@ -217,7 +217,7 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
         >
           <Upload className="h-7 w-7 text-muted-foreground shrink-0" />
           <span className="text-sm font-medium">{t("dropHint")}</span>
-          <span className="text-xs text-muted-foreground">PDF, JPG, PNG</span>
+          <span className="text-xs text-muted-foreground">{t("fileTypes")}</span>
           <input
             ref={inputRef}
             type="file"
@@ -333,6 +333,7 @@ function StatusIcon({ status }: { status: Status }) {
 }
 
 export function RetryButton({ docId }: { docId: string }) {
+  const t = useTranslations("DocumentsPage");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -350,12 +351,13 @@ export function RetryButton({ docId }: { docId: string }) {
       className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/20 disabled:opacity-50 transition-colors"
     >
       <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} />
-      {pending ? "Retrying…" : "Retry"}
+      {pending ? t("retrying") : t("retry")}
     </button>
   );
 }
 
 export function RetryAllButton({ failedDocIds }: { failedDocIds: string[] }) {
+  const t = useTranslations("DocumentsPage");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -373,7 +375,7 @@ export function RetryAllButton({ failedDocIds }: { failedDocIds: string[] }) {
       className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/20 disabled:opacity-50 transition-colors"
     >
       <RefreshCw className="h-3.5 w-3.5" />
-      {pending ? "Retrying…" : `Retry ${failedDocIds.length} failed`}
+      {pending ? t("retrying") : t("retryCount", { count: failedDocIds.length })}
     </button>
   );
 }

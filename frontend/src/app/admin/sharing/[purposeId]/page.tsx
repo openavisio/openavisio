@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/utils";
 import { AlertCircle, Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ClosePurposeButton } from "../ClosePurposeButton";
 
 function formatSize(bytes: number | null): string {
@@ -16,6 +17,8 @@ function formatSize(bytes: number | null): string {
 
 export default async function SharingPurposeDetailPage({ params }: { params: Promise<{ purposeId: string }> }) {
   const { purposeId } = await params;
+  const t = await getTranslations("AdminSharing");
+  const tc = await getTranslations("Common");
 
   let purpose: any = null;
   let shares: any[] = [];
@@ -33,13 +36,13 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
   return (
     <AppLayout>
       <Link href="/admin/sharing" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="size-4" /> Back to data sharing
+        <ArrowLeft className="size-4" /> {t("Back")}
       </Link>
 
       {fetchError && (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
-          Failed to load this sharing purpose.
+          {t("LoadOneError")}
         </div>
       )}
 
@@ -49,12 +52,12 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
             <div>
               <h1 className="text-xl font-bold">{purpose.name}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                {purpose.description ? `Requested: ${purpose.description}` : "No data description"}
+                {purpose.description ? t("RequestedValue", { description: purpose.description }) : t("NoDescription")}
                 {" · "}
-                <span className="capitalize">{purpose.identification_mode}</span>
+                <span>{t(`Mode_${purpose.identification_mode}`)}</span>
                 {" · "}
-                <span className="capitalize">{purpose.status}</span>
-                {purpose.expires_at && ` · expires ${formatDate(purpose.expires_at)}`}
+                <span>{t(`Status_${purpose.status}`)}</span>
+                {purpose.expires_at && ` · ${t("ExpiresOn", { date: formatDate(purpose.expires_at) })}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -63,7 +66,7 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
                   href={`/api/sharing-purposes/${purposeId}/download`}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90"
                 >
-                  <Download className="size-3.5" /> Download all (ZIP)
+                  <Download className="size-3.5" /> {t("DownloadAll")}
                 </a>
               )}
               {purpose.status === "open" && <ClosePurposeButton purposeId={purposeId} />}
@@ -72,21 +75,21 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
 
           {purpose.identification_mode === "anonymous" && (
             <p className="text-xs text-muted-foreground mb-4">
-              Anonymous purpose — patients are shown as pseudonyms. File contents are unchanged and may still contain identifying information.
+              {t("AnonymousNote")}
             </p>
           )}
 
           <div className="mt-4 rounded-xl border bg-card overflow-hidden">
             {shares.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">No files shared yet.</div>
+              <div className="text-center py-12 text-muted-foreground text-sm">{t("NoFiles")}</div>
             ) : (
               <table className="w-full text-sm">
                 <thead className="border-b bg-muted/50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium">Patient</th>
-                    <th className="px-4 py-3 text-left font-medium">File</th>
-                    <th className="px-4 py-3 text-left font-medium">Size</th>
-                    <th className="px-4 py-3 text-left font-medium">Shared</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("Patient")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("File")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("Size")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("Shared")}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -102,7 +105,7 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
                           href={`/api/shares/${s.share_id}/file`}
                           className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted"
                         >
-                          <Download className="size-3.5" /> Download
+                          <Download className="size-3.5" /> {tc("Download")}
                         </a>
                       </td>
                     </tr>

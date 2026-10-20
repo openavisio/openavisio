@@ -4,8 +4,10 @@ import { useState, useTransition } from "react";
 import { Trash2, UserPlus } from "lucide-react";
 import { assignPatientAction, removePatientAction } from "./actions";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 function PatientRow({ patient, groupId }: { patient: any; groupId: string }) {
+  const t = useTranslations("GroupPage");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
 
@@ -30,7 +32,7 @@ function PatientRow({ patient, groupId }: { patient: any; groupId: string }) {
           className="flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 disabled:opacity-50"
         >
           <Trash2 className="size-3.5" />
-          {pending ? "…" : "Remove"}
+          {pending ? "…" : t("Remove")}
         </button>
         {error && <p className="text-xs text-destructive mt-1">{error}</p>}
       </td>
@@ -47,6 +49,7 @@ export function PatientPanel({
   patients: any[];
   allPatients: any[];
 }) {
+  const t = useTranslations("GroupPage");
   const [selectedId, setSelectedId] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -66,10 +69,10 @@ export function PatientPanel({
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
-      <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">Patients</div>
+      <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">{t("Patients")}</div>
       <div className="p-4 space-y-4">
         {patients.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No patients assigned.</p>
+          <p className="text-sm text-muted-foreground">{t("NoPatients")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -84,7 +87,7 @@ export function PatientPanel({
 
         {available.length > 0 && (
           <div className="border-t pt-4 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Add patient</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("AddPatient")}</p>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="flex gap-2">
               <select
@@ -92,7 +95,7 @@ export function PatientPanel({
                 onChange={(e) => setSelectedId(e.target.value)}
                 className="rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background flex-1"
               >
-                <option value="">Select a patient…</option>
+                <option value="">{t("SelectPatient")}</option>
                 {available.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.given_name} {p.family_name}
@@ -105,7 +108,7 @@ export function PatientPanel({
                 className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
               >
                 <UserPlus className="size-3.5" />
-                {pending ? "Adding…" : "Add"}
+                {pending ? t("Adding") : t("Add")}
               </button>
             </div>
           </div>

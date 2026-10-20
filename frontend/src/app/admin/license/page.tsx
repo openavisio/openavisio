@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
+import { getTranslations } from "next-intl/server";
 import { LicenseForm } from "./LicenseForm";
 
 const API = process.env.API_URL || "http://localhost:8000";
@@ -24,6 +25,7 @@ const THIRD_PARTY = [
 
 export default async function LicensePage() {
   const session = await auth();
+  const t = await getTranslations("AdminLicense");
   const accessToken = (session as any)?.accessToken;
 
   let licenseInfo = {
@@ -52,9 +54,9 @@ export default async function LicensePage() {
   return (
     <AppLayout>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">License</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("Title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Entitlement tier and open-source license information.
+          {t("Subtitle")}
         </p>
       </div>
 
@@ -77,13 +79,13 @@ export default async function LicensePage() {
 
       <div className="rounded-xl border bg-card overflow-hidden">
         <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">
-          Third-party Open Source Components
+          {t("ThirdParty")}
         </div>
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr>
-              <th className="px-4 py-2 text-left font-medium text-xs">Component</th>
-              <th className="px-4 py-2 text-left font-medium text-xs">License</th>
+              <th className="px-4 py-2 text-left font-medium text-xs">{t("Component")}</th>
+              <th className="px-4 py-2 text-left font-medium text-xs">{t("License")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">

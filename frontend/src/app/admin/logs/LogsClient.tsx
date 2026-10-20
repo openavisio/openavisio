@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 
@@ -70,6 +71,7 @@ function LevelChip({ level, active, onClick }: { level: string; active: boolean;
 }
 
 export function LogsClient() {
+  const t = useTranslations("AdminLogs");
   const [tab, setTab] = useState<"logs" | "tasks" | "jobs">("logs");
 
   // -- Log stream state --
@@ -170,17 +172,17 @@ export function LogsClient() {
     <div className="flex flex-col gap-4">
       {/* Tab bar */}
       <div className="flex border-b">
-        {(["logs", "tasks", "jobs"] as const).map((t) => (
+        {(["logs", "tasks", "jobs"] as const).map((k) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={k}
+            onClick={() => setTab(k)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t
+              tab === k
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t === "logs" ? "Application Logs" : t === "tasks" ? "Processing Pipeline" : "All Jobs"}
+            {k === "logs" ? t("TabLogs") : k === "tasks" ? t("TabPipeline") : t("TabJobs")}
           </button>
         ))}
       </div>
@@ -189,13 +191,13 @@ export function LogsClient() {
         <div className="flex flex-col gap-3">
           {/* Toolbar */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground mr-1">Level:</span>
+            <span className="text-xs text-muted-foreground mr-1">{t("Level")}</span>
             {LEVELS.map((l) => (
               <LevelChip key={l} level={l} active={activeLevel.has(l)} onClick={() => toggleLevel(l)} />
             ))}
             <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className={`size-1.5 rounded-full ${connected ? "bg-green-500" : "bg-muted-foreground"}`} />
-              {connected ? "Live" : "Connecting…"}
+              {connected ? t("Live") : t("Connecting")}
             </div>
           </div>
 
@@ -207,7 +209,7 @@ export function LogsClient() {
           >
             {filteredLogs.length === 0 ? (
               <div className="flex items-center justify-center h-full text-zinc-500">
-                {connected ? "Waiting for log entries…" : "Connecting to log stream…"}
+                {connected ? t("WaitingForEntries") : t("ConnectingToStream")}
               </div>
             ) : (
               <table className="w-full border-collapse">
@@ -246,7 +248,7 @@ export function LogsClient() {
               }}
               className="self-end text-xs text-muted-foreground underline"
             >
-              Scroll to bottom
+              {t("ScrollToBottom")}
             </button>
           )}
         </div>
@@ -255,17 +257,17 @@ export function LogsClient() {
       {tab === "tasks" && (
         <div className="rounded-xl border bg-card overflow-hidden">
           {tasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">No pipeline tasks found.</div>
+            <div className="text-center py-12 text-muted-foreground text-sm">{t("NoPipelineTasks")}</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium">Document</th>
-                  <th className="px-4 py-3 text-left font-medium">Patient</th>
-                  <th className="px-4 py-3 text-left font-medium">Stage</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Updated</th>
-                  <th className="px-4 py-3 text-left font-medium">Error</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Document")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Patient")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Stage")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Status")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Updated")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Error")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -298,17 +300,17 @@ export function LogsClient() {
       {tab === "jobs" && (
         <div className="rounded-xl border bg-card overflow-hidden">
           {taskRuns.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">No task runs recorded yet.</div>
+            <div className="text-center py-12 text-muted-foreground text-sm">{t("NoTaskRuns")}</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium">Task</th>
-                  <th className="px-4 py-3 text-left font-medium">Args</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Started</th>
-                  <th className="px-4 py-3 text-left font-medium">Finished</th>
-                  <th className="px-4 py-3 text-left font-medium">Error</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Task")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Args")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Status")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Started")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Finished")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{t("Error")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

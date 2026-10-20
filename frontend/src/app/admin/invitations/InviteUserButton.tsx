@@ -15,6 +15,7 @@ export function InviteUserButton() {
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const t = useTranslations("Invite");
+  const tc = useTranslations("Common");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,7 +63,7 @@ export function InviteUserButton() {
     <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 w-full sm:w-auto sm:min-w-80">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium">{t("Title")}</p>
-        <button onClick={close} className="text-muted-foreground hover:text-foreground">
+        <button onClick={close} aria-label={tc("Close")} className="text-muted-foreground hover:text-foreground">
           <X className="size-4" />
         </button>
       </div>
@@ -91,7 +92,7 @@ export function InviteUserButton() {
           <p className="text-xs text-muted-foreground">{t("Created")}</p>
           <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
             <code className="flex-1 truncate text-xs">{inviteUrl}</code>
-            <button onClick={copy} className="shrink-0 text-muted-foreground hover:text-foreground">
+            <button onClick={copy} aria-label={copied ? t("Copied") : t("CopyLink")} className="shrink-0 text-muted-foreground hover:text-foreground">
               {copied ? <Check className="size-3.5 text-green-600" /> : <Copy className="size-3.5" />}
             </button>
           </div>

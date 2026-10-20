@@ -3,9 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { createGroupAction } from "./actions";
 
 export function CreateGroupButton() {
+  const t = useTranslations("AdminGroups");
+  const tc = useTranslations("Common");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
@@ -32,7 +35,7 @@ export function CreateGroupButton() {
         className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90"
       >
         <Plus className="size-3.5" />
-        Create Group
+        {t("CreateGroup")}
       </button>
     );
   }
@@ -45,7 +48,7 @@ export function CreateGroupButton() {
         required
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Group name"
+        placeholder={t("GroupName")}
         className="rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background w-48"
       />
       {error && <span className="text-xs text-destructive">{error}</span>}
@@ -54,11 +57,12 @@ export function CreateGroupButton() {
         disabled={pending || !name.trim()}
         className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
       >
-        {pending ? "Creating…" : "Create"}
+        {pending ? t("Creating") : tc("Create")}
       </button>
       <button
         type="button"
         onClick={() => { setOpen(false); setName(""); setError(""); }}
+        aria-label={tc("Cancel")}
         className="rounded-lg border px-2 py-1.5 text-sm hover:bg-muted"
       >
         <X className="size-3.5" />

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Star } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { addFavorite, removeFavorite } from "@/lib/api";
 
 export function FavoriteStar({
@@ -14,6 +15,7 @@ export function FavoriteStar({
   initial: boolean;
   className?: string;
 }) {
+  const t = useTranslations("DocumentsPage");
   const [fav, setFav] = useState(initial);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -39,7 +41,7 @@ export function FavoriteStar({
       onClick={toggle}
       disabled={pending}
       aria-pressed={fav}
-      aria-label={fav ? "Unfavorite" : "Favorite"}
+      aria-label={fav ? t("unfavorite") : t("favorite")}
       className={`shrink-0 rounded p-1 transition-colors disabled:opacity-50 ${
         fav ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground/40 hover:text-amber-500"
       } ${className}`}

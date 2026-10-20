@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { getAdminUsers } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { InviteUserButton } from "../invitations/InviteUserButton";
 import { UserActions } from "./UserActions";
 
@@ -12,19 +13,21 @@ export default async function AdminUsersPage() {
     getAdminUsers().then((u) => ({ data: u, error: false })).catch(() => ({ data: [], error: true })),
   ]);
   const { data: users, error } = usersResult;
+  const t = await getTranslations("AdminUsers");
+  const tc = await getTranslations("Common");
   const selfEmail = (session?.user as any)?.email;
 
   return (
     <AppLayout>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Users</h1>
+        <h1 className="text-xl font-bold">{t("Title")}</h1>
         <InviteUserButton />
       </div>
 
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
-          Failed to load users. The server may be unavailable.
+          {t("LoadError")}
         </div>
       )}
 
@@ -32,10 +35,10 @@ export default async function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50">
             <tr>
-              <th className="px-4 py-3 text-left font-medium">Name / Email</th>
-              <th className="px-4 py-3 text-left font-medium">Status</th>
-              <th className="px-4 py-3 text-left font-medium">Joined</th>
-              <th className="px-4 py-3 text-left font-medium">Actions</th>
+              <th className="px-4 py-3 text-left font-medium">{t("NameEmail")}</th>
+              <th className="px-4 py-3 text-left font-medium">{tc("Status")}</th>
+              <th className="px-4 py-3 text-left font-medium">{t("Joined")}</th>
+              <th className="px-4 py-3 text-left font-medium">{tc("Actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -49,7 +52,7 @@ export default async function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${u.is_active ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"}`}>
-                      {u.is_active ? "Active" : "Disabled"}
+                      {u.is_active ? tc("Active") : t("Disabled")}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
