@@ -12,8 +12,8 @@ RUN apt-get update \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# uv — installs to /usr/local/bin via pip, no PATH changes needed
-RUN pip install uv
+# uv from its image, not pip: pip < 26.2.2 still trusts the emSign intermediates
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /usr/local/bin/
 
 # pnpm — Node 22 ships with corepack
 RUN corepack enable pnpm

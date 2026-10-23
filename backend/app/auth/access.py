@@ -30,8 +30,7 @@ _LEVEL_MAP = {
 
 _FAMILY_ROLE_LEVEL = {
     "viewer": AccessLevel.view,
-    "editor": AccessLevel.contribute,
-    "admin": AccessLevel.full,
+    "manager": AccessLevel.view,
     "owner": AccessLevel.admin,
 }
 

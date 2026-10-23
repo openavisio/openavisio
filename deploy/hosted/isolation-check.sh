@@ -6,6 +6,7 @@
 # reach one. Deployments are Compose projects named oa-<id>, each with its own default network.
 set -u
 CADDY=${CADDY:-edge-caddy-1}
+PROXY=${PROXY:-edge-llm-proxy-1}
 ONLY=${1:-}
 bad=0
 fail() { echo "FAIL: $*"; bad=1; }
@@ -14,9 +15,10 @@ ids=$(docker network ls --format '{{.Name}}' | sed -n 's/^oa-\([a-z0-9]*\)_defau
 for id in $ids; do
   members=$(docker network inspect -f '{{range .Containers}}{{.Name}} {{end}}' "oa-${id}_default")
   for c in $members; do
-    case "$c" in "oa-$id-"*|"$CADDY") ;; *) fail "$c is on the network of $id" ;; esac
+    case "$c" in "oa-$id-"*|"$CADDY"|"$PROXY") ;; *) fail "$c is on the network of $id" ;; esac
   done
   echo " $members" | grep -q " $CADDY " || fail "$CADDY is not on the network of $id, so $id is unreachable"
+  echo " $members" | grep -q " $PROXY " || fail "$PROXY is not on the network of $id, so $id has no AI"
 done
 
 # a Deployment's containers sit on its own network and nowhere else

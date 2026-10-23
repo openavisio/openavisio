@@ -6,6 +6,11 @@
 #   docker compose -f docker-compose.edge.yml up -d
 # Add a Deployment:  printf '%s.openavisio.app {\n    import openavisio %s\n}\n' <id> <id> > sites/<id>.caddy
 #                    docker compose -f docker-compose.edge.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
+#
+# The LLM proxy (#375) holds the IONOS token, from /opt/edge/.env (IONOS_API_KEY=...), and is attached
+# to each Deployment's network the same way; a Deployment reaches it as http://edge-llm-proxy-1:8080/v1
+# with its own key (proxy-key.sh). Usage per Deployment:
+#   docker exec edge-llm-proxy-1 python /app/proxy.py report [YYYY-MM]
 name: edge
 services:
   caddy:
@@ -20,6 +25,20 @@ services:
       - ./sites:/etc/caddy/sites:ro
       - caddy-data:/data
       - caddy-config:/config
+  llm-proxy:
+    image: python:3.12.15-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    command: python /app/proxy.py
+    environment:
+      IONOS_API_KEY: ${IONOS_API_KEY:?IONOS_API_KEY in /opt/edge/.env}
+    volumes:
+      - ./llm-proxy:/app:ro
+      - llm-proxy-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
 volumes:
+  llm-proxy-data:
   caddy-data:
   caddy-config:

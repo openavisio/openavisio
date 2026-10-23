@@ -9,8 +9,10 @@
 # Needs ~/.config/openavisio/hosted.env (mode 600, never in git) with:
 #   BOX=root@203.0.113.10     BOX_IP=203.0.113.10     REGISTRY=registry.example.org
 #   TAG=v0.1.0-beta10         DOMAIN_SUFFIX=openavisio.app
-#   AGE_PUBKEY=age1...        the same IONOS / mail values for every Deployment:
-#   VLLM_API_KEY=...  SMTP_USER=...  SMTP_PASSWORD=...  SMTP_FROM=...  OPS_ALERT_EMAIL=...
+#   AGE_PUBKEY=age1...        the same mail values for every Deployment:
+#   SMTP_USER=...  SMTP_PASSWORD=...  SMTP_FROM=...  OPS_ALERT_EMAIL=...
+# The IONOS token is not here: it lives in the box's LLM proxy (/opt/edge/.env), and each
+# Deployment gets its own proxy key from proxy-key.sh (#375).
 #   optional: ESCROW_DEST=u123456@u123456.your-storagebox.de   (escrow copy off this machine)
 #
 # After the stack is up it attaches the shared Caddy to the Deployment's own network and refuses to
@@ -27,7 +29,7 @@ while IFS='=' read -r k v; do
   case "$k" in ''|\#*) continue ;; esac
   export "$k=$v"
 done < "$CONF"
-: "${BOX:?}" "${BOX_IP:?}" "${REGISTRY:?}" "${TAG:?}" "${AGE_PUBKEY:?}" "${VLLM_API_KEY:?}" \
+: "${BOX:?}" "${BOX_IP:?}" "${REGISTRY:?}" "${TAG:?}" "${AGE_PUBKEY:?}" \
   "${SMTP_USER:?}" "${SMTP_PASSWORD:?}" "${SMTP_FROM:?}" "${OPS_ALERT_EMAIL:?}"
 SUFFIX=${DOMAIN_SUFFIX:-openavisio.app}
 REF=${REF:-$TAG}   # the git ref the compose files come from
@@ -81,9 +83,9 @@ BOOTSTRAP_TOKEN=$BOOTSTRAP
 DOCUMENT_ENCRYPTION_KEY=$KEK
 AGE_PUBKEY=$AGE_PUBKEY
 AI_BACKEND=vllm
-VLLM_URL=https://openai.inference.de-txl.ionos.com/v1
-VLLM_EMBED_URL=https://openai.inference.de-txl.ionos.com/v1
-VLLM_API_KEY=$VLLM_API_KEY
+VLLM_URL=http://edge-llm-proxy-1:8080/v1
+VLLM_EMBED_URL=http://edge-llm-proxy-1:8080/v1
+VLLM_API_KEY=
 VLLM_MODEL=Qwen/Qwen3.8-27B
 VLLM_VISION_MODEL=lightonai/LightOnOCR-2-1B
 VLLM_EMBED_MODEL=Qwen/Qwen3-VL-Embedding-8B
@@ -105,6 +107,7 @@ ssh "$BOX" "cd $DIR && F='-f docker-compose.prod.yml -f docker-compose.hosted.ym
 # 4b. Caddy joins this Deployment's own network, which is the only way it is reachable (and the
 #     only network it is on). The Deployment shares nothing with the others on the box.
 ssh "$BOX" "docker network connect oa-${ID}_default edge-caddy-1"
+"$(dirname "$0")/proxy-key.sh" "$ID"   # attaches the LLM proxy too
 ssh "$BOX" "sh -s -- $ID" < "$(dirname "$0")/isolation-check.sh" \
   || { echo "isolation check failed for $ID, not routing it" >&2; exit 1; }
 

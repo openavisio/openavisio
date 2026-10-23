@@ -38,6 +38,7 @@ for ID in $ids; do
 
   # up -d may recreate the network, and Caddy loses its attachment; the check proves it is back
   ssh "$BOX" "docker network connect oa-${ID}_default edge-caddy-1" 2>/dev/null || true
+  ssh "$BOX" "docker network connect oa-${ID}_default edge-llm-proxy-1" 2>/dev/null || true
   ssh "$BOX" "sh -s -- $ID" < "$here/isolation-check.sh"
   code=$(curl -s -o /dev/null -w '%{http_code}' "https://$ID.$SUFFIX/" || true)
   [ "$code" = 307 ] || { echo "https://$ID.$SUFFIX answers $code" >&2; exit 1; }

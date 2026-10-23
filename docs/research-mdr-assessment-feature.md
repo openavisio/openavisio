@@ -70,7 +70,7 @@ not under MDR Rule 11. Two rules decide the class:
 | Rule | Text | Effect here |
 |---|---|---|
 | Rule 4(a) | "Devices intended for self-testing are classified as class C", except pregnancy, fertility, cholesterol, and urine glucose/erythrocytes/leucocytes/bacteria (class B) | "Device for self-testing" is defined in Art. 2(5) as "any device intended by the manufacturer to be used by **lay persons**, including devices used for testing services offered to lay persons by means of information society services". A family caregiver is a lay person (MDR Art. 2(38)) |
-| Rule 3(k) | class C for "management of patients suffering from a **life-threatening disease or condition**" | Chronically ill children, e.g. dup15q, epilepsy, metabolic disease: plausibly in scope |
+| Rule 3(k) | class C for "management of patients suffering from a **life-threatening disease or condition**" | Chronically ill children, e.g. Dup15q, epilepsy, metabolic disease: plausibly in scope |
 | Rule 6 | "Devices not covered by the above-mentioned classification rules are classified as class B" | The fallback if neither bites |
 
 **Inference**: an AI that tells a lay caregiver whether their child's lab value is worrying reads as

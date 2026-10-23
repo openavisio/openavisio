@@ -120,24 +120,14 @@ async def test_group_membership_viewer_returns_view(db: AsyncSession):
     assert level == AccessLevel.view
 
 
-async def test_group_membership_editor_returns_contribute(db: AsyncSession):
-    owner = await _create_user(db, "owner_gme@test.com", role="admin")
-    member = await _create_user(db, "member_gme@test.com", role="user")
+async def test_group_membership_manager_returns_view(db: AsyncSession):
+    owner = await _create_user(db, "owner_gmm@test.com", role="admin")
+    member = await _create_user(db, "member_gmm@test.com", role="user")
     patient = await _create_patient(db, owner)
-    await _create_group_membership(db, patient, member, role="editor")
+    await _create_group_membership(db, patient, member, role="manager")
 
     level = await resolve_patient_access(patient.id, member, db)
-    assert level == AccessLevel.contribute
-
-
-async def test_group_membership_admin_returns_full(db: AsyncSession):
-    owner = await _create_user(db, "owner_gma@test.com", role="admin")
-    member = await _create_user(db, "member_gma@test.com", role="user")
-    patient = await _create_patient(db, owner)
-    await _create_group_membership(db, patient, member, role="admin")
-
-    level = await resolve_patient_access(patient.id, member, db)
-    assert level == AccessLevel.full
+    assert level == AccessLevel.view
 
 
 async def test_group_membership_owner_returns_admin(db: AsyncSession):

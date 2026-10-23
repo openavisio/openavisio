@@ -1,6 +1,6 @@
 {
   "name": "openavisio-frontend",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "private": true,
   "packageManager": "pnpm@11.2.2",
   "scripts": {
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",
-    "next": "16.3.8",
+    "next": "16.4.2",
     "next-auth": "^5.0.0-beta.32",
     "next-intl": "^4.13.2",
     "react": "19.3.0",
@@ -48,7 +48,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

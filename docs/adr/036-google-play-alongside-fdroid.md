@@ -49,7 +49,7 @@ compliance forms, and, for new personal developer accounts, a closed-testing gat
 - **Release track.** Personal accounts must run **Closed Testing (~12 testers, 14 days)**
   before applying for production (Google gate, verify exact thresholds in the Console
   before starting). Path: Internal Testing now (verify signing/upload/deep-links/lock)
-  → Closed Testing in parallel, testers sourced from the care / dup15q community →
+  → Closed Testing in parallel, testers sourced from the care / Dup15q community →
   apply for production. F-Droid stays the primary channel meanwhile, so the gate blocks
   nothing.
 - **Capacitor version.** Unchanged: Play builds the same Cap-7 source (ADR 035). No

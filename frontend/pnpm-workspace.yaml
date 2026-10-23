@@ -22,3 +22,5 @@ overrides:
   baseline-browser-mapping: '>=2.11.0'
   # source-map-js sits under postcss under next; <1.2.2 has an event-loop DoS.
   source-map-js: '>=1.2.2'
+  # follow-redirects sits under axios; <1.16.1 can leak credential headers on redirect.
+  follow-redirects: '>=1.16.1'

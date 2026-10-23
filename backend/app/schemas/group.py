@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, EmailStr
 
@@ -37,9 +38,12 @@ class GroupInviteInfoDto(BaseModel):
     group_name: str
 
 
+GroupRole = Literal["viewer", "manager", "owner"]
+
+
 class GroupInviteRequest(BaseModel):
     email: EmailStr
-    role: str = "viewer"
+    role: GroupRole = "viewer"
 
 
 class GroupInviteResult(BaseModel):
@@ -48,7 +52,7 @@ class GroupInviteResult(BaseModel):
 
 
 class UpdateMemberRoleRequest(BaseModel):
-    role: str
+    role: GroupRole
 
 
 class AssignPatientToGroupRequest(BaseModel):

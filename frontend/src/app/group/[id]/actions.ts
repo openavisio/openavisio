@@ -23,6 +23,7 @@ export async function inviteMemberAction(
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ email, role }),
   });
+  if (res.status === 403) return { error: await actionError("GroupPage.OwnerOnly") };
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
     return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
@@ -41,6 +42,7 @@ export async function removeMemberAction(
     method: "DELETE",
     headers: { Authorization: `Bearer ${t}` },
   });
+  if (res.status === 403) return { error: await actionError("GroupPage.OwnerOnly") };
   if (!res.ok && res.status !== 204) return { error: await actionError("Common.RequestFailed", { status: res.status }) };
   revalidatePath(`/group/${groupId}`);
   return {};
@@ -58,6 +60,7 @@ export async function updateMemberRoleAction(
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ role }),
   });
+  if (res.status === 403) return { error: await actionError("GroupPage.OwnerOnly") };
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
     return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };
@@ -109,6 +112,7 @@ export async function acceptGroupInviteAction(
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });
+  if (res.status === 403) return { error: await actionError("GroupPage.InviteOtherAddress") };
   if (!res.ok) {
     const d = await res.json().catch(() => ({}));
     return { error: d?.detail ?? await actionError("Common.RequestFailed", { status: res.status }) };

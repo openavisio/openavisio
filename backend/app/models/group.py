@@ -43,5 +43,6 @@ class GroupInviteToken(BaseModel):
     token: Mapped[str] = mapped_column(String(256), unique=True, nullable=False, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_used: Mapped[bool] = mapped_column(default=False)
+    role: Mapped[str] = mapped_column(String(50), default="viewer", server_default="viewer")
 
     group: Mapped[Group] = relationship("Group", back_populates="invite_tokens")

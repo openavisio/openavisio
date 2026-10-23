@@ -1594,6 +1594,8 @@
     "Pending": "Offen"
   },
   "GroupPage": {
+    "InviteOtherAddress": "Diese Einladung ging an eine andere E-Mail-Adresse. Melde dich mit der Adresse an, an die sie geschickt wurde.",
+    "OwnerOnly": "Nur ein Besitzer der Gruppe kann die Besitzer-Rolle vergeben, ändern oder einen Besitzer entfernen.",
     "Groups": "Gruppen",
     "LoadFailed": "Die Gruppen konnten nicht geladen werden. Der Server ist vielleicht nicht erreichbar.",
     "NoGroups": "Keine Gruppen gefunden.",

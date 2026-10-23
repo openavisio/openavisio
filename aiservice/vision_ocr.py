@@ -34,6 +34,22 @@ def _ocr_prompt(model: str, table: bool = False) -> str:
     return VISION_OCR_PROMPT
 
 
+def _read_page(backend, model: str, img: bytes) -> str:
+    """One page. glm-ocr's table prompt returns the table and drops the prose around it, so a
+    table page gets both passes, prose first (#246); other models read both in one pass."""
+    def ask(table: bool) -> str:
+        return backend.chat(
+            model,
+            [{"role": "user", "content": _ocr_prompt(model, table)}],
+            images=[img],
+            num_ctx=get_num_ctx("vision"),  # else the model loads at its 32k default (#73)
+        ).strip()
+
+    if _GLM not in model.lower() or not analyze_page(img)["table_like"]:
+        return ask(False)
+    return ask(False) + "\n\n" + ask(True)
+
+
 def vision_ocr(file_bytes: bytes, content_type: str, model: str | None = None) -> dict:
     """Extract text from file using vision model.
 
@@ -54,18 +70,11 @@ def _vision_ocr_image(image_bytes: bytes, backend, model: str) -> dict:
     from PIL import Image
     buf = io.BytesIO()
     deshade(Image.open(io.BytesIO(image_bytes))).save(buf, format="PNG")  # ADR 028
-    img = buf.getvalue()
-    table = analyze_page(img)["table_like"]
-    text = backend.chat(
-        model,
-        [{"role": "user", "content": _ocr_prompt(model, table)}],
-        images=[img],
-        num_ctx=get_num_ctx("vision"),  # else the model loads at its 32k default (#73)
-    )
+    text = _read_page(backend, model, buf.getvalue())
     # No confidence: the model gives us none, and a constant dressed up as a
     # measurement is worse than an honest absence — it was shown to users as
     # "OCR confidence 70%" (#111).
-    return {"text": text.strip(), "confidence": None, "method": "vision"}
+    return {"text": text, "confidence": None, "method": "vision"}
 
 
 def _vision_ocr_pdf(file_bytes: bytes, backend, model: str) -> dict:
@@ -79,17 +88,8 @@ def _vision_ocr_pdf(file_bytes: bytes, backend, model: str) -> dict:
         pil_image = deshade(bitmap.to_pil())  # ADR 028: recover grey-shaded table columns
         buf = io.BytesIO()
         pil_image.save(buf, format="PNG")
-        img_bytes = buf.getvalue()
-
-        table = analyze_page(img_bytes)["table_like"]
-        logger.info("Vision OCR on page %d/%d (%s)", i + 1, page_count, "table" if table else "text")
-        text = backend.chat(
-            model,
-            [{"role": "user", "content": _ocr_prompt(model, table)}],
-            images=[img_bytes],
-            num_ctx=get_num_ctx("vision"),  # else the model loads at its 32k default (#73)
-        )
-        all_text.append(text.strip())
+        logger.info("Vision OCR on page %d/%d", i + 1, page_count)
+        all_text.append(_read_page(backend, model, buf.getvalue()))
 
     doc.close()
     text = "\n\n".join(all_text)

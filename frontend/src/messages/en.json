@@ -1594,6 +1594,8 @@
     "Pending": "Pending"
   },
   "GroupPage": {
+    "InviteOtherAddress": "This invitation was sent to a different email address. Sign in with the address it was sent to.",
+    "OwnerOnly": "Only an owner of the group can grant or change the Owner role, or remove an owner.",
     "Groups": "Groups",
     "LoadFailed": "Failed to load groups. The server may be unavailable.",
     "NoGroups": "No groups found.",
