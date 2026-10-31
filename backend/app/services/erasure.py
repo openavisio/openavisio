@@ -119,6 +119,9 @@ async def erase_patient(
     await db.execute(delete(DocumentShareLinkItem).where(DocumentShareLinkItem.patient_id == patient_id))
     await db.execute(delete(DocumentShareLinkHandout).where(DocumentShareLinkHandout.patient_id == patient_id))
     await db.execute(delete(DocumentShareLink).where(DocumentShareLink.patient_id == patient_id))
+    from app.models.proposal import NameGrouping, Proposal
+    await db.execute(delete(Proposal).where(Proposal.patient_id == patient_id))
+    await db.execute(delete(NameGrouping).where(NameGrouping.patient_id == patient_id))
     await db.execute(delete(DocumentReference).where(DocumentReference.patient_id == patient_id))
     # Crypto-shred (ADR-031): destroying the patient KEK renders every encrypted
     # blob / extracted_text / extraction_json unrecoverable, live and — as the

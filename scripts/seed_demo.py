@@ -9,15 +9,14 @@ Run from the repo root after setting env vars:
 Generate PDFs first if docs/demo/*.pdf are missing:
   python scripts/generate_demo_pdfs.py
 
-Generate real embeddings before deploying the demo (optional but recommended):
-  AI_SERVICE_URL=http://localhost:8001 python scripts/generate_demo_embeddings.py
+The chunk embeddings come from the running AI service at seed time (ADR 019);
+without it the demo seeds without them and the chat cannot search the letters.
 
 Idempotent — safe to run multiple times. Skips all creation if Lena Hoffmann already exists.
 """
 
 import asyncio
 import hashlib
-import json
 import os
 import secrets
 import sys
@@ -46,6 +45,7 @@ from app.core.encryption import encrypt_document  # noqa: E402
 from app.core.patient_keys import ensure_patient_kek  # noqa: E402
 from app.core.storage import get_storage  # noqa: E402
 from app.services.lab_codes import canonical_code, parse_reference_range  # noqa: E402
+from app.models.condition import ConditionSource  # noqa: E402
 from app.models import (  # noqa: E402
     CalendarEvent,
     CareNotes,
@@ -68,7 +68,6 @@ from app.models import (  # noqa: E402
 )
 
 DOCS_DIR = Path(__file__).parent.parent / "docs" / "demo"
-EMBEDDINGS_FILE = Path(__file__).parent / "demo_data" / "embeddings.json"
 
 # ──────────────────────────────────────────────────────────────
 # Demo data
@@ -83,7 +82,6 @@ CORRESPONDENTS = [
     "Pflegekasse bei der AOK Baden-Württemberg",
 ]
 
-# Chunk texts must stay in sync with generate_demo_embeddings.py.
 CHUNK_TEXTS: dict[str, list[str]] = {
     "01_gp_referral": [
         (
@@ -271,7 +269,6 @@ DOCUMENTS: list[dict] = [
     {
         "key": "01_gp_referral",
         "filename": "01_gp_referral.pdf",
-        "type": "referral",
         "issued_date": "2024-03-10",
         "correspondent": "Hausarztpraxis Dr. Schmidt",
         "description": "Hausärztliche Überweisung an die Neuropädiatrie bei fraglichen Anfallsereignissen",
@@ -328,11 +325,10 @@ DOCUMENTS: list[dict] = [
     {
         "key": "02_eeg_report",
         "filename": "02_eeg_report.pdf",
-        "type": "diagnostic-report",
         "issued_date": "2024-04-02",
         "correspondent": "St. Marien-Kinderklinik",
         "description": "EEG-Befund — pathologisch, vereinbar mit Absence-Epilepsie des Kindesalters",
-        "document_classification": "diagnostic-report",
+        "document_classification": "doctor_letter",
         "detected_provider": "St. Marien-Kinderklinik",
         "ocr_confidence": 0.99,
         "extraction_confidence": 0.96,
@@ -363,11 +359,10 @@ DOCUMENTS: list[dict] = [
     {
         "key": "04_blood_panel",
         "filename": "04_blood_panel.pdf",
-        "type": "laboratory-report",
         "issued_date": "2025-01-20",
         "correspondent": "Zentrallabor Nordbaden",
         "description": "Laborbefund — Valproat-Spiegel therapeutisch, Leberwerte unauffällig",
-        "document_classification": "laboratory-report",
+        "document_classification": "lab_report",
         "detected_provider": "Zentrallabor Nordbaden",
         "ocr_confidence": 0.99,
         "extraction_confidence": 0.97,
@@ -424,11 +419,10 @@ DOCUMENTS: list[dict] = [
     {
         "key": "05_school_health_check",
         "filename": "05_school_health_check.pdf",
-        "type": "health-assessment",
         "issued_date": "2025-09-08",
         "correspondent": "Schulärztlicher Dienst Grundschule Am Fluss",
         "description": "Jährliche Schulgesundheitsuntersuchung — Einschulung 1. Klasse",
-        "document_classification": "health-assessment",
+        "document_classification": "doctor_letter",
         "detected_provider": "Schulärztlicher Dienst Grundschule Am Fluss",
         "ocr_confidence": 0.97,
         "extraction_confidence": 0.93,
@@ -485,11 +479,10 @@ DOCUMENTS: list[dict] = [
     {
         "key": "06_hospital_discharge",
         "filename": "06_hospital_discharge.pdf",
-        "type": "discharge-summary",
         "issued_date": "2026-02-14",
         "correspondent": "St. Marien-Kinderklinik",
         "description": "Entlassungsbericht — Durchbruchanfall, Valproat-Dosis auf 400 mg/Tag erhöht",
-        "document_classification": "discharge-summary",
+        "document_classification": "discharge_summary",
         "detected_provider": "St. Marien-Kinderklinik",
         "ocr_confidence": 0.98,
         "extraction_confidence": 0.95,
@@ -543,7 +536,6 @@ DOCUMENTS: list[dict] = [
         # confirm flow can be walked from the amount back to the paper it came from.
         "key": "07_supplier_invoice",
         "filename": "07_supplier_invoice.pdf",
-        "type": "invoice",
         "issued_date": "2026-04-18",
         "correspondent": "Sanitätshaus Berger GmbH",
         "description": "Rechnung über Pflegehilfsmittel zum Verbrauch (April 2026)",
@@ -565,7 +557,6 @@ DOCUMENTS: list[dict] = [
         # from the decision date: 12 May + 3 days service + 1 month = Monday 15 June.
         "key": "08_pflegekasse_decision",
         "filename": "08_pflegekasse_decision.pdf",
-        "type": "insurance_decision",
         "issued_date": "2026-05-12",
         "correspondent": "Pflegekasse bei der AOK Baden-Württemberg",
         "description": "Bescheid über die Einstufung in einen Pflegegrad — Pflegegrad 2 statt beantragtem 3",
@@ -607,18 +598,21 @@ DOCUMENTS: list[dict] = [
 # Helpers
 # ──────────────────────────────────────────────────────────────
 
-def _load_embeddings() -> tuple[dict[str, list[list[float]]], bool]:
-    """Return (embeddings_dict, is_placeholder).
-
-    embeddings_dict maps doc_key → list of embedding vectors.
-    Returns empty dict and is_placeholder=True if the file is missing or is a placeholder.
-    """
-    if not EMBEDDINGS_FILE.exists():
-        return {}, True
-    data = json.loads(EMBEDDINGS_FILE.read_text())
-    if data.get("placeholder", True):
-        return {}, True
-    return data.get("embeddings", {}), False
+async def _embed_chunks() -> dict[str, list[list[float]]]:
+    """Vectors from the AI service the demo runs on, so they match its query embeddings (ADR 019)."""
+    import httpx
+    from app.core.config import settings
+    out = {}
+    try:
+        async with httpx.AsyncClient(timeout=120, headers=settings.ai_service_headers) as client:
+            for key, texts in CHUNK_TEXTS.items():
+                resp = await client.post(f"{settings.ai_service_url}/embed", json={"texts": texts})
+                resp.raise_for_status()
+                out[key] = resp.json()["embeddings"]
+    except Exception as e:
+        print(f"WARNING: no embeddings ({e}); the chat will not find anything in the letters.")
+        return {}
+    return out
 
 
 async def _get_or_create_org(db: AsyncSession) -> Organization:
@@ -693,13 +687,7 @@ async def main() -> None:
     engine = create_async_engine(database_url)
     Session = async_sessionmaker(engine, expire_on_commit=False)
 
-    embeddings, is_placeholder = _load_embeddings()
-    if is_placeholder:
-        print(
-            "WARNING: scripts/demo_data/embeddings.json is a placeholder.\n"
-            "  The AI Health Assistant will not work semantically on the demo instance.\n"
-            "  Run: AI_SERVICE_URL=http://... python scripts/generate_demo_embeddings.py\n"
-        )
+    embeddings = await _embed_chunks()
 
     # Verify PDFs exist before starting DB work
     missing = [d["filename"] for d in DOCUMENTS if not (DOCS_DIR / d["filename"]).exists()]
@@ -834,7 +822,6 @@ async def main() -> None:
                 patient_id=patient.id,
                 owner_id=admin.id,
                 status="current",
-                type=doc_def["type"],
                 description=doc_def["description"],
                 issued_date=DateType.fromisoformat(doc_def["issued_date"]),
                 file_name=doc_def["filename"],
@@ -874,6 +861,8 @@ async def main() -> None:
                     severity=c.get("severity"),
                     onset_date_time=c.get("onset_date_time"),
                     recorded_date=doc_def["issued_date"],
+                    # the citation the conditions page shows; without it the row reads "entered by hand"
+                    sources=[ConditionSource(document_reference_id=doc_id)],
                 ))
 
             for m in doc_def["medications"]:

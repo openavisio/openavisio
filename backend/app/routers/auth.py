@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.ratelimit import client_ip, enforce
 from app.core.security import (
@@ -15,7 +16,7 @@ from app.core.security import (
     normalize_recovery_code,
     verify_password,
 )
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.system import UserInvitation
 from app.deps import get_current_user
 from app.schemas.auth import (
@@ -40,7 +41,12 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
     # across many accounts never trips a per-account counter.
     ip = client_ip(request)
     await enforce(f"rl:login:ip:{ip}", limit=20, window_seconds=300)
-    await enforce(f"rl:login:email:{body.email.lower()}", limit=10, window_seconds=300)
+    # The public demo's visitors share one account whose password is printed on the
+    # login page: a budget per address or a lockout there only lets one visitor shut
+    # out all the others. The per-IP budget still holds; the admin keeps the lockout.
+    demo = bool(settings.demo_locked_upload_sha256)
+    if not demo:
+        await enforce(f"rl:login:email:{body.email.lower()}", limit=10, window_seconds=300)
 
     result = await db.execute(select(User).where(User.email == body.email, User.is_deleted == False))  # noqa: E712
     user = result.scalar_one_or_none()
@@ -48,8 +54,9 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
     now = datetime.now(UTC)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    lockable = not (demo and user.role != UserRole.admin)
 
-    if user.locked_until and user.locked_until > now:
+    if lockable and user.locked_until and user.locked_until > now:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account locked")
 
     # The lockout has been served: forget it. Without this the counter stays at
@@ -61,11 +68,12 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
         user.locked_until = None
 
     if not verify_password(body.password, user.hashed_password):
-        user.failed_login_attempts += 1
-        if user.failed_login_attempts >= 5:
-            from datetime import timedelta
-            user.locked_until = now + timedelta(minutes=15)
-        await db.commit()
+        if lockable:
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= 5:
+                from datetime import timedelta
+                user.locked_until = now + timedelta(minutes=15)
+            await db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     user.failed_login_attempts = 0
@@ -75,7 +83,6 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
 
     data = {"sub": str(user.id), "email": user.email, "role": user.role}
     from datetime import timedelta
-    from app.core.config import settings
     expire = now + timedelta(minutes=settings.access_token_expire_minutes)
     return AuthResponse(
         access_token=create_access_token(data),
@@ -100,7 +107,6 @@ async def refresh(request: Request, body: RefreshRequest, db: AsyncSession = Dep
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
     from datetime import timedelta
-    from app.core.config import settings
     now = datetime.now(UTC)
     data = {"sub": str(user.id), "email": user.email, "role": user.role}
     expire = now + timedelta(minutes=settings.access_token_expire_minutes)

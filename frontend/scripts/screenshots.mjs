@@ -77,7 +77,7 @@ async function walkToMonth(page, target) {
   const [ty, tm] = target.split("-").map(Number);
   const now = new Date();
   const steps = (now.getFullYear() - ty) * 12 + (now.getMonth() + 1 - tm);
-  const arrow = page.getByRole("button", { name: steps > 0 ? /previous|zurück/i : /next|weiter/i });
+  const arrow = page.getByRole("button", { name: steps > 0 ? /previous|vorheriger/i : /next|nächster/i });
   for (let i = 0; i < Math.abs(steps); i++) await arrow.click();
   if (steps !== 0) await page.waitForLoadState("networkidle");
 }
@@ -85,8 +85,10 @@ async function walkToMonth(page, target) {
 async function capture(browser, locale, theme) {
   const context = await browser.newContext({
     viewport: { width: WIDTH, height: HEIGHT },
-    // scale 1 on purpose: the committed set is exactly 1440x900, and doubling it
-    // would silently replace every file with one of a different size
+    // scale 1 by default: the committed set is exactly 1440x900, and doubling it
+    // would silently replace every file with one of a different size. Phone shots
+    // want SHOT_SCALE=2, a phone screen shows them at full size.
+    deviceScaleFactor: Number(process.env.SHOT_SCALE ?? 1),
     colorScheme: theme,
     locale: locale === "de" ? "de-DE" : "en-US",
   });
@@ -95,15 +97,23 @@ async function capture(browser, locale, theme) {
     { name: "NEXT_LOCALE", value: locale, domain: hostname, path: "/" },
   ]);
 
+  // the Umami notice would cover the bottom of every shot; objecting also keeps the run out of the stats
+  await context.addInitScript(() => {
+    localStorage.setItem("oa-privacy-acknowledged", "1");
+    localStorage.setItem("umami.disabled", "1");
+  });
+
   const page = await context.newPage();
   await page.goto(`${BASE_URL}/login`);
   await page.locator('input[type="email"]').fill(EMAIL);
   await page.locator('input[type="password"]').fill(PASSWORD);
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL(/\/patients$/, { timeout: 30_000 });
-
-  await page.getByRole("link", { name: new RegExp(PATIENT) }).first().click();
-  await page.waitForURL(/\/patients\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+  // a single patient opens straight away, several land on the list
+  await page.waitForURL(/\/patients(\/[0-9a-f-]{36})?$/, { timeout: 30_000 });
+  if (page.url().endsWith("/patients")) {
+    await page.getByRole("link", { name: new RegExp(PATIENT) }).first().click();
+    await page.waitForURL(/\/patients\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+  }
   const patientUrl = page.url();
 
   for (const view of SELECTED) {
@@ -134,7 +144,8 @@ async function capture(browser, locale, theme) {
 const browser = await chromium.launch();
 await mkdir(OUT, { recursive: true });
 console.log(`capturing ${BASE_URL} -> ${OUT}`);
-for (const locale of ["en", "de"]) {
+// SHOT_LOCALES=de for just one language; each locale and theme is one sign-in
+for (const locale of process.env.SHOT_LOCALES?.split(",") ?? ["en", "de"]) {
   for (const theme of ["light", "dark"]) {
     console.log(`${locale} / ${theme}`);
     await capture(browser, locale, theme);

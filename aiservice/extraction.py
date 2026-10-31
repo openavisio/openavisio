@@ -77,9 +77,18 @@ def _lang_line(language: str) -> str:
     return f"Respond in {lang_name}. Free-text values (summary, recommendations) must be written in {lang_name}. JSON keys must remain in English.\n\n"
 
 
+def _lang_reminder(language: str) -> str:
+    # The language line stands before several thousand words of English instructions;
+    # on Kassen letters, which add more of them, the summary came back in English every
+    # time (2 of 56 letters, 6 of 6 reruns). Repeated after the document, it held 6 of 6.
+    lang_name = _LANGUAGE_NAMES.get(language, "English")
+    return f"\n\nWrite every free-text value (summary, recommendations) in {lang_name}."
+
+
 def call_ollama_text(text: str, model: str, language: str = "en") -> dict:
     """Send extracted text to backend for structured extraction. Retries once on bad JSON."""
-    prompt = f"{_lang_line(language)}{EXTRACTION_PROMPT}\n\n--- DOCUMENT TEXT ---\n{text}\n--- END ---"
+    prompt = (f"{_lang_line(language)}{EXTRACTION_PROMPT}\n\n--- DOCUMENT TEXT ---\n{text}\n--- END ---"
+              f"{_lang_reminder(language)}")
     messages = [{"role": "user", "content": prompt}]
     nctx = get_num_ctx("extract")
     # think=False: a reasoning model otherwise spends the context window
@@ -98,7 +107,7 @@ def call_ollama_text(text: str, model: str, language: str = "en") -> dict:
 
 def call_ollama_vision(image_bytes: bytes, model: str, language: str = "en") -> dict:
     """Send an image to vision backend for structured extraction. Retries once on bad JSON."""
-    prompt = f"{_lang_line(language)}{EXTRACTION_PROMPT}"
+    prompt = f"{_lang_line(language)}{EXTRACTION_PROMPT}{_lang_reminder(language)}"
     messages = [{"role": "user", "content": prompt}]
     nctx = get_num_ctx("vision")
     response = get_vision_backend().chat(model, messages, images=[image_bytes], num_ctx=nctx)

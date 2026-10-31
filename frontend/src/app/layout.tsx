@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { ThemeColorMeta } from "@/components/providers/ThemeColorMeta";
 import { HighContrastProvider } from "@/components/providers/HighContrastProvider";
 import { UmamiNotice } from "@/components/UmamiNotice";
+import { InsecureNotice } from "@/components/InsecureNotice";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -86,6 +87,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <ThemeColorMeta />
           <HighContrastProvider>
             <NextIntlClientProvider messages={messages}>
+              <InsecureNotice />
               {children}
               {umamiUrl && umamiId && <UmamiNotice />}
             </NextIntlClientProvider>

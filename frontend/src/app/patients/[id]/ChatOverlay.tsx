@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { MessageCircle, Send, Siren, X } from "lucide-react";
+import { renderChatMarkdown } from "@/lib/chatMarkdown";
 type Message = { role: string; content: string; emergency_plan?: boolean };
 
 type ChatAnswer = {
@@ -144,11 +145,14 @@ export function ChatOverlay({ patientId, notice }: { patientId: string; notice: 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${
-                msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
+                msg.role === "user" ? "whitespace-pre-wrap bg-primary text-primary-foreground" : "bg-muted text-foreground"
               }`}
             >
-              {msg.role === "user" ? msg.content : withMonthLinks(msg.content, patientId, answer?.months ?? [])}
+              {/* the model writes Markdown; the user's own words stay as typed */}
+              {msg.role === "user"
+                ? msg.content
+                : renderChatMarkdown(msg.content, (s) => withMonthLinks(s, patientId, answer?.months ?? []))}
               {msg.emergency_plan && (
                 <Link href={`/patients/${patientId}/emergency-plan`} data-testid="chat-emergency-plan"
                   className="mt-2 flex w-fit items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 font-medium text-red-700 hover:bg-red-500/20 dark:text-red-300">

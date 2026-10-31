@@ -76,10 +76,9 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     appointments.length === 0 && recommendations.length === 0;
 
   // A meaningful heading, not the (often cryptic, scanned) file name.
-  const KNOWN_CLASS = new Set(["lab_report", "doctor_letter", "therapy_report", "prescription", "imaging_report", "discharge_summary"]);
   const title =
     doc.type ||
-    (KNOWN_CLASS.has(doc.document_classification) ? t(`class_${doc.document_classification}`) : null) ||
+    (t.has(`class_${doc.document_classification}`) ? t(`class_${doc.document_classification}`) : null) ||
     t("document");
 
   return (

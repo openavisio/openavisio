@@ -23,6 +23,7 @@ from app.models.chat import ChatMessage, DocumentChunk
 from app.models.audit import AuditLog
 from app.models.system import SystemSetting, UserInvitation
 from app.models.recommendation import Recommendation
+from app.models.proposal import NameGrouping, Proposal
 from app.models.passkey import PasskeyCredential
 from app.models.log_entry import LogEntry
 from app.models.task_run import TaskRun
@@ -76,6 +77,8 @@ __all__ = [
     "SystemSetting",
     "UserInvitation",
     "Recommendation",
+    "Proposal",
+    "NameGrouping",
     "Correspondent",
     "PasskeyCredential",
     "LogEntry",

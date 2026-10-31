@@ -116,6 +116,10 @@ test("login, open a patient, and keep navigating", async ({ page, request }) => 
   await expect(page.getByText(/ein paar Minuten|a few minutes/)).toBeVisible({ timeout: 15_000 });
   await page.getByRole("link", { name: /Fortschritt in den Dokumenten|See progress in Documents/ }).click();
   await page.waitForURL(/\/documents$/);
+  // the list has three views; the table is the one with columns (ADR 058)
+  await page.getByRole("button", { name: /^(Tabelle|Table)$/ }).click();
+  await expect(page.getByRole("columnheader", { name: /Absender|Correspondent/ })).toBeVisible();
+  await page.getByRole("button", { name: /^(Karten|Cards)$/ }).click();
   await page.goBack();
 
   // The chat, all the way through (#201). Opening the overlay proves nothing:

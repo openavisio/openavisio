@@ -83,11 +83,23 @@ _Avoid_: suggestion, finding, action item
 A conversational interface that answers questions about a Patient's health records using AI. Searches across all clinical data and Documents to generate answers.
 _Avoid_: chat, RAG chat, AI assistant, health bot
 
+**Document Search**:
+Finding a Patient's Documents by a word in their text or metadata. It finds, it does not answer; answering is the AI Health Assistant. It covers Documents only, not diary entries and not Intake Forms. UI term in German: "Suche".
+_Avoid_: full-text search, semantic search, document chat
+
 ### Clinical data
 
 **Document**:
 An uploaded medical file (PDF, image, scan). The source of truth from which clinical data is extracted. Processed through the AI pipeline to produce structured clinical data. Key metadata: `issued_date` (the date printed on the document, populated by the Processing Pipeline, overridable by the User) and `correspondent` (the issuing entity — see Correspondent).
 _Avoid_: DocumentReference, record, file, attachment
+
+**Proposal**:
+Something the Processing Pipeline read out of a Document that no User has decided on yet: a Diagnosis, a Medication, a Measurement or Lab Result, an Event, or the Document's own date, kind and Correspondent. A Proposal is not part of the record. A User accepts, changes or rejects it, and a Document counts as verified once none of its Proposals is open.
+_Avoid_: suggestion, extraction result, candidate
+
+**Proposal Review**:
+The place where a User decides on the open Proposals of all of a Patient's Documents at once, sorted by content rather than by Document, so that one Diagnosis named in twelve letters is one decision. Names that denote the same thing are proposed as one group, and the User confirms or splits it. Works the same for one new letter as for years of them. UI term in German: "Offene Vorschläge".
+_Avoid_: bulk verify, batch review, Sammelprüfung
 
 **Correspondent**:
 The named entity that issued or sent a Document — a hospital, clinic, lab, GP practice, or insurer. It is also who a Carer Update comes from, such as a Kita, a school or a respite carer. Correspondents are reusable across Documents and Carer Updates within an Organization (not free-text per entry), so a Kita's development report and its day-to-day updates sit under the same name. A Correspondent is only a name, with no kind. A Document may have at most one Correspondent; a Carer Update has exactly one.

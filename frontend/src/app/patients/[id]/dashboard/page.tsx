@@ -23,13 +23,20 @@ function statusVariant(status: string): BadgeVariant {
   return map[status?.toLowerCase()] ?? "muted"
 }
 
+// the API sends FHIR codes; show the same words as the conditions and medications pages
+const MED_STATUS: Record<string, string> = { active: "Active", stopped: "Stopped", "on-hold": "OnHold", completed: "Completed" }
+
 export default async function DashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [patient, dashboard, tp] = await Promise.all([
+  const [patient, dashboard, tp, tc, tm] = await Promise.all([
     getPatient(id).catch(() => null),
     getDashboard(id).catch(() => null),
     getTranslations("Patient"),
+    getTranslations("Conditions"),
+    getTranslations("Med"),
   ])
+  const cond = (kind: string, raw: string) => (tc.has(`${kind}_${raw}`) ? tc(`${kind}_${raw}`) : raw)
+  const med = (raw: string) => (MED_STATUS[raw] ? tm(MED_STATUS[raw]) : raw)
 
   return (
     <AppLayout>
@@ -75,9 +82,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {c.severity && (
-                        <Badge variant="outline" className="text-xs">{c.severity}</Badge>
+                        <Badge variant="outline" className="text-xs capitalize">{cond("severity", c.severity)}</Badge>
                       )}
-                      <Badge variant={statusVariant(c.status)}>{c.status}</Badge>
+                      <Badge variant={statusVariant(c.status)} className="capitalize">{cond("status", c.status)}</Badge>
                     </div>
                   </div>
                 ))}
@@ -95,7 +102,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
                 {dashboard.medication_timeline.map((m: any) => (
                   <div key={m.id} className="flex items-center justify-between gap-4 py-1">
                     <p className="text-sm font-medium truncate">{m.display}</p>
-                    <Badge variant={statusVariant(m.status)} className="shrink-0">{m.status}</Badge>
+                    <Badge variant={statusVariant(m.status)} className="shrink-0">{med(m.status)}</Badge>
                   </div>
                 ))}
               </CardContent>

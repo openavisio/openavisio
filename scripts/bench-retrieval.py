@@ -25,6 +25,21 @@ Both files are reused when they exist, which is what makes the second run compar
 They contain patient text: keep them where the documents already live and delete them
 afterwards.
 
+`--probes` measures the chat's cutoff instead (ADR 057): which distance separates
+the questions that have an answer in the corpus from those that do not. Recall says
+nothing about this, a model can rank as well as another and still sit closer to
+everything. A probe file is written by hand for the operator's own documents and
+reused for every model, the output holds distances and nothing else, so it can be
+posted in an issue:
+
+    [{"q": "Wann war die letzte Blutabnahme?", "match": ["blutbild"]},
+     {"q": "Hat sie Diabetes?", "match": []},
+     {"q": "Wie mache ich eine Lasagne?", "match": []}]
+
+`match` says which chunks count as the answer: those containing any of its words. An
+empty `match` is a question the corpus has no answer to. Include medical ones the
+documents do not mention; unrelated ones alone make every model look separable.
+
 Measured this way on 2026-07-28, 60 questions over 731 chunks from 176 documents:
 qwen3-embedding:4b recall@10 0.767, Qwen3-VL-Embedding-8B (truncated to 768d) 0.783,
 bge-m3 0.733, paraphrase-multilingual-mpnet-base-v2 0.217.
@@ -82,6 +97,29 @@ async def main(limit):
 asyncio.run(main(int(sys.argv[1])))
 """
 
+# The production chunks themselves, documents only (not diary entries): a cutoff is
+# only valid for the chunk size it was measured on (ADR 057).
+_FETCH_CHUNKS = r"""
+import asyncio, json
+from sqlalchemy import select
+from app.core.database import AsyncSessionLocal
+from app.core.encryption import decrypt_str
+from app.core.patient_keys import get_patient_kek
+from app.models.chat import DocumentChunk
+
+async def main():
+    async with AsyncSessionLocal() as db:
+        rows = (await db.execute(select(DocumentChunk).where(
+            DocumentChunk.document_reference_id.is_not(None),
+            DocumentChunk.is_deleted == False))).scalars().all()  # noqa: E712
+        keks = {}
+        for c in rows:
+            keks.setdefault(c.patient_id, await get_patient_kek(db, c.patient_id))
+        print(json.dumps([decrypt_str(c.content, keks[c.patient_id]) for c in rows]))
+
+asyncio.run(main())
+"""
+
 
 def post(url: str, payload: dict, timeout: int = 600) -> dict:
     token = os.environ.get("AISERVICE_TOKEN", "").strip()
@@ -101,13 +139,17 @@ def chunk(text: str) -> list[str]:
     return [c for c in out if len(c.strip()) > 200]
 
 
+def from_backend(compose_dir: Path, *argv: str) -> list[str]:
+    proc = subprocess.run(["docker", "compose", "exec", "-T", "backend", "/app/.venv/bin/python", "-c", *argv],
+                          cwd=compose_dir, capture_output=True, text=True, check=True)
+    return json.loads(proc.stdout.strip() or "[]")
+
+
 def build_corpus(args) -> list[str]:
+    if args.probes and args.from_db:
+        return from_backend(args.compose_dir, _FETCH_CHUNKS)
     if args.from_db:
-        proc = subprocess.run(
-            ["docker", "compose", "exec", "-T", "backend",
-             "/app/.venv/bin/python", "-c", _FETCH, str(args.limit)],
-            cwd=args.compose_dir, capture_output=True, text=True, check=True)
-        texts = json.loads(proc.stdout.strip() or "[]")
+        texts = from_backend(args.compose_dir, _FETCH, str(args.limit))
     else:
         texts = [p.read_text(errors="replace") for p in sorted(Path(args.texts).glob("*.txt"))]
     return [c for t in texts for c in chunk(t)]
@@ -147,6 +189,33 @@ def normalise(v: list[float]) -> list[float]:
     return [x / n for x in v]
 
 
+def calibrate(corpus: list[str], probes: list[dict], args) -> dict:
+    """Nearest gold chunk for answerable probes, nearest chunk at all for the others.
+    The threshold is the strictest one that lets no unanswerable
+    probe through; `kept` says how many answerable ones still pass it."""
+    folded = [" ".join(c.casefold().split()) for c in corpus]
+    C = embed(args.url, corpus, False, args.language)
+    V = embed(args.url, [p["q"] for p in probes], True, args.language)
+    on, off, no_gold = [], [], 0
+    for v, p in zip(V, probes):
+        dist = [1 - sum(a * b for a, b in zip(v, c)) for c in C]
+        gold = [i for i, t in enumerate(folded) if any(m.casefold() in t for m in p["match"])]
+        if not p["match"]:
+            off.append(min(dist))
+        elif gold:
+            on.append(min(dist[i] for i in gold))
+        else:
+            no_gold += 1
+    out = {"url": args.url, "chunks": len(corpus), "answerable": len(on),
+           "unanswerable": len(off), "no_gold_chunk": no_gold}
+    if on and off:
+        cut = min(off)
+        out |= {"answerable_range": [round(min(on), 3), round(max(on), 3)],
+                "unanswerable_range": [round(cut, 3), round(max(off), 3)],
+                "threshold": round(cut, 3), "kept": sum(d < cut for d in on)}
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", default="http://localhost:8000", help="aiservice whose embed model is measured")
@@ -161,6 +230,7 @@ def main() -> int:
     ap.add_argument("--gen-model", default="qwen3.6:27b-mtp-q4_K_M")
     ap.add_argument("--language", default="de")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--probes", type=Path, help="measure the chat cutoff from this probe file (ADR 057)")
     args = ap.parse_args()
 
     if args.corpus.exists():
@@ -172,6 +242,10 @@ def main() -> int:
         corpus = build_corpus(args)
         args.corpus.write_text(json.dumps(corpus, ensure_ascii=False))
         print(f"{len(corpus)} Chunks -> {args.corpus}")
+
+    if args.probes:
+        print(json.dumps(calibrate(corpus, json.loads(args.probes.read_text()), args), indent=2))
+        return 0
 
     if args.questions.exists():
         questions = json.loads(args.questions.read_text())

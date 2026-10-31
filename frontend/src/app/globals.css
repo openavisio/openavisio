@@ -260,18 +260,25 @@
     min-width: 1.25rem;
     min-height: 1.25rem;
   }
-  /* icon-only controls get a 44x44 hit area without per-screen edits */
-  button:has(> svg:only-child),
-  a:has(> svg:only-child),
-  [role="button"]:has(> svg:only-child) {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
   /* remove the grey tap flash for a more native feel */
   a, button, [role="button"] {
     -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Icon-only controls get a 44x44 hit area on phones without per-screen edits (ADR 030).
+   In the base layer, not beside the input rule above: unlayered, its display beat every
+   utility, so an icon button marked "hidden" still showed on phones. */
+@layer base {
+  @media (pointer: coarse) {
+    button:has(> svg:only-child),
+    a:has(> svg:only-child),
+    [role="button"]:has(> svg:only-child) {
+      min-width: 2.75rem;
+      min-height: 2.75rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
   }
 }

@@ -39,6 +39,8 @@ class DocumentDto(OrmBase):
     correspondent: CorrespondentDto | None = None
     insights: DocumentInsightsDto | None = None
     is_favorite: bool = False
+    snippet: list[str] | None = None  # [before, hit, after] (ADR 057)
+    open_diagnoses: int = 0  # undecided diagnoses of an unverified letter (ADR 058)
     created_at: datetime
 
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Maximize2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -15,8 +15,12 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
   const tc = useTranslations("Common");
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  // Chrome on Android cannot show a PDF inline and its fallback cannot open a blob URL
+  const inline = useSyncExternalStore(never, () => navigator.pdfViewerEnabled !== false, () => true);
+  const pages = !inline && contentType === "application/pdf";
 
   useEffect(() => {
+    if (pages) return;
     let url: string | null = null;
     fetch(`/api/documents/${docId}/file`)
       .then((res) => {
@@ -31,7 +35,9 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
     return () => {
       if (url) URL.revokeObjectURL(url);
     };
-  }, [docId]);
+  }, [docId, pages]);
+
+  if (pages) return <PdfPages docId={docId} className={className} />;
 
   if (error) {
     return (
@@ -75,6 +81,46 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
       >
         <Maximize2 className="h-4 w-4" />
       </button>
+    </div>
+  );
+}
+
+const never = () => () => {};
+
+function PdfPages({ docId, className }: { docId: string; className: string }) {
+  const t = useTranslations("DocDetail");
+  const [count, setCount] = useState<number | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/documents/${docId}/pages/0`)
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        setCount(Number(res.headers.get("X-Page-Count")) || 1);
+      })
+      .catch(() => setError(true));
+  }, [docId]);
+
+  if (error) {
+    return (
+      <div className={`flex items-center justify-center bg-muted rounded-xl text-sm text-muted-foreground ${className}`}>
+        {t("loadError")}
+      </div>
+    );
+  }
+  // pinch zoom is the browser's own; each page is an image the width of the screen
+  return (
+    <div className={`space-y-2 overflow-y-auto rounded-xl border bg-muted p-2 ${className}`}>
+      {Array.from({ length: count ?? 1 }, (_, i) => (
+        // eslint-disable-next-line @next/next/no-img-element -- an authenticated route, not a static asset
+        <img
+          key={i}
+          src={`/api/documents/${docId}/pages/${i}`}
+          alt={t("page", { n: i + 1 })}
+          loading={i === 0 ? "eager" : "lazy"}
+          className="w-full rounded bg-white shadow-sm"
+        />
+      ))}
     </div>
   );
 }

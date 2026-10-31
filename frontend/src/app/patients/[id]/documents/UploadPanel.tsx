@@ -18,6 +18,9 @@ import { retryDocument } from "@/lib/api";
 const CONCURRENCY = 4;
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png";
 
+// a local key only: crypto.randomUUID is missing over plain http
+let nextId = 0;
+
 type Status = "pending" | "uploading" | "done" | "error";
 
 type FileEntry = {
@@ -75,7 +78,7 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
 
   function addFiles(files: FileList | File[]) {
     const newEntries: FileEntry[] = Array.from(files).map((file) => ({
-      id: crypto.randomUUID(),
+      id: String(nextId++),
       file,
       status: "pending",
     }));

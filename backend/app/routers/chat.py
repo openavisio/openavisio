@@ -154,6 +154,21 @@ def _is_emergency(question: str, plan_medications) -> bool:
                 or any(m.lower() in q for m in plan_medications if m))
 
 
+EMERGENCY_THRESHOLD = 0.2  # IONOS: history <= 0.11, emergencies >= 0.26 (ADR 059)
+
+
+async def _asks_for_emergency(question: str, plan_medications, model: str | None) -> bool:
+    """The chat model's P(ja), the keywords only when it gives none (ADR 059)."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=15, headers=settings.ai_service_headers) as client:
+            resp = await client.post(f"{settings.ai_service_url}/emergency", json={"question": question, "model": model})
+            p = resp.json().get("p") if resp.status_code == 200 else None
+    except Exception:
+        p = None
+    return p >= EMERGENCY_THRESHOLD if isinstance(p, (int, float)) else _is_emergency(question, plan_medications)
+
+
 def _is_pointer(content: str) -> bool:
     return any(content == L["emergency"] for L in _LABELS.values())
 
@@ -419,7 +434,8 @@ async def chat(
     plan_meds = (await db.execute(
         select(MedicationStatement.medication_display).where(MedicationStatement.id.in_(plan_med_ids))
     )).scalars().all() if plan_med_ids else []
-    if _is_emergency(body.question, plan_meds):
+    model = await _chat_model(db)
+    if await _asks_for_emergency(body.question, plan_meds, model):
         if not demo:
             await _store(patient_id, user.id, body.question, _LABELS[lang]["emergency"], db)
         return ChatResponse(answer=_LABELS[lang]["emergency"], history=await _get_history(patient_id, user.id, db),
@@ -454,7 +470,7 @@ async def chat(
                 # records (#200).
                 "context_chunks": chunks + records,
                 "history": [{"role": m.role, "content": m.content} for m in history],
-                "model": await _chat_model(db),
+                "model": model,
             })
             busy = resp.status_code == 429  # the provider's shared rate limit (#374)
             if resp.status_code == 200:

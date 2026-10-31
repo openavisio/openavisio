@@ -49,6 +49,9 @@ def _annotate_model(name: str, annotations: list[dict]) -> dict:
 
 
 _CHAT_SYSTEM_PROMPT = _load_prompt("chat_system.md")
+# German on purpose: the threshold was measured with exactly this text (ADR 059)
+_EMERGENCY_PROMPT = _load_prompt("emergency.md")
+_GROUP_PROMPTS = {"diagnosis": _load_prompt("group_diagnoses.md"), "correspondent": _load_prompt("group_correspondents.md")}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -616,6 +619,87 @@ async def chat_endpoint(request: ChatRequest):
     except Exception as e:
         logger.exception("Chat failed")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class EmergencyRequest(BaseModel):
+    question: str
+    model: Optional[str] = None
+
+
+@app.post("/emergency")
+async def emergency_endpoint(request: EmergencyRequest):
+    """P(ja) that the question asks what to do in an emergency (ADR 059); null without logprobs."""
+    messages = [{"role": "system", "content": _EMERGENCY_PROMPT}, {"role": "user", "content": request.question}]
+    try:
+        p = await asyncio.to_thread(get_backend().yes_probability, request.model or get_model("chat"), messages)
+    except RateLimitError:
+        raise
+    except Exception as e:
+        logger.exception("Emergency check failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"p": p}
+
+
+class GroupRequest(BaseModel):
+    names: list[str]
+    record: list[str] = []
+    model: Optional[str] = None
+    kind: str = "diagnosis"  # or "correspondent"
+
+
+def _clean_groups(raw: str, names: list[str]) -> list[list[str]]:
+    """Every name exactly once: invented names dropped, forgotten ones alone (ADR 058)."""
+    start, end = raw.find("{"), raw.rfind("}")
+    groups = json.loads(raw[start:end + 1])["groups"] if start >= 0 else []
+    known, seen, out = set(names), set(), []
+    for g in groups:
+        g = [n for n in dict.fromkeys(g) if isinstance(n, str) and n in known and n not in seen]
+        seen.update(g)
+        if g:
+            out.append(g)
+    return out + [[n] for n in dict.fromkeys(names) if n not in seen]
+
+
+@app.post("/group")
+async def group_endpoint(request: GroupRequest):
+    """Names that denote the same condition or Correspondent, for the Proposal Review (ADR 058)."""
+    if request.kind not in _GROUP_PROMPTS:
+        raise HTTPException(status_code=422, detail=f"unknown kind {request.kind}")
+    lines = [f"- {n} [record]" for n in request.record] + [f"- {n}" for n in request.names]
+    messages = [{"role": "system", "content": _GROUP_PROMPTS[request.kind]}, {"role": "user", "content": "\n".join(lines)}]
+    try:
+        raw = await asyncio.to_thread(get_backend().chat, request.model or get_model("chat"), messages,
+                                      images=None, num_ctx=get_num_ctx("chat"), think=False)
+        return {"groups": _clean_groups(raw, request.record + request.names)}
+    except RateLimitError:
+        raise
+    except Exception as e:
+        logger.exception("Grouping failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/render-page")
+async def render_page_endpoint(page: int = 0, width: int = 1200, file: UploadFile = File(...)):
+    """One PDF page as PNG, for browsers that cannot show a PDF inline (phones)."""
+    import io
+    import pypdfium2 as pdfium
+    from fastapi.responses import Response
+    data = await file.read()
+    width = max(200, min(width, 2000))
+
+    def render() -> tuple[bytes, int]:
+        pdf = pdfium.PdfDocument(data)
+        p = pdf[page]
+        buf = io.BytesIO()
+        p.render(scale=width / p.get_width()).to_pil().save(buf, "PNG", optimize=True)
+        return buf.getvalue(), len(pdf)
+    try:
+        png, count = await asyncio.to_thread(render)
+    except IndexError:
+        raise HTTPException(status_code=404, detail="no such page")
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return Response(png, media_type="image/png", headers={"X-Page-Count": str(count)})
 
 
 async def _iter_in_thread(sync_gen):

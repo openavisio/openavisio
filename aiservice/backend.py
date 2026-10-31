@@ -127,6 +127,22 @@ def _check_fit(response, num_ctx: int | None) -> None:
         raise ContextOverflow(f"prompt filled the whole context window ({used} of {num_ctx} tokens) and was truncated")
 
 
+def p_yes(top: list[tuple[str, float]]) -> float | None:
+    """P(ja) from the first token's alternatives, ja against nein (ADR 059).
+
+    Qwen emits "nein" as "ne" + "in", so any prefix of "nein" counts as no.
+    """
+    import math
+    p = {"ja": 0.0, "nein": 0.0}
+    for token, logprob in top:
+        w = token.strip().lower()
+        k = "ja" if w in ("ja", "j") else "nein" if w and "nein".startswith(w) else None
+        if k:
+            p[k] += math.exp(logprob)
+    total = p["ja"] + p["nein"]
+    return p["ja"] / total if total else None
+
+
 class InferenceBackend(ABC):
     """Abstract base class for inference backends."""
 
@@ -153,6 +169,10 @@ class InferenceBackend(ABC):
                     think: bool | None = None) -> Generator[str, None, None]:
         """Stream chat completion token by token. Yields response text chunks."""
         ...
+
+    def yes_probability(self, model: str, messages: list[dict]) -> float | None:
+        """P(ja) of a one-token ja/nein answer, None when the server gives no logprobs."""
+        return None
 
     @abstractmethod
     def embed(self, model: str, texts: list[str], dimensions: int | None = None) -> list[list[float]]:
@@ -276,6 +296,12 @@ class OllamaBackend(InferenceBackend):
                     _check_fit(chunk, num_ctx)
                 except ContextOverflow as e:
                     logger.warning("Chat %s", e)
+
+    def yes_probability(self, model: str, messages: list[dict]) -> float | None:
+        _, client = self._get_client()
+        r = client.chat(model=model, messages=messages, think=False, logprobs=True, top_logprobs=10,
+                        options={**_DETERMINISTIC, "num_predict": 1})
+        return p_yes([(t.token, t.logprob) for t in r.logprobs[0].top_logprobs]) if r.logprobs else None
 
     def embed(self, model: str, texts: list[str], dimensions: int | None = None) -> list[list[float]]:
         url, client = self._get_client()
@@ -449,6 +475,12 @@ class VllmBackend(InferenceBackend):
         for chunk in stream:
             if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
+
+    def yes_probability(self, model: str, messages: list[dict]) -> float | None:
+        _, client = self._get_client()
+        r = self._create(client, model, messages, dict(self._NO_THINK), max_tokens=1, logprobs=True, top_logprobs=10)
+        lp = r.choices[0].logprobs
+        return p_yes([(t.token, t.logprob) for t in lp.content[0].top_logprobs]) if lp and lp.content else None
 
     @staticmethod
     def _truncate(vectors: list[list[float]], dimensions: int) -> list[list[float]]:

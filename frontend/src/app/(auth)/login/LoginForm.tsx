@@ -46,7 +46,11 @@ export function LoginForm({ demoMode = false }: { demoMode?: boolean }) {
         // Only CredentialsSignin means the password was wrong. Everything else
         // is our side failing, and calling that a bad password sent the tester
         // hunting for a typo that was not there.
-        setError(result.error === "CredentialsSignin" ? t("InvalidCredentials") : t("SignInFailed"));
+        setError(
+          result.code === "rate_limited" ? t("TooManyAttempts")
+          : result.error === "CredentialsSignin" ? t("InvalidCredentials")
+          : t("SignInFailed"),
+        );
       } else {
         router.push(target);
       }

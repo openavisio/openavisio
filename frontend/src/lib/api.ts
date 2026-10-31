@@ -1,12 +1,14 @@
 "use server";
 
 import { auth } from "@/auth";
+import { forwardedFor } from "@/lib/forwarded";
 import type { Einstufung, EinstufungInput, Scale } from "@/lib/einstufung";
 import type { EmergencyPlan, EmergencyPlanInput } from "@/lib/emergencyPlan";
 import type { CareNotes } from "@/lib/careNotes";
 import type { CarerUpdate, CarerUpdateInput } from "@/lib/carerUpdates";
 import type { Handout } from "@/lib/handout";
 import type { Aging, HistoryFact, IntakeForm, IntakeFormDetail } from "@/lib/intake";
+import type { CorrespondentReview, DiagnosisReview } from "@/lib/proposals";
 
 const API_URL = process.env.API_URL || "http://localhost:8000";
 
@@ -18,6 +20,7 @@ async function getToken(): Promise<string | null> {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getToken();
   const headers: Record<string, string> = {
+    ...(await forwardedFor()),
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
@@ -37,7 +40,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 // Like request() but returns the raw body as text — for CSV and other non-JSON downloads.
 async function requestText(path: string): Promise<string> {
   const token = await getToken();
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = await forwardedFor();
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${API_URL}${path}`, { cache: "no-store", headers });
   if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
@@ -46,7 +49,7 @@ async function requestText(path: string): Promise<string> {
 
 async function requestBase64(path: string, body: unknown): Promise<string> {
   const token = await getToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = { ...(await forwardedFor()), "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${API_URL}${path}`, { method: "POST", cache: "no-store", headers, body: JSON.stringify(body) });
   if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
@@ -96,6 +99,24 @@ export const verifyDocument = async (id: string, data: any) => api.post<any>(`/a
 export const updateDocument = async (id: string, data: { issued_date?: string | null; description?: string | null; type?: string | null; correspondent_id?: string | null }) => api.patch<any>(`/api/documents/${id}`, data);
 export const deleteDocument = async (id: string) => api.delete<void>(`/api/documents/${id}`);
 export const retryDocument = async (id: string) => api.post<any>(`/api/documents/${id}/retry`);
+
+// What each letter adds over the earlier ones (ADR 058)
+export const getDocumentNovelty = async (patientId: string) =>
+  api.get<Record<string, import("@/app/patients/[id]/documents/DocumentsExplorer").Novelty>>(`/api/patients/${patientId}/documents/novelty`);
+
+// Proposal Review (ADR 058)
+export const getDiagnosisProposals = async (patientId: string) =>
+  api.get<DiagnosisReview>(`/api/patients/${patientId}/proposals/diagnoses`);
+export const getCorrespondentProposals = async (patientId: string) =>
+  api.get<CorrespondentReview>(`/api/patients/${patientId}/proposals/correspondents`);
+export const decideCorrespondentProposals = async (
+  patientId: string,
+  data: { document_ids: string[]; name: string; correspondent_id?: string | null },
+) => api.post<void>(`/api/patients/${patientId}/proposals/correspondents/decide`, data);
+export const decideDiagnosisProposals = async (
+  patientId: string,
+  data: { proposal_ids: string[]; accept: boolean; name?: string; condition_id?: string | null },
+) => api.post<void>(`/api/patients/${patientId}/proposals/diagnoses/decide`, data);
 export const addDocumentFavorite = async (id: string) => api.put<void>(`/api/documents/${id}/favorite`);
 export const removeDocumentFavorite = async (id: string) => api.delete<void>(`/api/documents/${id}/favorite`);
 

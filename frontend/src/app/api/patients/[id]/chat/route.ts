@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { forwardedFor } from "@/lib/forwarded";
 
 const API_URL = process.env.API_URL || "http://localhost:8000";
 
@@ -13,7 +14,7 @@ async function proxy(id: string, init?: RequestInit) {
 
   const res = await fetch(`${API_URL}/api/patients/${id}/chat${init ? "" : "/history"}`, {
     ...init,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: { ...(await forwardedFor()), Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     cache: "no-store",
   });
   return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });

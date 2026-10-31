@@ -22,6 +22,9 @@
     handle /api/documents/*/file {
         reverse_proxy {args[0]}-frontend:3000
     }
+    handle /api/documents/*/pages/* {
+        reverse_proxy {args[0]}-frontend:3000
+    }
     handle /api/shares/*/file {
         reverse_proxy {args[0]}-frontend:3000
     }

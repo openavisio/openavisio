@@ -1,3 +1,11 @@
+{
+    servers {
+        # A proxy in front (NPM) on a private address: take the visitor from its
+        # X-Forwarded-For, or every visitor shares the proxy's IP and its rate limits.
+        trusted_proxies static private_ranges
+    }
+}
+
 http://{$DOMAIN} {
     # /api/* goes to the backend, so every Next route handler needs its own line here first.
     handle /api/auth/* {
@@ -7,6 +15,9 @@ http://{$DOMAIN} {
         reverse_proxy frontend:3000
     }
     handle /api/documents/*/file {
+        reverse_proxy frontend:3000
+    }
+    handle /api/documents/*/pages/* {
         reverse_proxy frontend:3000
     }
     handle /api/shares/*/file {

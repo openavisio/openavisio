@@ -1,7 +1,9 @@
 import hashlib
+import json
+import re
 import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
@@ -10,7 +12,6 @@ from app.core.encryption import decrypt_document, decrypt_str, encrypt_document
 from app.core.patient_keys import ensure_patient_kek, get_patient_kek
 from app.core.storage import get_storage
 from app.deps import get_current_user
-from app.models.correspondent import Correspondent
 from app.models.document import DocumentReference
 from app.models.favorite import DocumentFavorite
 from app.models.user import User
@@ -22,6 +23,39 @@ router = APIRouter()
 def _norm_condition(name: str) -> str:
     """Same normalisation as lab parameter names: case, whitespace, trailing colon."""
     return " ".join((name or "").strip().lower().rstrip(":.").split())
+
+
+def _norm_dosage(text: str) -> str:
+    """"5mg 0-0-1" and "5 mg 0 - 0 - 1" are one dose (ADR 058)."""
+    t = re.sub(r"\s*([-:/(),])\s*", r"\1", _norm_condition(text))
+    return re.sub(r"(\d)\s+(?=[a-zµ%])", r"\1", t)
+
+
+def _fold(text: str) -> tuple[str, str, list[int]]:
+    """Text as Document Search compares it (ADR 057): hyphenation at line ends
+    removed, whitespace collapsed, then casefolded so "ß" matches "ss". Returns
+    the unfolded text, the folded one, and per folded character its index in the
+    unfolded text, for the snippet."""
+    plain = " ".join(re.sub(r"-[ \t]*\n\s*", "", text).split())
+    folded, at = [], []
+    for i, ch in enumerate(plain):
+        f = ch.casefold()
+        folded.append(f)
+        at += [i] * len(f)
+    return plain, "".join(folded), at
+
+
+def _snippet(text: str | None, term: str, width: int = 80) -> list[str] | None:
+    """[before, hit, after] around the first occurrence of term, or None."""
+    if not text:
+        return None
+    plain, folded, at = _fold(text)
+    i = folded.find(term)
+    if i < 0:
+        return None
+    start, end = at[i], at[i + len(term) - 1] + 1
+    lo, hi = max(0, start - width), min(len(plain), end + width)
+    return [("…" if lo else "") + plain[lo:start], plain[start:end], plain[end:hi] + ("…" if hi < len(plain) else "")]
 
 
 async def _favorite_doc_ids(db: AsyncSession, user_id: uuid.UUID) -> set[uuid.UUID]:
@@ -64,19 +98,6 @@ async def list_documents(
         q = q.where(DocumentReference.type == doc_type)
     if doc_status:
         q = q.where(DocumentReference.processing_status == doc_status)
-    if search:
-        # ponytail: ILIKE substring match, no ranking; pg_trgm/tsvector if it gets slow
-        like = f"%{search}%"
-        # extracted_text is ciphertext at rest (ADR-031) — body-text search is
-        # embeddings-only (semantic) now; this matches metadata fields only.
-        q = q.outerjoin(Correspondent, DocumentReference.correspondent_id == Correspondent.id).where(
-            or_(
-                DocumentReference.file_name.ilike(like),
-                DocumentReference.description.ilike(like),
-                DocumentReference.type.ilike(like),
-                Correspondent.name.ilike(like),
-            )
-        )
     result = await db.execute(q.order_by(DocumentReference.created_at.desc()))
     docs = result.scalars().all()
 
@@ -90,9 +111,27 @@ async def list_documents(
     except KeyError:
         kek = None
     favs = await _favorite_doc_ids(db, user.id)
+    # ADR 057: the text is ciphertext at rest, so the search decrypts it here
+    # ponytail: decrypts every document per search, a cache if thousands per Patient
+    term = _fold(search)[1] if search else ""
+    # a letter whose diagnoses became Proposals counts the open ones; before that, all it names
+    from app.models.proposal import Proposal
+    proposal_rows = (await db.execute(select(Proposal.document_reference_id, Proposal.status).where(
+        Proposal.patient_id == patient_id, Proposal.kind == "diagnosis"))).all()
+    open_by_doc: dict = {}
+    for doc_id, st in proposal_rows:
+        open_by_doc[doc_id] = open_by_doc.get(doc_id, 0) + (st == "open")
     dtos = []
     for doc in docs:
+        snippet = None
+        if term:
+            meta = (doc.file_name, doc.description, doc.type, doc.correspondent and doc.correspondent.name)
+            text = decrypt_str(doc.extracted_text, kek) if kek else doc.extracted_text
+            snippet = _snippet(text, term)
+            if not snippet and not any(term in _fold(m)[1] for m in meta if m):
+                continue
         dto = DocumentDto.model_validate(doc)
+        dto.snippet = snippet
         dto.is_favorite = doc.id in favs
         if kek and doc.extraction_json:
             try:
@@ -101,6 +140,9 @@ async def list_documents(
                 insights = build_insights(entities)
                 if insights:
                     dto.insights = DocumentInsightsDto.model_validate(insights)
+                if doc.verification_status == "extracted":
+                    dto.open_diagnoses = open_by_doc[doc.id] if doc.id in open_by_doc else sum(
+                        1 for d in entities.get("diagnoses") or [] if (d.get("name") or "").strip())
             except Exception:
                 pass  # a single unreadable extraction must not blank the whole list
         dtos.append(dto)
@@ -199,6 +241,28 @@ async def get_document_file(doc_id: uuid.UUID, user: User = Depends(get_current_
     )
 
 
+@router.get("/documents/{doc_id}/pages/{page}")
+async def get_document_page(doc_id: uuid.UUID, page: int, width: int = Query(1200, ge=200, le=2000),
+                            user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """A PDF page as PNG for phones, whose browsers cannot show a PDF inline."""
+    import httpx
+    from fastapi.responses import Response
+    from app.core.config import settings
+    doc = (await db.execute(select(DocumentReference).where(
+        DocumentReference.id == doc_id, DocumentReference.is_deleted == False))).scalar_one_or_none()  # noqa: E712
+    if not doc or doc.content_type != "application/pdf" or page < 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    await require_patient_access(doc.patient_id, user, db)
+    data = decrypt_document(get_storage().read(doc.storage_path), doc.encrypted_dek, await get_patient_kek(db, doc.patient_id))
+    async with httpx.AsyncClient(timeout=60, headers=settings.ai_service_headers) as client:
+        resp = await client.post(f"{settings.ai_service_url}/render-page", params={"page": page, "width": width},
+                                 files={"file": ("doc.pdf", data, "application/pdf")})
+    if resp.status_code != 200:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return Response(content=resp.content, media_type="image/png", headers={
+        "X-Page-Count": resp.headers.get("X-Page-Count", "1"), "Cache-Control": "private, max-age=86400"})
+
+
 @router.get("/documents/{doc_id}", response_model=DocumentDto)
 async def get_document(doc_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(DocumentReference).where(DocumentReference.id == doc_id, DocumentReference.is_deleted == False))  # noqa: E712
@@ -217,7 +281,15 @@ async def get_document_detail(doc_id: uuid.UUID, user: User = Depends(get_curren
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     await require_patient_access(doc.patient_id, user, db)
     doc.is_favorite = doc.id in await _favorite_doc_ids(db, user.id)  # not a column; the DTO reads it
-    return await _reveal(doc, db)
+    doc = await _reveal(doc, db)
+    # a diagnosis decided in the Proposal Review is not asked again here (ADR 058)
+    from app.models.proposal import Proposal
+    decided = set((await db.execute(select(Proposal.index).where(
+        Proposal.document_reference_id == doc.id, Proposal.kind == "diagnosis", Proposal.status != "open"))).scalars())
+    if decided and isinstance(doc.extraction_json, dict):
+        dxs = doc.extraction_json.get("diagnoses") or []
+        doc.extraction_json = {**doc.extraction_json, "diagnoses": [d for i, d in enumerate(dxs) if i not in decided]}
+    return doc
 
 
 @router.post("/documents/{doc_id}/verify", response_model=DocumentDetailDto)
@@ -272,7 +344,12 @@ async def verify_document(
                 Condition.is_deleted == False,  # noqa: E712
             )
         )).scalars().all()
+        from app.models.proposal import Proposal
+        reviewed = set((await db.execute(select(Proposal.record_id).where(
+            Proposal.document_reference_id == doc_id, Proposal.status == "accepted"))).scalars())
         for cond in citing:
+            if cond.id in reviewed:  # decided in the Proposal Review, not on this form (ADR 058)
+                continue
             # delete-orphan cascade turns the removal into DELETEs
             cond.sources = [s for s in cond.sources if s.document_reference_id != doc_id]
             if cond.sources:
@@ -290,6 +367,15 @@ async def verify_document(
         from app.services.lab_codes import canonical_code, parse_number, parse_reference_range, resolve_panel
 
         doc_date = doc.issued_date.isoformat() if doc.issued_date else None
+        # A later letter quoting a measured value is not a second measurement: same
+        # parameter, date and value merge without asking (ADR 058).
+        def obs_key(code, display, date, number, text):
+            return (code or _norm_condition(display or ""), (date or "")[:10],
+                    number if number is not None else _norm_condition(text or ""))
+        known_obs = {obs_key(o.code, o.code_display, o.effective_date_time, o.value_quantity, o.value_string)
+                     for o in (await db.execute(select(Observation).where(
+                         Observation.patient_id == doc.patient_id, Observation.is_deleted == False,  # noqa: E712
+                     ))).scalars()}
         for obs_data in body.observations:
             raw_val = obs_data.get("value")
             # "13,9" off a German report is a number, not text. Storing it as text
@@ -304,6 +390,10 @@ async def verify_document(
             panel = resolve_panel(code, obs_data.get("panel"))
             # A value from a lab panel is a lab result; a standalone vital is a measurement.
             category = obs_data.get("category") or ("lab" if panel else "measurement")
+            key = obs_key(code, display, obs_data.get("date") or doc_date, value_quantity, value_string)
+            if key in known_obs:
+                continue
+            known_obs.add(key)
             db.add(Observation(
                 patient_id=doc.patient_id,
                 owner_id=user.id,
@@ -384,7 +474,7 @@ async def verify_document(
             )
         )).scalars().all()
         seen_meds = {
-            (_norm_condition(m.medication_display), _norm_condition(m.dosage_text or ""))
+            (_norm_condition(m.medication_display), _norm_dosage(m.dosage_text or ""))
             for m in running
         }
 
@@ -392,8 +482,9 @@ async def verify_document(
             med_name = med_data.get("name") or med_data.get("display") or ""
             if not med_name:
                 continue
-            med_key = (_norm_condition(med_name), _norm_condition(med_data.get("dosage") or ""))
-            if med_key in seen_meds:
+            med_key = (_norm_condition(med_name), _norm_dosage(med_data.get("dosage") or ""))
+            # a mention without a dose says only "still taking it" about a running course
+            if med_key in seen_meds or (not med_key[1] and any(n == med_key[0] for n, _ in seen_meds)):
                 continue
             seen_meds.add(med_key)
             db.add(MedicationStatement(
@@ -565,6 +656,17 @@ async def verify_document(
                 status="proposed",
                 source="pipeline",
             ))
+
+        kept = {_norm_condition(d.get("name") or d.get("code_display") or "") for d in body.diagnoses}
+        open_props = (await db.execute(select(Proposal).where(
+            Proposal.document_reference_id == doc_id, Proposal.status == "open"))).scalars().all()
+        if open_props:
+            from datetime import UTC, datetime
+            kek = await get_patient_kek(db, doc.patient_id)
+            for p in open_props:
+                name = json.loads(decrypt_str(p.payload, kek)).get("name") or ""
+                p.status = "accepted" if _norm_condition(name) in kept else "rejected"
+                p.decided_at, p.decided_by = datetime.now(UTC), user.id
 
         doc.verification_status = "verified"
         await db.commit()

@@ -99,3 +99,20 @@ async def test_the_demo_is_read_only_but_for_the_sample_and_the_chat(client: Asy
     assert (await db.execute(select(func.count()).select_from(ChatMessage))).scalar() == 0, "no visitor's question is kept"
     r = await client.get(f"/api/patients/{p.id}/chat/history", headers=h)
     assert r.json()["messages"] == []
+
+
+async def test_wrong_passwords_lock_the_demo_admin_but_never_the_shared_visitor(client: AsyncClient, db: AsyncSession, monkeypatch):
+    """One visitor typing nonsense five times would otherwise lock every other visitor out."""
+    await _setup(db)
+    db.add(User(email="admin@t.com", hashed_password=hash_password("Admin1!"), role="admin",
+                is_active=True, first_name="A", last_name="Admin"))
+    await db.commit()
+    monkeypatch.setattr(settings, "demo_locked_upload_sha256", SAMPLE_SHA)
+
+    for email in ("demo@t.com", "admin@t.com"):
+        for _ in range(6):
+            await client.post("/api/auth/login", json={"email": email, "password": "wrong"})
+
+    assert (await client.post("/api/auth/login", json={"email": "demo@t.com", "password": "Pass1!"})).status_code == 200
+    r = await client.post("/api/auth/login", json={"email": "admin@t.com", "password": "Admin1!"})
+    assert r.status_code == 401 and "locked" in r.json()["detail"].lower()

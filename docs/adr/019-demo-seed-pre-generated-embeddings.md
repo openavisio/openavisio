@@ -1,6 +1,6 @@
 # ADR 019: Pre-generated embeddings for the demo seed
 
-**Status:** Accepted
+**Status:** Superseded on 31 Oct 2026, see the last section
 
 The demo seed script (`scripts/seed_demo.py`) populates `DocumentChunk` rows with embedding
 vectors generated in advance by `scripts/generate_demo_embeddings.py`, rather than invoking
@@ -34,3 +34,9 @@ Assistant will not function semantically until real vectors are committed.
 Schema changes to `DocumentChunk` (column renames, added non-nullable fields) require updating
 `seed_demo.py`. Changes to the pipeline extraction format or `DocumentReference` fields also
 require updating `seed_demo.py` and possibly the demo PDFs in `docs/demo/`.
+
+## Superseded: embeddings come from the AI service at seed time
+
+The committed file was never generated: it shipped as a placeholder in June and stayed one. Every nightly reset seeded the 15 chunks without vectors, so the public demo's chat never saw a letter and answered only from the record, sometimes wrongly ("seit wann bekommt Lena die aktuelle Dosis" dated the change to the seizure on 12 Feb instead of the discharge on 14 Feb). Nothing showed it; it was found on 31 Oct 2026 while recording a video.
+
+The objection above no longer holds: the demo runs real AI since 9 Oct 2026. `seed_demo.py` now asks the demo's own aiservice for the vectors, so they always match the model that embeds the questions, and a model change needs no regeneration. When the AI service is down, the seed warns and seeds without them, as before. `generate_demo_embeddings.py` and `scripts/demo_data/embeddings.json` are gone.

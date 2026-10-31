@@ -72,15 +72,9 @@ cd backend && pip install -e . && cd ..
 python scripts/generate_demo_pdfs.py
 ```
 
-### Regenerating embeddings
+### Embeddings
 
-If the embedding model or document text changes, regenerate and commit the embeddings file:
-
-```
-AI_SERVICE_URL=http://localhost:8001 python scripts/generate_demo_embeddings.py
-```
-
-Then commit `scripts/demo_data/embeddings.json` and re-run `seed_demo.py`.
+`seed_demo.py` asks the AI service for the chunk vectors at seed time (ADR 019). Without a reachable AI service it warns and seeds without them; the chat then finds nothing in the letters.
 
 ---
 
@@ -88,17 +82,9 @@ Then commit `scripts/demo_data/embeddings.json` and re-run `seed_demo.py`.
 
 | Change | Files to update |
 |--------|----------------|
-| Embedding model changes (new model or dimension ≠ 768) | Regenerate `scripts/demo_data/embeddings.json`; update dimension note in ADR 019 |
-| Demo document text changes | `scripts/generate_demo_pdfs.py`, chunk texts in `scripts/seed_demo.py`, then regenerate PDF and embeddings |
+| Demo document text changes | `scripts/generate_demo_pdfs.py`, chunk texts in `scripts/seed_demo.py`, then regenerate the PDF |
 | `DocumentChunk` schema changes | `scripts/seed_demo.py` |
 | `DocumentReference` field added/renamed | `scripts/seed_demo.py` |
 | Pipeline extraction format changes (new entity type, renamed field) | `scripts/seed_demo.py` — the hardcoded clinical data records mirror what the pipeline would have produced |
 | Clinical data models change (`Condition`, `MedicationStatement`, `Observation`, `Incident`, `CalendarEvent`, `Recommendation`) | `scripts/seed_demo.py` |
 | New Correspondent needed | `scripts/seed_demo.py` (add to `CORRESPONDENTS` constant) |
-
-## Embeddings note
-
-The pre-generated embeddings in `scripts/demo_data/embeddings.json` still pair with
-the original English chunk texts. With the demo's mock AI backend that is invisible;
-if semantic search on a demo instance ever matters, re-run
-`generate_demo_embeddings.py` against a real backend after the German rewrite.

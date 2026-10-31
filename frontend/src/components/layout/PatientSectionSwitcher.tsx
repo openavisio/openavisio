@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, LayoutGrid, Settings, Check } from "lucide-react";
+import { ChevronDown, LayoutGrid, Printer, Settings, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { PATIENT_SECTIONS } from "@/lib/patientSections";
 
@@ -23,6 +23,8 @@ export function PatientSectionSwitcher() {
   const items = [
     { segment: null as string | null, href: `/patients/${patientId}`, label: tp("Overview"), Icon: LayoutGrid, tint: "bg-primary/10 text-primary" },
     ...PATIENT_SECTIONS.map((s) => ({ segment: s.segment, href: `/patients/${patientId}/${s.segment}`, label: tp(s.key), Icon: s.Icon, tint: s.tint })),
+    // not a section, but without it the switcher said "Overview" on the handout page
+    { segment: "handout", href: `/patients/${patientId}/handout`, label: tp("Handout"), Icon: Printer, tint: "bg-muted text-muted-foreground" },
     { segment: "manage", href: `/patients/${patientId}/manage`, label: tp("Manage"), Icon: Settings, tint: "bg-muted text-muted-foreground" },
   ];
   const current = items.find((i) => i.segment === segment) ?? items[0];

@@ -4,6 +4,8 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.encryption import encrypt_str
+from app.core.patient_keys import ensure_patient_kek
 from app.core.security import hash_password
 from app.models.correspondent import Correspondent
 from app.models.document import DocumentReference
@@ -61,14 +63,24 @@ async def _auth(client: AsyncClient) -> dict:
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
-async def test_q_does_not_search_encrypted_body(client: AsyncClient, db: AsyncSession):
+async def test_q_finds_a_word_in_the_encrypted_text_with_its_snippet(client: AsyncClient, db: AsyncSession):
+    _, patient = await _setup(db)
+    kek = await ensure_patient_kek(db, patient.id)
+    doc = (await db.execute(select(DocumentReference).where(DocumentReference.file_name == "labor.pdf"))).scalar_one()
+    doc.extracted_text = encrypt_str("Der Valproat-\nSpiegel liegt  im therapeutischen Bereich, Größe normal", kek)
+    await db.commit()
+    headers = await _auth(client)
+    r = await client.get(f"/api/patients/{patient.id}/documents?q=valproatspiegel", headers=headers)
+    assert [d["snippet"] for d in r.json()] == [["Der ", "ValproatSpiegel", " liegt im therapeutischen Bereich, Größe normal"]]
+    r = await client.get(f"/api/patients/{patient.id}/documents?q=GRÖSSE", headers=headers)
+    assert [d["snippet"][1] for d in r.json()] == ["Größe"]
+
+
+async def test_q_matches_the_correspondent_without_a_snippet(client: AsyncClient, db: AsyncSession):
     _, patient = await _setup(db)
     headers = await _auth(client)
-    # extracted_text is ciphertext at rest (ADR-031); body-text search is
-    # embeddings-only now, so a body-only term no longer matches via `q`.
-    r = await client.get(f"/api/patients/{patient.id}/documents?q=valproat", headers=headers)
-    assert r.status_code == 200
-    assert r.json() == []
+    r = await client.get(f"/api/patients/{patient.id}/documents?q=meier", headers=headers)
+    assert [(d["file_name"], d["snippet"]) for d in r.json()] == [("labor.pdf", None)]
 
 
 async def test_q_searches_file_name_case_insensitive(client: AsyncClient, db: AsyncSession):

@@ -319,15 +319,10 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
 
   // The file name is a scanner artefact ("img20240405_08273634.pdf"), never a
   // title. Same rule as the documents list: say what it is and who wrote it.
-  const KNOWN_CLASS = new Set([
-    "lab_report", "doctor_letter", "therapy_report",
-    "prescription", "imaging_report", "discharge_summary",
-  ]);
-
   function eventLabel(ev: FeedItem): string {
     if (ev.type !== "document") return ev.title;
     const cls = (ev as any).classification as string | undefined;
-    const label = cls && KNOWN_CLASS.has(cls) ? tc(`class_${cls}`) : null;
+    const label = cls && tc.has(`class_${cls}`) ? tc(`class_${cls}`) : null;
     if (label && ev.title && ev.title !== label) return `${label} · ${ev.title}`;
     return label ?? ev.title;
   }

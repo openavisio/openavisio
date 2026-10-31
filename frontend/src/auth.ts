@@ -1,8 +1,14 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { verifyChallengeFromCookieHeader } from "@/lib/passkey-challenge";
+import { forwardedFor } from "@/lib/forwarded";
 
 const API = process.env.API_URL || "http://localhost:8000";
+
+// a 429 is not a wrong password; the login form tells the two apart by this code
+class RateLimited extends CredentialsSignin {
+  code = "rate_limited";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -15,9 +21,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         const res = await fetch(`${API}/api/auth/login`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...(await forwardedFor()), "Content-Type": "application/json" },
           body: JSON.stringify({ email: credentials.email, password: credentials.password }),
         });
+        if (res.status === 429) throw new RateLimited();
         if (!res.ok) return null;
         const data = await res.json();
         return {

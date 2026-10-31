@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import bcrypt
 import pytest
 from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
@@ -17,6 +18,11 @@ _APP_DATABASE_URL = os.getenv("DATABASE_URL")
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.test")
 
 from app.core.database import Base, get_db  # noqa: E402
+
+# Cost 12 is ~0.5 s per hash and nearly every test signs someone in; tests check
+# the flow, not the cost.
+_gensalt = bcrypt.gensalt
+bcrypt.gensalt = lambda rounds=4, prefix=b"2b": _gensalt(rounds, prefix)
 from app.main import app  # noqa: E402
 
 _pg_password = os.getenv("POSTGRES_PASSWORD", "devpassword123")

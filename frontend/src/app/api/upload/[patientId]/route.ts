@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { forwardedFor } from "@/lib/forwarded";
 
 export async function POST(
   req: NextRequest,
@@ -16,7 +17,7 @@ export async function POST(
     `${apiUrl}/api/patients/${patientId}/documents/upload`,
     {
       method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: { ...(await forwardedFor()), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: formData,
     }
   );

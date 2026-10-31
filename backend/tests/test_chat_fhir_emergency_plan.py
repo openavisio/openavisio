@@ -16,7 +16,7 @@ PLAN = {
 }
 
 
-def _fake_aiservice(monkeypatch, sent: dict, *, forbid_chat=False):
+def _fake_aiservice(monkeypatch, sent: dict, *, forbid_chat=False, p_emergency=None):
     class _Resp:
         status_code = 200
 
@@ -26,6 +26,8 @@ def _fake_aiservice(monkeypatch, sent: dict, *, forbid_chat=False):
         def json(self):
             if "texts" in self._payload:
                 return {"embeddings": [[0.0] * 768]}
+            if "context_chunks" not in self._payload:  # /emergency; no p = a server without logprobs
+                return {"p": p_emergency}
             return {"answer": "Ich sehe folgende Einträge."}
 
     class _Client:
@@ -109,6 +111,18 @@ def test_the_emergency_keywords_catch_actions_not_history():
     for q in ("Wann war der letzte Anfall?", "Wann war der letzte Notfall-Termin?", "Thrombozyten 112?",
               "Wann war der letzte Termin?"):
         assert not hit(q, ()), q
+
+
+async def test_the_model_decides_where_the_keywords_fail(client: AsyncClient, db, monkeypatch):
+    """Measured: the keywords missed 24 of 40 emergencies, P(ja) >= 0.2 none (ADR 059)."""
+    patient, _, h = await _setup(client, db, "plan-model@test.com")
+    _fake_aiservice(monkeypatch, {}, forbid_chat=True, p_emergency=0.26)
+    r = await client.post(f"/api/patients/{patient.id}/chat", headers=h, json={"question": "Er läuft blau an, was jetzt?"})
+    assert r.json()["emergency_plan"] is True
+    sent: dict = {}
+    _fake_aiservice(monkeypatch, sent, p_emergency=0.11)
+    r = await client.post(f"/api/patients/{patient.id}/chat", headers=h, json={"question": "Seit wann bekommt sie Diazepam?"})
+    assert r.json()["emergency_plan"] is False and sent["question"] == "Seit wann bekommt sie Diazepam?"
 
 
 def test_a_medication_the_plan_points_at_counts_as_an_emergency_question():

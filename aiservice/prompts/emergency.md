@@ -1,0 +1,1 @@
+Fragt diese Frage danach, was jetzt in einem akuten medizinischen Notfall zu tun ist, oder nach dem Notfallplan oder der Dosis des Notfallmedikaments? Fragen nach vergangenen Ereignissen oder Daten aus den Unterlagen sind kein Notfall. Antworte nur mit ja oder nein.

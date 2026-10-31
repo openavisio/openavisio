@@ -20,6 +20,7 @@ from app.routers import (
     dev,
     diary,
     documents,
+    proposals,
     einstufungen,
     emergency_plan,
     care_notes,
@@ -78,6 +79,7 @@ app.include_router(passkey.router, prefix="/api/auth", tags=["passkey"])
 app.include_router(patients.router, prefix="/api", tags=["patients"])
 app.include_router(observations.router, prefix="/api", tags=["observations"])
 app.include_router(documents.router, prefix="/api", tags=["documents"])
+app.include_router(proposals.router, prefix="/api", tags=["proposals"])
 app.include_router(incidents.router, prefix="/api", tags=["incidents"])
 app.include_router(einstufungen.router, prefix="/api", tags=["einstufungen"])
 app.include_router(emergency_plan.router, prefix="/api", tags=["emergency-plan"])
