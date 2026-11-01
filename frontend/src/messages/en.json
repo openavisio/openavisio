@@ -1480,6 +1480,8 @@
     "Usage": "Usage"
   },
   "AdminAi": {
+    "EmbedMismatchTitle": "Search no longer matches the embedding model",
+    "EmbedMismatch": "{count, plural, one {# passage was} other {# passages were}} not embedded with {model}. Until they are embedded again, the chat finds the wrong passages in these documents. Re-embed in the backend container: uv run python cli.py reembed",
     "Title": "AI backend",
     "Status": "Status",
     "Connected": "Connected",

@@ -10,8 +10,8 @@ export default async function MeasurementsPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const t = await getTranslations("Measurement");
   const tc = await getTranslations("Common");
-  let patient: any = null;
-  let observations: any[] = [];
+  let patient: Awaited<ReturnType<typeof getPatient>> | null = null;
+  let observations: Awaited<ReturnType<typeof getObservations>> = [];
   let fetchError = false;
 
   try { patient = await getPatient(id); } catch {}

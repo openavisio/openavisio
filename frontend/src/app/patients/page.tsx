@@ -12,15 +12,15 @@ import { Badge } from "@/components/ui/badge"
 import { FavoriteStar } from "@/components/FavoriteStar"
 
 export default async function PatientsPage() {
-  let patients: any[] = []
-  let fetchError = false
-  const [session, t, locale] = await Promise.all([
+  const [session, t, locale, fetched] = await Promise.all([
     auth(),
     getTranslations("Patient"),
     getLocale(),
-    getPatients().then((p) => { patients = p }).catch(() => { fetchError = true }),
+    getPatients().catch(() => null),
   ])
-  const role = (session?.user as any)?.role
+  const fetchError = fetched === null
+  const patients = fetched ?? []
+  const role = session?.user?.role
   const canCreate = role === "admin" || role === "manager"
   // #70: a plain user with exactly one patient jumps straight in; staff (who can
   // create) keep the list to onboard more.
@@ -66,9 +66,9 @@ export default async function PatientsPage() {
         </div>
       ) : (
         (() => {
-          const favorites = patients.filter((p: any) => p.is_favorite)
-          const rest = patients.filter((p: any) => !p.is_favorite)
-          const card = (p: any) => (
+          const favorites = patients.filter((p) => p.is_favorite)
+          const rest = patients.filter((p) => !p.is_favorite)
+          const card = (p: (typeof patients)[number]) => (
             <Link key={p.id} href={`/patients/${p.id}`} className="block group">
               <Card className="h-full transition-shadow group-hover:shadow-md">
                 <CardHeader className="pb-3">

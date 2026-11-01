@@ -9,35 +9,13 @@ import {
   FileText, ClipboardCheck, Eye, Search, X, Download, Star, Loader2,
   LayoutGrid, LayoutList, Table2,
 } from "lucide-react";
-import { getDocumentNovelty, getDocuments } from "@/lib/api";
+import { getDocumentNovelty, getDocuments, type S } from "@/lib/api";
 import { formatDate, statusBadgeColor } from "@/lib/utils";
 import { RetryButton } from "./UploadPanel";
 import { FavoriteButton } from "./FavoriteButton";
 import { DeleteDocumentButton } from "./[docId]/DeleteDocumentButton";
 
-// what the list reads from GET /patients/{id}/documents
-type Doc = {
-  id: string;
-  type?: string | null;
-  description?: string | null;
-  file_name?: string | null;
-  content_type?: string | null;
-  document_classification?: string;
-  detected_provider?: string | null;
-  correspondent?: { id: string; name: string } | null;
-  issued_date?: string | null;
-  created_at: string;
-  processing_status: string;
-  pipeline_stage?: string;
-  verification_status?: string | null;
-  is_favorite?: boolean;
-  snippet?: [string, string, string] | null;
-  open_diagnoses?: number;
-  insights?: {
-    summary?: string | null; provider?: string | null;
-    observations?: number; medications?: number; diagnoses?: number; recommendations?: number;
-  } | null;
-};
+type Doc = S<"DocumentDto">;
 
 const RANGES = { "3m": 91, "12m": 365, all: Infinity } as const;
 type RangeKey = keyof typeof RANGES;
@@ -150,7 +128,7 @@ function docTitle(doc: Doc, t: (k: string) => string, tc: { (k: string): string;
 // rather than wedged between the buttons.
 const STAGES = ["ocr", "classification", "extraction", "embedding"];
 
-function PipelineProgress({ stage, label }: { stage?: string; label: string }) {
+function PipelineProgress({ stage, label }: { stage: string | null; label: string }) {
   const at = STAGES.indexOf(stage ?? "");
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">

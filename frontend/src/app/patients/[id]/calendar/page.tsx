@@ -14,7 +14,7 @@ export default async function CalendarPage({
   const { id } = await params;
   const { month } = await searchParams;
   const tp = await getTranslations("Patient");
-  let patient: any = null;
+  let patient: Awaited<ReturnType<typeof getPatient>> | null = null;
   try { patient = await getPatient(id); } catch {}
 
   return (

@@ -7,7 +7,7 @@ import { CopyLinkButton } from "./CopyLinkButton";
 import { InviteUserButton } from "./InviteUserButton";
 
 export default async function AdminInvitationsPage() {
-  let invitations: any[] = [], fetchError = false;
+  let invitations: Awaited<ReturnType<typeof getAdminInvitations>> = [], fetchError = false;
   try { invitations = await getAdminInvitations(); } catch { fetchError = true; }
   const t = await getTranslations("AdminInvitations");
   const tc = await getTranslations("Common");
@@ -41,7 +41,7 @@ export default async function AdminInvitationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {invitations.map((inv: any) => {
+              {invitations.map((inv) => {
                 const used = inv.is_used;
                 const expired = new Date(inv.expires_at) < new Date();
                 const statusLabel = used ? t("Used") : expired ? t("Expired") : t("Pending");

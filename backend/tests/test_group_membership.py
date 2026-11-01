@@ -57,6 +57,32 @@ async def test_admin_outside_a_group_cannot_open_or_join_it(client: AsyncClient,
     assert r.status_code == 201
 
 
+async def test_group_list_counts_active_members_and_patients(client: AsyncClient, db: AsyncSession):
+    owner = await _user(db, "cowner@t.com", "manager")
+    other = await _user(db, "cother@t.com", "user")
+    group = Group(name="Station 3", owner_id=owner.id)
+    db.add(group)
+    await db.flush()
+    now = datetime.now(UTC)
+    db.add_all([
+        GroupMembership(group_id=group.id, user_id=owner.id, role="owner", status="active", invited_at=now, accepted_at=now),
+        GroupMembership(group_id=group.id, user_id=other.id, role="viewer", status="pending", invited_at=now),
+        Patient(given_name="Emma", family_name="Test", birth_date="2015-04-02", created_by=owner.id, group_id=group.id),
+        Patient(given_name="Gone", family_name="Test", birth_date="2015-04-02", created_by=owner.id, group_id=group.id, is_deleted=True),
+    ])
+    await db.commit()
+
+    r = await client.get("/api/groups", headers=await _auth(client, "cowner@t.com"))
+    assert r.status_code == 200
+    [g] = r.json()
+    assert (g["member_count"], g["patient_count"]) == (1, 1)
+
+    await _user(db, "cadmin@t.com", "admin")
+    r = await client.get("/api/admin/groups", headers=await _auth(client, "cadmin@t.com"))
+    assert r.status_code == 200
+    assert [x["member_count"] for x in r.json()] == [1]
+
+
 async def test_group_manager_cannot_touch_the_owner_role(client: AsyncClient, db: AsyncSession):
     owner = await _user(db, "o2@t.com", "manager")
     mgr = await _user(db, "m2@t.com", "manager")

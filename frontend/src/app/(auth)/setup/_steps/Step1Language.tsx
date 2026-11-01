@@ -9,6 +9,10 @@ const LOCALES = [
   { code: "de", label: "Deutsch", flag: "🇩🇪" },
 ];
 
+function rememberLocale(code: string) {
+  document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 interface Props {
   state: WizardState;
   onLocale: (locale: string) => void;
@@ -19,7 +23,7 @@ export function Step1Language({ state, onLocale }: Props) {
   const router = useRouter();
 
   function select(code: string) {
-    document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000; SameSite=Lax`;
+    rememberLocale(code);
     onLocale(code);
     router.refresh();
   }

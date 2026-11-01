@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-export const GET = auth(async (req, context) => {
-  const { purposeId } = await (context as any).params;
-  const token = (req.auth as any)?.accessToken ?? null;
+export const GET = auth(async (req, context: { params: Promise<{ purposeId: string }> }) => {
+  const { purposeId } = await context.params;
+  const token = req.auth?.accessToken ?? null;
 
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

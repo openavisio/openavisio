@@ -27,7 +27,7 @@ export default async function AdminAuditPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {entries.map((e: any) => (
+              {entries.map((e) => (
                 <tr key={e.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                     {formatDate(e.timestamp)}

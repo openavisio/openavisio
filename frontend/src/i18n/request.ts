@@ -13,7 +13,7 @@ async function getBrowserLanguage(): Promise<string | null> {
     for (const part of accept.split(",")) {
       const tag = part.split(";")[0].trim().toLowerCase();
       const primary = tag.split("-")[0];
-      if (routing.locales.includes(primary as any)) return primary;
+      if ((routing.locales as readonly string[]).includes(primary)) return primary;
     }
   } catch {}
   return null;
@@ -27,7 +27,7 @@ async function getOrgDefaultLanguage(): Promise<string> {
     if (res.ok) {
       const data = await res.json();
       const lang = data.default_language as string | undefined;
-      if (lang && routing.locales.includes(lang as any)) return lang;
+      if (lang && (routing.locales as readonly string[]).includes(lang)) return lang;
     }
   } catch {}
   return routing.defaultLocale;
@@ -38,7 +38,7 @@ export default getRequestConfig(async () => {
   const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value;
 
   const locale =
-    (cookieLocale && routing.locales.includes(cookieLocale as any) ? cookieLocale : null) ??
+    (cookieLocale && (routing.locales as readonly string[]).includes(cookieLocale) ? cookieLocale : null) ??
     (await getBrowserLanguage()) ??
     (await getOrgDefaultLanguage());
 

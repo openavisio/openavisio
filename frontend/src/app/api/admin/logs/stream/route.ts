@@ -8,7 +8,7 @@ const API_URL = process.env.API_URL || "http://localhost:8000";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const token = (await auth() as any)?.accessToken ?? null;
+  const token = (await auth())?.accessToken ?? null;
   if (!token) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 
   const upstream = await fetch(`${API_URL}/api/admin/logs/stream`, {

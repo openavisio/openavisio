@@ -7,7 +7,7 @@ export async function POST(
 ) {
   const { patientId } = await params;
   const session = await auth();
-  const token = (session as any)?.accessToken ?? null;
+  const token = session?.accessToken ?? null;
 
   const apiUrl = process.env.API_URL || "http://localhost:8000";
   const formData = await req.formData();

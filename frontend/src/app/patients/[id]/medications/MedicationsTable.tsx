@@ -4,15 +4,18 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatDate, formatDose } from "@/lib/utils";
 import { MedicationActions } from "./MedicationActions";
+import type { S } from "@/lib/api";
 
-function period(m: any, locale: string, t: (k: string) => string) {
+type Medication = S<"MedicationDto">;
+
+function period(m: Medication, locale: string, t: (k: string) => string) {
   if (!m.effective_start && !m.effective_end) return "—";
   const start = m.effective_start ? formatDate(m.effective_start, locale) : "—";
   const end = m.effective_end ? formatDate(m.effective_end, locale) : t("Ongoing");
   return `${start} – ${end}`;
 }
 
-export function MedicationsTable({ medications }: { medications: any[] }) {
+export function MedicationsTable({ medications }: { medications: Medication[] }) {
   const t = useTranslations("Med");
   const locale = useLocale();
   // Phone: cards + tap-reveal action bar, like documents and conditions — a
@@ -22,7 +25,7 @@ export function MedicationsTable({ medications }: { medications: any[] }) {
   return (
     <>
       <div className="space-y-3 lg:hidden">
-        {medications.map((m: any) => {
+        {medications.map((m) => {
           const open = revealed === m.id;
           return (
             <div key={m.id} className={`overflow-hidden rounded-xl border bg-card ${m.is_active ? "" : "opacity-60"}`}>
@@ -57,7 +60,7 @@ export function MedicationsTable({ medications }: { medications: any[] }) {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {medications.map((m: any) => (
+            {medications.map((m) => (
               <tr key={m.id} className="hover:bg-muted/30 transition-colors">
                 <td className={`px-4 py-3 font-medium ${m.is_active ? "" : "opacity-50"}`}>{m.medication_display}</td>
                 <td className={`px-4 py-3 text-muted-foreground ${m.is_active ? "" : "opacity-50"}`}>{formatDose(m) || "—"}</td>

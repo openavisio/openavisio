@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { updateMe } from "@/lib/api";
+import { updateMe, type PasskeyInfo } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { verifyChallenge } from "@/lib/passkey-challenge";
@@ -29,7 +29,7 @@ export async function changePasswordAction(
 ): Promise<{ error?: string }> {
   const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
 
   if (!token) {
     return { error: t("SessionExpired") };
@@ -67,10 +67,10 @@ export async function changePasswordAction(
 export async function registerPasskeyAction(
   credential: unknown,
   label: string
-): Promise<{ error?: string; passkey?: any }> {
+): Promise<{ error?: string; passkey?: PasskeyInfo }> {
   const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: t("SessionExpired") };
 
   const cookieStore = await cookies();
@@ -106,7 +106,7 @@ export async function renamePasskeyAction(
 ): Promise<{ error?: string }> {
   const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: t("SessionExpired") };
 
   const res = await fetch(`${API}/api/auth/passkey/${id}`, {
@@ -121,7 +121,7 @@ export async function renamePasskeyAction(
 export async function deletePasskeyAction(id: string): Promise<{ error?: string }> {
   const t = await getTranslations("SettingsPage.Errors");
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: t("SessionExpired") };
 
   const res = await fetch(`${API}/api/auth/passkey/${id}`, {

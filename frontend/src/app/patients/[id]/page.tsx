@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { getPatient, getCalendarFeed, getCurrentEinstufung, getConditions } from "@/lib/api";
+import { getPatient, getCalendarFeed, getCurrentEinstufung, getConditions, type S } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
@@ -27,7 +27,7 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
   // The current Pflegegrad belongs where it is read off rather than looked up: it is
   // asked for on every form and every admission (ADR 042).
   const [feed, einstufung, conditions] = await Promise.all([
-    getCalendarFeed(id, { from: today }).catch(() => [] as any[]),
+    getCalendarFeed(id, { from: today }).catch(() => []),
     getCurrentEinstufung(id).catch(() => null),
     getConditions(id, "active").catch(() => []),
   ]);
@@ -36,7 +36,7 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
     .filter((c) => c.category === "allergy")
     .map((c) => (String(c.code_display).replace(/[-\s]*allerg(ie|y)$/i, "") || c.code_display) + (c.verification_status === "provisional" ? "?" : ""));
   // next few upcoming items for the "today at a glance" agenda
-  const agenda = (feed as any[])
+  const agenda = feed
     .filter((i) => i.start)
     .sort((a, b) => String(a.start).localeCompare(String(b.start)))
     .slice(0, 3);
@@ -191,7 +191,7 @@ function Meta({ Icon, label, value }: { Icon: LucideIcon; label: string; value: 
 }
 
 // "18:00" today, "Tomorrow", else a short date — the agenda's left-column label.
-function agendaWhen(item: any, today: string, locale: string, labels: { today: string; tomorrow: string }): string {
+function agendaWhen(item: S<"CalendarFeedItem">, today: string, locale: string, labels: { today: string; tomorrow: string }): string {
   const date = String(item.start).slice(0, 10);
   const d = new Date(today + "T00:00:00");
   d.setDate(d.getDate() + 1);

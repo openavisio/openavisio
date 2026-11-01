@@ -5,8 +5,9 @@ import { Trash2, UserPlus } from "lucide-react";
 import { assignPatientAction, removePatientAction } from "./actions";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import type { S } from "@/lib/api";
 
-function PatientRow({ patient, groupId }: { patient: any; groupId: string }) {
+function PatientRow({ patient, groupId }: { patient: S<"GroupPatientDto">; groupId: string }) {
   const t = useTranslations("GroupPage");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -46,8 +47,8 @@ export function PatientPanel({
   allPatients,
 }: {
   groupId: string;
-  patients: any[];
-  allPatients: any[];
+  patients: S<"GroupPatientDto">[];
+  allPatients: S<"PatientDto">[];
 }) {
   const t = useTranslations("GroupPage");
   const [selectedId, setSelectedId] = useState("");

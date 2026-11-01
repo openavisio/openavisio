@@ -7,12 +7,10 @@ import { CreateGroupButton } from "../admin/groups/CreateGroupButton";
 import { getTranslations } from "next-intl/server";
 
 export default async function GroupPage() {
-  let groups: any[] = [], fetchError = false;
-  const [session] = await Promise.all([
-    auth(),
-    getGroups().then((g) => { groups = g }).catch(() => { fetchError = true }),
-  ]);
-  const role = (session?.user as any)?.role;
+  const [session, fetched] = await Promise.all([auth(), getGroups().catch(() => null)]);
+  const fetchError = fetched === null;
+  const groups = fetched ?? [];
+  const role = session?.user?.role;
   const canManage = role === "admin" || role === "manager";
   const t = await getTranslations("GroupPage");
 
@@ -32,7 +30,7 @@ export default async function GroupPage() {
         <div className="text-center py-12 text-muted-foreground">{t("NoGroups")}</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {groups.map((g: any) => (
+          {groups.map((g) => (
             <Link
               key={g.id}
               href={`/group/${g.id}`}
@@ -44,10 +42,10 @@ export default async function GroupPage() {
                 </div>
                 <div>
                   <div className="font-semibold group-hover:underline">{g.name}</div>
-                  <div className="text-xs text-muted-foreground">{t("MemberCount", { count: g.member_count ?? 0 })}</div>
+                  <div className="text-xs text-muted-foreground">{t("MemberCount", { count: g.member_count })}</div>
                 </div>
               </div>
-              {g.patient_count !== undefined && (
+              {g.patient_count > 0 && (
                 <div className="text-xs text-muted-foreground">{t("PatientsShared", { count: g.patient_count })}</div>
               )}
             </Link>

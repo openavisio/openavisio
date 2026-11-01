@@ -17,7 +17,7 @@ export type LicenseInfo = {
 
 export async function uploadLicenseAction(token: string): Promise<{ error?: string; info?: LicenseInfo }> {
   const session = await auth();
-  const accessToken = (session as any)?.accessToken;
+  const accessToken = session?.accessToken;
   if (!accessToken) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/admin/license`, {
@@ -46,7 +46,7 @@ const PERSONAL_INFO: LicenseInfo = {
 
 export async function deleteLicenseAction(): Promise<{ error?: string; info?: LicenseInfo }> {
   const session = await auth();
-  const accessToken = (session as any)?.accessToken;
+  const accessToken = session?.accessToken;
   if (!accessToken) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/admin/license`, {

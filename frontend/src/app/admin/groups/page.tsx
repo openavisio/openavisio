@@ -7,7 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { CreateGroupButton } from "./CreateGroupButton";
 
 export default async function AdminGroupsPage() {
-  let groups: any[] = [], fetchError = false;
+  let groups: Awaited<ReturnType<typeof getAdminGroups>> = [], fetchError = false;
   try { groups = await getAdminGroups(); } catch { fetchError = true; }
   const t = await getTranslations("AdminGroups");
   const tc = await getTranslations("Common");
@@ -39,12 +39,12 @@ export default async function AdminGroupsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {groups.map((g: any) => (
+              {groups.map((g) => (
                 <tr key={g.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium">
                     <Link href={`/group/${g.id}`} className="hover:underline">{g.name}</Link>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{g.member_count ?? 0}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{g.member_count}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(g.created_at)}</td>
                 </tr>
               ))}

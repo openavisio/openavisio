@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 // ADR 052: the Household Manager's one page; the role is admin in code and never named here.
 export default async function FamilyPage() {
   const [session, org] = await Promise.all([auth(), getOrganization().catch(() => null)]);
-  const me = session?.user as any;
+  const me = session?.user;
   if (me?.role !== "admin" || !org?.is_household) redirect("/");
 
   const t = await getTranslations("Family");
@@ -25,8 +25,8 @@ export default async function FamilyPage() {
     getAdminInvitations().catch(() => []),
     getNotificationSettings().catch(() => ({ event_reminder: true, caregiver_added: true, invitation: true, include_content: false, document_processed: false })),
   ]);
-  const members = users.filter((u: any) => u.is_active);
-  const open = invitations.filter((i: any) => !i.is_used && new Date(i.expires_at) > new Date());
+  const members = users.filter((u) => u.is_active);
+  const open = invitations.filter((i) => !i.is_used && new Date(i.expires_at) > new Date());
   const card = "rounded-xl border bg-card p-6 space-y-4";
 
   return (
@@ -40,7 +40,7 @@ export default async function FamilyPage() {
         <section className={card}>
           <h2 className="font-medium text-sm">{t("Members")}</h2>
           <ul className="divide-y rounded-lg border">
-            {members.map((u: any) => (
+            {members.map((u) => (
               <li key={u.id} className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
@@ -66,7 +66,7 @@ export default async function FamilyPage() {
           </div>
           {open.length > 0 && (
             <ul className="divide-y rounded-lg border">
-              {open.map((i: any) => (
+              {open.map((i) => (
                 <li key={i.id} className="flex items-center gap-3 px-4 py-3 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{i.email}</p>

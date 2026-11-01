@@ -10,7 +10,7 @@ export async function saveAiModelsAction(config: {
   vision_model: string | null;
 }): Promise<{ error?: string }> {
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(

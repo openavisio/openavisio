@@ -1,14 +1,15 @@
 {
   "name": "openavisio-frontend",
-  "version": "0.2.11",
+  "version": "0.3.0",
   "private": true,
   "packageManager": "pnpm@11.2.2",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "e2e": "playwright test"
+    "lint": "eslint --max-warnings 0",
+    "e2e": "playwright test",
+    "api-types": "cd ../backend && uv run python ../scripts/openapi.py > /tmp/openapi.json && cd ../frontend && openapi-typescript /tmp/openapi.json --default-non-nullable false -o src/lib/api-schema.ts"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.3.0",
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

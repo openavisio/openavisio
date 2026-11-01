@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useSyncExternalStore } from "react"
 
 interface HighContrastContextValue {
   highContrast: boolean
@@ -12,22 +12,23 @@ const HighContrastContext = createContext<HighContrastContextValue>({
   toggle: () => {},
 })
 
-export function HighContrastProvider({ children }: { children: React.ReactNode }) {
-  const [highContrast, setHighContrast] = useState(false)
+const listeners = new Set<() => void>()
+function subscribe(cb: () => void) {
+  listeners.add(cb)
+  return () => listeners.delete(cb)
+}
+const read = () => localStorage.getItem("high-contrast") === "true"
 
+export function HighContrastProvider({ children }: { children: React.ReactNode }) {
+  const highContrast = useSyncExternalStore(subscribe, read, () => false)
   useEffect(() => {
-    const stored = localStorage.getItem("high-contrast")
-    if (stored === "true") {
-      setHighContrast(true)
-      document.documentElement.classList.add("high-contrast")
-    }
-  }, [])
+    document.documentElement.classList.toggle("high-contrast", highContrast)
+  }, [highContrast])
 
   function toggle() {
     const next = !highContrast
-    setHighContrast(next)
-    document.documentElement.classList.toggle("high-contrast", next)
     localStorage.setItem("high-contrast", String(next))
+    listeners.forEach((cb) => cb())
   }
 
   return (

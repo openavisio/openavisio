@@ -344,7 +344,8 @@ async def list_models():
     except Exception:
         backend_name = "unknown"
 
-    result = {"models": list(seen.values()), "ollama_url": get_ollama_url(), "backend": backend_name}
+    result = {"models": list(seen.values()), "ollama_url": get_ollama_url(), "backend": backend_name,
+              "embed_model": get_model("embed")}
     if errors:
         result["error"] = "; ".join(errors)
     return result
@@ -549,7 +550,7 @@ async def embed_endpoint(request: EmbedRequest):
         model = get_model("embed")
         texts = _as_query(request.texts, model, request.language) if request.is_query else request.texts
         embeddings = await asyncio.to_thread(backend.embed, model, texts, EMBED_DIMENSIONS)
-        return {"embeddings": embeddings}
+        return {"embeddings": embeddings, "model": model}
     except RateLimitError:
         raise
     except Exception as e:

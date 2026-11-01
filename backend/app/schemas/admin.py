@@ -43,6 +43,7 @@ class AdminGroupDto(OrmBase):
     name: str
     owner_id: uuid.UUID
     created_at: datetime
+    member_count: int = 0
 
 
 class AdminGroupMemberDto(OrmBase):
@@ -75,6 +76,7 @@ class OllamaSettingsDto(BaseModel):
     vision_model: str | None
     chat_model: str | None
     current_models: dict[str, str | None] = {}
+    corpus_embed_models: dict[str, int] = {}
 
 
 class AiModelConfigRequest(BaseModel):

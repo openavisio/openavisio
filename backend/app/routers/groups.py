@@ -3,7 +3,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
@@ -19,6 +19,7 @@ from app.schemas.group import (
     GroupInviteInfoDto,
     GroupInviteRequest,
     GroupInviteResult,
+    GroupListItemDto,
     GroupMemberDto,
     GroupPatientDto,
     GroupUpdateRequest,
@@ -48,7 +49,7 @@ async def _member_group(group_id: uuid.UUID, user: User, db: AsyncSession, roles
     return row.Group, row.role
 
 
-@router.get("/groups", response_model=list[GroupDto])
+@router.get("/groups", response_model=list[GroupListItemDto])
 async def list_groups(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Group).where(Group.is_deleted == False))  # noqa: E712
     all_g = result.scalars().all()
@@ -64,7 +65,22 @@ async def list_groups(user: User = Depends(get_current_user), db: AsyncSession =
         ))
         if mem.scalar_one_or_none():
             mine.append(g)
-    return mine
+    ids = [g.id for g in mine]
+    members = dict((await db.execute(
+        select(GroupMembership.group_id, func.count()).where(
+            GroupMembership.group_id.in_(ids), GroupMembership.status == "active",
+            GroupMembership.is_deleted == False,  # noqa: E712
+        ).group_by(GroupMembership.group_id)
+    )).all())
+    patients = dict((await db.execute(
+        select(Patient.group_id, func.count()).where(
+            Patient.group_id.in_(ids), Patient.is_deleted == False,  # noqa: E712
+        ).group_by(Patient.group_id)
+    )).all())
+    return [
+        GroupListItemDto(**GroupDto.model_validate(g).model_dump(), member_count=members.get(g.id, 0), patient_count=patients.get(g.id, 0))
+        for g in mine
+    ]
 
 
 @router.post("/groups", response_model=GroupDto, status_code=status.HTTP_201_CREATED)

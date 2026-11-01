@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminOrganizationPage() {
   const t = await getTranslations("Org");
   const session = await auth();
-  const token = (session as any)?.accessToken;
+  const token = session?.accessToken;
 
   const res = await fetch(`${API}/api/organization`, {
     headers: { Authorization: `Bearer ${token}` },

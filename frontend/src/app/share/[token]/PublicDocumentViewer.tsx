@@ -48,6 +48,7 @@ export function PublicDocumentViewer({ token, docId, src, contentType, fileName 
         </div>
       ) : contentType.startsWith("image/") ? (
         <div className="flex items-center justify-center bg-muted rounded-xl overflow-hidden h-[60vh]">
+          {/* eslint-disable-next-line @next/next/no-img-element -- a blob: URL, next/image cannot load it */}
           <img src={blobUrl} alt={fileName} className="max-w-full max-h-full object-contain" />
         </div>
       ) : (

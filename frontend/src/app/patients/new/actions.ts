@@ -13,7 +13,7 @@ export async function createPatientAction(data: {
   identifier?: string;
 }): Promise<{ id?: string; error?: string }> {
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients`, {

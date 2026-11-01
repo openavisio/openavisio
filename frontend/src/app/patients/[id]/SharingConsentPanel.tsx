@@ -126,7 +126,7 @@ function ShareRow({ patientId, share }: { patientId: string; share: Share }) {
       <td className="px-4 py-2 text-sm text-muted-foreground">{share.purpose_name || "—"}</td>
       <td className="px-4 py-2">
         <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${share.status === "active" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
-          {t(`status_${share.status}` as any)}
+          {t(`status_${share.status}`)}
         </span>
       </td>
       <td className="px-4 py-2 text-right">

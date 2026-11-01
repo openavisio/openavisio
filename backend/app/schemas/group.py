@@ -14,6 +14,11 @@ class GroupDto(OrmBase):
     created_at: datetime
 
 
+class GroupListItemDto(GroupDto):
+    member_count: int
+    patient_count: int
+
+
 class GroupCreateRequest(BaseModel):
     name: str
 

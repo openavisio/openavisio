@@ -4,13 +4,15 @@ import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { confirmExpense, deleteExpense } from "@/lib/api";
+import { confirmExpense, deleteExpense, type S } from "@/lib/api";
+
+type Expense = S<"ExpenseDto">;
 import { Check, Trash2 } from "lucide-react";
 
-const eur = (v: any) => `${Number(v ?? 0).toFixed(2)} €`;
-const openOf = (e: any) => Number(e.amount ?? 0) - Number(e.reimbursed_amount ?? 0);
+const eur = (v: string | number | null | undefined) => `${Number(v ?? 0).toFixed(2)} €`;
+const openOf = (e: Expense) => Number(e.amount ?? 0) - Number(e.reimbursed_amount ?? 0);
 
-export function ExpensesTable({ expenses, summary }: { expenses: any[]; summary: any }) {
+export function ExpensesTable({ expenses, summary }: { expenses: Expense[]; summary: S<"ExpenseSummaryDto"> | null }) {
   const t = useTranslations("Exp");
   const locale = useLocale();
   const router = useRouter();
@@ -33,7 +35,7 @@ export function ExpensesTable({ expenses, summary }: { expenses: any[]; summary:
     );
   }
 
-  function Actions({ e, iconBar }: { e: any; iconBar?: boolean }) {
+  function Actions({ e, iconBar }: { e: Expense; iconBar?: boolean }) {
     const proposed = e.status === "proposed";
     return (
       <div className={iconBar ? "flex items-center justify-end gap-1 border-t bg-muted/30 px-2 py-1.5" : "flex items-center gap-1"}>
@@ -68,7 +70,7 @@ export function ExpensesTable({ expenses, summary }: { expenses: any[]; summary:
 
       {/* Phone: cards */}
       <div className="space-y-3 lg:hidden">
-        {expenses.map((e: any) => {
+        {expenses.map((e) => {
           const proposed = e.status === "proposed";
           const isOpen = revealed === e.id;
           return (
@@ -112,7 +114,7 @@ export function ExpensesTable({ expenses, summary }: { expenses: any[]; summary:
             </tr>
           </thead>
           <tbody className="divide-y">
-            {expenses.map((e: any) => {
+            {expenses.map((e) => {
               const proposed = e.status === "proposed";
               return (
                 <tr key={e.id} className={`transition-colors hover:bg-muted/30 ${proposed ? "bg-amber-500/5" : ""}`}>

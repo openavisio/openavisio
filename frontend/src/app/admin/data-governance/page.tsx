@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
 import { getTranslations } from "next-intl/server";
 import { DataGovernanceClient } from "./DataGovernanceClient";
+import type { S } from "@/lib/api";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -10,9 +11,9 @@ export const dynamic = "force-dynamic";
 export default async function DataGovernancePage() {
   const t = await getTranslations("AdminGovernance");
   const session = await auth();
-  const token = (session as any)?.accessToken;
+  const token = session?.accessToken;
 
-  let categories: any[] = [];
+  let categories: S<"DataCategoryDto">[] = [];
   try {
     const res = await fetch(`${API}/api/admin/data-categories`, {
       headers: { Authorization: `Bearer ${token}` },

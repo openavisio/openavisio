@@ -249,20 +249,24 @@ def extraction_stage(self, doc_id: str):
 
 
 @celery_app.task(bind=True, autoretry_for=(Exception,), max_retries=2, default_retry_delay=30)
-def embedding_stage(self, doc_id: str):
+def embedding_stage(self, doc_id: str, quiet: bool = False):
+    """quiet: a re-embed (cli.py reembed, #238); the document keeps its status and nobody gets a mail."""
     from app.core.config import settings
 
     async def _run_embed():
         doc = await _get_doc(doc_id)
         if not doc or not doc.extracted_text:
             return
-        await _update_doc(doc_id, processing_status="embedding", pipeline_stage="embedding", processing_error=None)
+        if not quiet:
+            await _update_doc(doc_id, processing_status="embedding", pipeline_stage="embedding", processing_error=None)
         try:
             from app.core.encryption import decrypt_str, encrypt_str
             kek = await _patient_kek(doc.patient_id)
             # Chunk text
             chunks = _chunk_text(decrypt_str(doc.extracted_text, kek))
             if not chunks:
+                if quiet:
+                    return
                 await _update_doc(doc_id, processing_status="completed", pipeline_stage="done")
                 from app.services.email import send_document_processed_notification
                 await send_document_processed_notification(doc_id)
@@ -272,9 +276,12 @@ def embedding_stage(self, doc_id: str):
                 resp = await client.post(f"{settings.ai_service_url}/embed", json={"texts": chunks})
                 _wait_if_busy(self, resp)
                 if resp.status_code != 200:
+                    if quiet:
+                        raise RuntimeError(f"Embedding failed ({resp.status_code})")
                     await _update_doc(doc_id, processing_status="failed", processing_error="Embedding failed")
                     return
-                embeddings = resp.json()["embeddings"]
+                body = resp.json()
+                embeddings = body["embeddings"]
 
             from sqlalchemy import select
             from app.core.database import AsyncSessionLocal
@@ -291,15 +298,19 @@ def embedding_stage(self, doc_id: str):
                         chunk_index=i,
                         content=encrypt_str(text, kek),
                         embedding=emb,
+                        embedding_model=body.get("model"),
                     ))
                 await db.commit()
+            if quiet:
+                return
             await _update_doc(doc_id, processing_status="completed", pipeline_stage="done")
             from app.services.email import send_document_processed_notification
             await send_document_processed_notification(doc_id)
         except Retry:
             raise
         except Exception as e:
-            await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
+            if not quiet:
+                await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
 
     _run(_run_embed())

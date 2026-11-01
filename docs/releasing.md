@@ -30,8 +30,13 @@ publish it to the public repository (ADR 032):
 
 ```bash
 scripts/make-public-snapshot.sh vX.Y.Z        # refuses if anything internal survives
-git -C /tmp/openavisio-public-vX.Y.Z push origin main vX.Y.Z
+git -C /tmp/openavisio-public-vX.Y.Z push origin main vX.Y.Z   # Codeberg, over SSH
+git -C /tmp/openavisio-public-vX.Y.Z push github main vX.Y.Z   # GitHub, with the gh login
 ```
+
+The snapshot clones Codeberg over https but pushes to it over SSH (`git@codeberg.org:...`); there is
+no https login for Codeberg on the release machine. GitHub carries the same snapshot and is pushed
+from the same directory.
 
 `v0.1.0` (18 Jul 2026) was the first tagged release — the point where the
 Go-Live blockers were cleared.

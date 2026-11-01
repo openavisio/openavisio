@@ -70,7 +70,7 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
   async function startSampleUpload() {
     const { getDocuments, deleteDocument } = await import("@/lib/api");
     const existing = await getDocuments(patientId).catch(() => []);
-    const dup = (existing as any[]).find((d) => d.file_name === "sample-followup-letter.pdf");
+    const dup = existing.find((d) => d.file_name === "sample-followup-letter.pdf");
     if (dup) await deleteDocument(dup.id).catch(() => {});
     const blob = await (await fetch("/demo-sample.pdf")).blob();
     addFiles([new File([blob], "sample-followup-letter.pdf", { type: "application/pdf" })]);
@@ -124,7 +124,7 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
           )
         );
     });
-  }, [entries, patientId]);
+  }, [entries, patientId, t]);
 
   // Refresh document list once all uploads finish without errors
   useEffect(() => {

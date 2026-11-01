@@ -6,6 +6,11 @@ import { AiModelConfig } from "./AiModelConfig";
 export default async function AdminOllamaPage() {
   const status = await getOllamaStatus().catch(() => null);
   const t = await getTranslations("AdminAi");
+  // #238: chunks from another (or an unrecorded) model are retrieved by the wrong vectors
+  const embedModel = status?.embed_model;
+  const stale = embedModel
+    ? Object.entries(status.corpus_embed_models).reduce((n, [m, c]) => (m === embedModel ? n : n + c), 0)
+    : 0;
 
   return (
     <AppLayout>
@@ -28,6 +33,13 @@ export default async function AdminOllamaPage() {
         </div>
       </div>
 
+      {stale > 0 && (
+        <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200 p-5 mb-6 text-sm">
+          <div className="font-medium mb-1">{t("EmbedMismatchTitle")}</div>
+          <p>{t("EmbedMismatch", { count: stale, model: embedModel ?? "" })}</p>
+        </div>
+      )}
+
       {status?.models && status.models.length > 0 && (
         <div className="rounded-xl border bg-card overflow-hidden">
           <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">{t("AvailableModels")}</div>
@@ -40,7 +52,7 @@ export default async function AdminOllamaPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {status.models.map((m: any) => (
+              {status.models.map((m) => (
                 <tr key={m.name} className="hover:bg-muted/30">
                   <td className="px-4 py-2 font-mono text-xs">{m.name}</td>
                   <td className="px-4 py-2 text-xs text-muted-foreground">

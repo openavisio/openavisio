@@ -36,7 +36,7 @@ export default auth(async function middleware(req) {
     }
   }
 
-  const sessionError = (req.auth as any)?.error;
+  const sessionError = req.auth?.error;
   if (!isPublicPath && (!req.auth || sessionError === "RefreshTokenExpired")) {
     const loginUrl = new URL("/login", req.url);
     if (sessionError === "RefreshTokenExpired") {

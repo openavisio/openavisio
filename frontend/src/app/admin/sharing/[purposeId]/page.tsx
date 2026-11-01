@@ -20,8 +20,8 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
   const t = await getTranslations("AdminSharing");
   const tc = await getTranslations("Common");
 
-  let purpose: any = null;
-  let shares: any[] = [];
+  let purpose: Awaited<ReturnType<typeof getSharingPurpose>> | null = null;
+  let shares: Awaited<ReturnType<typeof getCollectedShares>> = [];
   let fetchError = false;
   try {
     [purpose, shares] = await Promise.all([

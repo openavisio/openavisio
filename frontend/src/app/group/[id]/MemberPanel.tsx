@@ -3,11 +3,12 @@
 import { useState, useTransition } from "react";
 import { UserPlus, Trash2, Copy, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
+import type { S } from "@/lib/api";
 import { inviteMemberAction, removeMemberAction, updateMemberRoleAction } from "./actions";
 
 const ROLES = ["viewer", "manager", "owner"] as const;
 
-function MemberRow({ member, groupId }: { member: any; groupId: string }) {
+function MemberRow({ member, groupId }: { member: S<"GroupMemberDto">; groupId: string }) {
   const t = useTranslations("GroupPage");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -133,7 +134,7 @@ function InviteForm({ groupId }: { groupId: string }) {
   );
 }
 
-export function MemberPanel({ groupId, members }: { groupId: string; members: any[] }) {
+export function MemberPanel({ groupId, members }: { groupId: string; members: S<"GroupMemberDto">[] }) {
   const t = useTranslations("GroupPage");
   return (
     <div className="rounded-xl border bg-card overflow-hidden">

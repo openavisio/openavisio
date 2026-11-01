@@ -9,7 +9,7 @@ const API_URL = process.env.API_URL || "http://localhost:8000";
  *  panel out of the DOM mid-interaction. It also hands the client the real
  *  status code, so a 503 can be told from any other failure. */
 async function proxy(id: string, init?: RequestInit) {
-  const token = (await auth() as any)?.accessToken ?? null;
+  const token = (await auth())?.accessToken ?? null;
   if (!token) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 
   const res = await fetch(`${API_URL}/api/patients/${id}/chat${init ? "" : "/history"}`, {

@@ -6,7 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { NewPatientForm } from "./NewPatientForm";
 
 export default async function NewPatientPage() {
-  const role = ((await auth())?.user as any)?.role;
+  const role = (await auth())?.user?.role;
   if (role !== "admin" && role !== "manager") redirect("/patients");
   const t = await getTranslations("Patient");
   return (

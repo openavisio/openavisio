@@ -48,11 +48,12 @@ export function PasskeysSection({ initialPasskeys }: Props) {
       if (result.error) {
         setError(result.error);
       } else if (result.passkey) {
-        setPasskeys((prev) => [...prev, result.passkey]);
+        const added = result.passkey;
+        setPasskeys((prev) => [...prev, added]);
         setAddLabel("");
       }
-    } catch (e: any) {
-      if (e?.name !== "NotAllowedError") {
+    } catch (e) {
+      if ((e as Error | null)?.name !== "NotAllowedError") {
         setError(t("Errors.PasskeyAdd"));
       }
     } finally {

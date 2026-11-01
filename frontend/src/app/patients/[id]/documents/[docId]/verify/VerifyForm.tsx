@@ -7,51 +7,7 @@ import Link from "next/link";
 import { verifyDocument } from "@/lib/api";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { Check, ChevronDown, FileText } from "lucide-react";
-
-interface MentionedPerson {
-  name: string;
-  role: string;
-  institution?: string;
-}
-
-interface Appointment {
-  date?: string;
-  time?: string;
-  provider?: string;
-  location?: string;
-  purpose?: string;
-  is_future?: boolean;
-}
-
-interface Observation {
-  type?: string;
-  value?: string | number;
-  unit?: string;
-  category?: string;
-}
-
-/** A Kassenbescheid's Rechtsbehelfsbelehrung — ADR 041. deadline_date is computed
- *  by the backend, never here; this screen only shows it and lets it be corrected. */
-interface Decision {
-  decision_date?: string | null;
-  deadline_months?: number | null;
-  deadline_date?: string | null;
-  authority?: string | null;
-  file_reference?: string | null;
-  subject?: string | null;
-  grounds?: string | null;
-}
-
-interface ExtractionJson {
-  summary?: string;
-  mentioned_persons?: MentionedPerson[];
-  diagnoses?: Record<string, any>[];
-  medications?: Record<string, any>[];
-  observations?: Observation[];
-  appointments?: Appointment[];
-  recommendations?: string[];
-  decision?: Decision | null;
-}
+import type { Appointment, Decision, Diagnosis, ExtractionJson, Medication, Observation } from "@/lib/extraction";
 
 interface Props {
   docId: string;
@@ -101,7 +57,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
   const [selectedAppts, setSelectedAppts] = useSelectionSet(appointments.length);
   const [selectedRecs, setSelectedRecs] = useSelectionSet(recommendations.length);
 
-  const [editedDx, setEditedDx] = useState<Record<string, any>[]>(() => diagnoses.map((d) => ({ ...d })));
+  const [editedDx, setEditedDx] = useState<Diagnosis[]>(() => diagnoses.map((d) => ({ ...d })));
 
   function addNewDx() {
     const idx = editedDx.length;
@@ -109,7 +65,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
     setSelectedDx((prev) => { const next = new Set(prev); next.add(idx); return next; });
     setEditingDx(idx);
   }
-  const [editedMeds, setEditedMeds] = useState<Record<string, any>[]>(() => medications.map((m) => ({ ...m })));
+  const [editedMeds, setEditedMeds] = useState<Medication[]>(() => medications.map((m) => ({ ...m })));
   const [editedMeasurements, setEditedMeasurements] = useState<Observation[]>(() => measurements.map((o) => ({ ...o })));
   const [editedLab, setEditedLab] = useState<Observation[]>(() => labResults.map((o) => ({ ...o })));
   const [editedAppts, setEditedAppts] = useState<Appointment[]>(() => appointments.map((a) => ({ ...a })));

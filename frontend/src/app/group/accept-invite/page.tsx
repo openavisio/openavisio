@@ -22,7 +22,7 @@ export default async function AcceptInvitePage({
 }) {
   const { token } = await searchParams;
   const session = await auth();
-  const accessToken = (session as any)?.accessToken as string | undefined;
+  const accessToken = session?.accessToken as string | undefined;
   const t = await getTranslations("GroupPage");
   const ta = await getTranslations("Access");
 

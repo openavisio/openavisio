@@ -8,7 +8,7 @@ const API = process.env.API_URL || "http://localhost:8000";
 
 async function adminFetch(path: string, body: unknown) {
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}${path}`, {
@@ -31,7 +31,7 @@ export async function setActiveAction(userId: string, isActive: boolean) {
 
 export async function eraseUserAction(userId: string, confirmEmail: string) {
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${process.env.API_URL || "http://localhost:8000"}/api/admin/users/${userId}/erase`, {

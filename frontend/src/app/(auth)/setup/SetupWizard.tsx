@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+
+const never = () => () => {};
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useWizardState } from "./_hooks/useWizardState";
@@ -29,9 +31,8 @@ export function SetupWizard({ hosted }: { hosted: boolean }) {
     typeof window === "undefined" ? "" : new URLSearchParams(location.hash.slice(1)).get("token") ?? "",
   );
   // the token is read from the address bar, which the server render cannot see
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(never, () => true, () => false);
   useEffect(() => {
-    setMounted(true);
     if (new URLSearchParams(location.hash.slice(1)).has("token")) {
       history.replaceState(history.state, "", location.pathname + location.search);
     }

@@ -1480,6 +1480,8 @@
     "Usage": "Auslastung"
   },
   "AdminAi": {
+    "EmbedMismatchTitle": "Die Suche passt nicht mehr zum Embedding-Modell",
+    "EmbedMismatch": "{count, plural, one {# Abschnitt wurde} other {# Abschnitte wurden}} nicht mit {model} eingebettet. Bis sie neu eingebettet sind, findet der Chat zu diesen Dokumenten die falschen Stellen. Neu einbetten im Backend-Container: uv run python cli.py reembed",
     "Title": "KI-Backend",
     "Status": "Status",
     "Connected": "Verbunden",

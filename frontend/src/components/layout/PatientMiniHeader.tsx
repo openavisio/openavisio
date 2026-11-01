@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Cake } from "lucide-react";
 import { PatientAvatar } from "@/components/PatientAvatar";
-import { getPatient } from "@/lib/api";
+import { getPatient, type S } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
 // On a patient's subpages you otherwise lose sight of whose data you are
@@ -20,21 +20,23 @@ export function PatientMiniHeader() {
   const m = pathname.match(/^\/patients\/([^/]+)\/([^/]+)/);
   const patientId = m && m[1] !== "new" ? m[1] : null;
 
-  const [patient, setPatient] = useState<any>(null);
+  // the age is computed when the patient arrives, not during render
+  const [loaded, setLoaded] = useState<{ patient: S<"PatientDto">; age: number | null } | null>(null);
   useEffect(() => {
-    if (!patientId) { setPatient(null); return; }
+    if (!patientId) return;
     let active = true;
     getPatient(patientId)
-      .then((p) => { if (active) setPatient(p); })
+      .then((p) => {
+        const age = p.birth_date ? Math.floor((Date.now() - new Date(p.birth_date).getTime()) / 31_557_600_000) : null;
+        if (active) setLoaded({ patient: p, age });
+      })
       .catch(() => {});
     return () => { active = false; };
   }, [patientId]);
 
+  const patient = loaded?.patient.id === patientId ? loaded.patient : null;
   if (!patientId || !patient) return null;
-
-  const age = patient.birth_date
-    ? Math.floor((Date.now() - new Date(patient.birth_date).getTime()) / 31_557_600_000)
-    : null;
+  const age = loaded?.age ?? null;
 
   return (
     <Link

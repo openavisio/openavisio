@@ -6,7 +6,7 @@ const API = process.env.API_URL || "http://localhost:8000";
 
 export async function GET() {
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

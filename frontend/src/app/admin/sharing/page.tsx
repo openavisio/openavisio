@@ -9,7 +9,7 @@ import { CreatePurposeForm } from "./CreatePurposeForm";
 export default async function AdminSharingPage() {
   const t = await getTranslations("AdminSharing");
   const tc = await getTranslations("Common");
-  let purposes: any[] = [];
+  let purposes: Awaited<ReturnType<typeof getSharingPurposes>> = [];
   let fetchError = false;
   try {
     purposes = await getSharingPurposes();

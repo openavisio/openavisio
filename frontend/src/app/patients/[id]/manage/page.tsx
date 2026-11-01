@@ -8,10 +8,11 @@ import { AccessPanel } from "../AccessPanel";
 import { SharingConsentPanel } from "../SharingConsentPanel";
 import { ShareLinksPanel } from "../ShareLinksPanel";
 import { ErasePatientButton } from "../ErasePatientButton";
+import type { S } from "@/lib/api";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
-async function getCaregivers(patientId: string, accessToken: string): Promise<{ caregivers: any[]; canManage: boolean }> {
+async function getCaregivers(patientId: string, accessToken: string): Promise<{ caregivers: S<"CaregiverDto">[]; canManage: boolean }> {
   const res = await fetch(`${API}/api/patients/${patientId}/access`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
@@ -31,8 +32,8 @@ export default async function PatientManagePage({ params }: { params: Promise<{ 
   ]);
   if (!patient) notFound();
 
-  const accessToken = (session as any)?.accessToken as string | undefined;
-  const currentUserEmail = (session?.user as any)?.email as string | undefined;
+  const accessToken = session?.accessToken as string | undefined;
+  const currentUserEmail = session?.user?.email as string | undefined;
   const { caregivers, canManage } = accessToken
     ? await getCaregivers(id, accessToken).catch(() => ({ caregivers: [], canManage: false }))
     : { caregivers: [], canManage: false };
@@ -44,7 +45,7 @@ export default async function PatientManagePage({ params }: { params: Promise<{ 
     getShareLinks(id).catch(() => []),
   ]);
 
-  const isAdmin = caregivers.some((c: any) => c.user_email === currentUserEmail && c.access_level === "admin");
+  const isAdmin = caregivers.some((c) => c.user_email === currentUserEmail && c.access_level === "admin");
 
   return (
     <AppLayout>

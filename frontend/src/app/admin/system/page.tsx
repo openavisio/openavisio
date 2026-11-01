@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { getSystemInfo } from "@/lib/api";
+import { getSystemInfo, type SystemInfo } from "@/lib/api";
 import { getTranslations } from "next-intl/server";
 import { AlertCircle, Server, Database, Zap, HardDrive, Users } from "lucide-react";
 
@@ -38,7 +38,7 @@ function DiskBar({ pct }: { pct: number }) {
 
 export default async function AdminSystemPage() {
   const t = await getTranslations("AdminSystem");
-  let info: any = null;
+  let info: SystemInfo | null = null;
   let error = false;
 
   try {

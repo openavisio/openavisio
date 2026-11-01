@@ -598,21 +598,22 @@ DOCUMENTS: list[dict] = [
 # Helpers
 # ──────────────────────────────────────────────────────────────
 
-async def _embed_chunks() -> dict[str, list[list[float]]]:
+async def _embed_chunks() -> tuple[dict[str, list[list[float]]], str | None]:
     """Vectors from the AI service the demo runs on, so they match its query embeddings (ADR 019)."""
     import httpx
     from app.core.config import settings
-    out = {}
+    out, model = {}, None
     try:
         async with httpx.AsyncClient(timeout=120, headers=settings.ai_service_headers) as client:
             for key, texts in CHUNK_TEXTS.items():
                 resp = await client.post(f"{settings.ai_service_url}/embed", json={"texts": texts})
                 resp.raise_for_status()
                 out[key] = resp.json()["embeddings"]
+                model = resp.json().get("model")
     except Exception as e:
         print(f"WARNING: no embeddings ({e}); the chat will not find anything in the letters.")
-        return {}
-    return out
+        return {}, None
+    return out, model
 
 
 async def _get_or_create_org(db: AsyncSession) -> Organization:
@@ -687,7 +688,7 @@ async def main() -> None:
     engine = create_async_engine(database_url)
     Session = async_sessionmaker(engine, expire_on_commit=False)
 
-    embeddings = await _embed_chunks()
+    embeddings, embed_model = await _embed_chunks()
 
     # Verify PDFs exist before starting DB work
     missing = [d["filename"] for d in DOCUMENTS if not (DOCS_DIR / d["filename"]).exists()]
@@ -954,6 +955,7 @@ async def main() -> None:
                     chunk_index=i,
                     content=chunk_text,
                     embedding=vector,
+                    embedding_model=embed_model if vector else None,
                 ))
 
             print(f"  Document: {doc_def['filename']}")

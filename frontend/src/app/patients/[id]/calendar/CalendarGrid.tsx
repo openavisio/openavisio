@@ -4,19 +4,9 @@ import { useEffect, useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, X, Plus, Pencil, Trash2, Pill, Check } from "lucide-react";
-import { getCalendarFeed, getCalendarEvent, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/api";
+import { getCalendarFeed, getCalendarEvent, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, type S } from "@/lib/api";
 
-interface FeedItem {
-  id: string;
-  title: string;
-  start: string;
-  end: string | null;
-  all_day: boolean;
-  type: string;
-  color: string;
-  url?: string | null;
-  developmental_domain?: string | null;
-}
+type FeedItem = S<"CalendarFeedItem">;
 
 const DOMAINS = ["motor", "speech", "cognitive", "social"] as const;
 
@@ -29,6 +19,7 @@ const TYPE_LABEL = (t: (k: string) => string, type: string) =>
     ? t({ appointment: "Appointment", milestone: "Milestone", deadline: "Deadline" }[type]!)
     : type);
 type EventCategory = (typeof CATEGORIES)[number];
+type Domain = (typeof DOMAINS)[number];
 
 
 const TYPE_PILL: Record<string, string> = {
@@ -89,8 +80,12 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   const [year, setYear] = useState(start ? Number(start[0]) : today.getFullYear());
   const [month, setMonth] = useState(start ? Number(start[1]) - 1 : today.getMonth());
   const [items, setItems] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
+  // which month the shown items belong to; loading until the current one answers
+  const monthKey = `${patientId}:${year}-${month}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const fetchError = failedKey === monthKey;
+  const loading = loadedKey !== monthKey && !fetchError;
 
   // Medication courses as bars across the days they were taken, not two lonely
   // "Rx start" / "Rx end" pills (#130). Off by default — it is extra ink.
@@ -98,7 +93,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
 
   const [drawerMode, setDrawerMode] = useState<"detail" | "edit" | "create" | null>(null);
   const [selected, setSelected] = useState<FeedItem | null>(null);
-  const [eventDetail, setEventDetail] = useState<any>(null);
+  const [eventDetail, setEventDetail] = useState<S<"CalendarEventDto"> | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pending, startTransition] = useTransition();
   const [mutError, setMutError] = useState("");
@@ -112,7 +107,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   const [fLocation, setFLocation] = useState("");
   const [fPurpose, setFPurpose] = useState("");
   const [fCategory, setFCategory] = useState<EventCategory>("appointment");
-  const [fDomain, setFDomain] = useState("");
+  const [fDomain, setFDomain] = useState<Domain | "">("");
 
   const lastDate = new Date(year, month + 1, 0).getDate();
 
@@ -126,14 +121,13 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   }
 
   useEffect(() => {
-    setLoading(true);
-    setFetchError(false);
+    const key = `${patientId}:${year}-${month}`;
     const last = new Date(year, month + 1, 0).getDate();
     const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
     const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
     getCalendarFeed(patientId, { from, to })
-      .then((data) => { setItems(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(() => { setFetchError(true); setLoading(false); });
+      .then((data) => { setItems(Array.isArray(data) ? data : []); setLoadedKey(key); setFailedKey(null); })
+      .catch(() => setFailedKey(key));
   }, [year, month, patientId]);
 
   const eventsByDay = useMemo(
@@ -214,7 +208,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
     setFLocation(detail.location ?? "");
     setFPurpose(detail.purpose ?? "");
     setFCategory(CATEGORIES.includes(detail.category as EventCategory) ? (detail.category as EventCategory) : "appointment");
-    setFDomain(detail.developmental_domain ?? "");
+    setFDomain(DOMAINS.includes(detail.developmental_domain as Domain) ? (detail.developmental_domain as Domain) : "");
     setMutError("");
     setDrawerMode("edit");
   }
@@ -232,7 +226,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setMutError("");
-    const body: any = {
+    const body: S<"CalendarEventCreateRequest"> = {
       title: fTitle,
       start_at: fStart,
       all_day: fAllDay,
@@ -271,7 +265,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
           title: detail.title,
           start_at: detail.start_at,
           all_day: detail.all_day ?? false,
-          category: detail.category,
+          category: detail.category as EventCategory,
           status: next,
           ...(detail.end_at ? { end_at: detail.end_at } : {}),
           ...(detail.provider ? { provider: detail.provider } : {}),
@@ -321,7 +315,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   // title. Same rule as the documents list: say what it is and who wrote it.
   function eventLabel(ev: FeedItem): string {
     if (ev.type !== "document") return ev.title;
-    const cls = (ev as any).classification as string | undefined;
+    const cls = ev.classification;
     const label = cls && tc.has(`class_${cls}`) ? tc(`class_${cls}`) : null;
     if (label && ev.title && ev.title !== label) return `${label} · ${ev.title}`;
     return label ?? ev.title;
@@ -740,7 +734,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
                       <label className="text-sm font-medium">{t("DevDomain")}</label>
                       <select
                         value={fDomain}
-                        onChange={(e) => setFDomain(e.target.value)}
+                        onChange={(e) => setFDomain(e.target.value as Domain | "")}
                         className={inputCls}
                       >
                         <option value="">—</option>

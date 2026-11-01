@@ -12,6 +12,11 @@ import { DocumentViewer } from "@/components/DocumentViewer";
 import { ClipboardCheck, Download } from "lucide-react";
 import { FavoriteButton } from "../FavoriteButton";
 import { AiNotice } from "@/components/AiNotice";
+import type { ExtractionJson, Observation } from "@/lib/extraction";
+import type { S } from "@/lib/api";
+
+type ObservationDto = S<"ObservationDto">;
+type ObsRow = { name: string; value: string; unit: string; reference: string; flag: "low" | "high" | null; panel?: string | null; category?: string | null };
 
 export default async function DocumentDetailPage({ params }: { params: Promise<{ id: string; docId: string }> }) {
   const { id, docId } = await params;
@@ -21,45 +26,44 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     getPatient(id).catch(() => null),
     getDocumentDetail(docId).catch(() => null),
     getCorrespondents().catch(() => []),
-    getObservations(id).catch(() => [] as any[]),
+    getObservations(id).catch(() => []),
   ]);
   if (!doc) notFound();
 
-  const j = doc.extraction_json ?? {};
-  const obs: any[] = j.observations ?? [];
-  const diagnoses: any[] = j.diagnoses ?? [];
-  const medications: any[] = j.medications ?? [];
-  const appointments: any[] = j.appointments ?? [];
-  const recommendations: string[] = j.recommendations ?? [];
-  const persons: any[] = j.mentioned_persons ?? [];
+  const j: ExtractionJson = doc.extraction_json ?? {};
+  const obs = j.observations ?? [];
+  const diagnoses = j.diagnoses ?? [];
+  const medications = j.medications ?? [];
+  const appointments = j.appointments ?? [];
+  const recommendations = j.recommendations ?? [];
+  const persons = j.mentioned_persons ?? [];
 
   // Prefer the saved (verified) observations for this document — they carry the
   // canonical panel and parsed reference range (out-of-range). Fall back to the
   // raw extraction for a not-yet-verified document.
-  const savedForDoc = (allObs as any[]).filter((o) => o.document_reference_id === docId);
+  const savedForDoc = allObs.filter((o) => o.document_reference_id === docId);
   const useSaved = savedForDoc.length > 0;
 
-  const outOfRange = (o: any): "low" | "high" | null => {
+  const outOfRange = (o: ObservationDto): "low" | "high" | null => {
     if (o.value_quantity == null) return null;
     if (o.ref_low != null && o.value_quantity < o.ref_low) return "low";
     if (o.ref_high != null && o.value_quantity > o.ref_high) return "high";
     return null;
   };
-  const normalize = (o: any) => {
-    if (useSaved) {
-      const ref = o.reference_range
-        || (o.ref_low != null && o.ref_high != null ? `${o.ref_low}–${o.ref_high}`
-          : o.ref_high != null ? `< ${o.ref_high}` : o.ref_low != null ? `> ${o.ref_low}` : "");
-      return {
-        name: o.code_display || o.code || "",
-        value: o.value_quantity != null ? `${o.value_quantity}` : (o.value_string || ""),
-        unit: o.value_unit || "", reference: ref, flag: outOfRange(o), panel: o.panel, category: o.category,
-      };
-    }
-    return { name: o.type, value: o.value ?? "", unit: o.unit || "", reference: o.reference_range || "", flag: null as null, panel: o.panel, category: o.category };
+  const fromSaved = (o: ObservationDto): ObsRow => {
+    const ref = o.reference_range
+      || (o.ref_low != null && o.ref_high != null ? `${o.ref_low}–${o.ref_high}`
+        : o.ref_high != null ? `< ${o.ref_high}` : o.ref_low != null ? `> ${o.ref_low}` : "");
+    return {
+      name: o.code_display || o.code || "",
+      value: o.value_quantity != null ? `${o.value_quantity}` : (o.value_string || ""),
+      unit: o.value_unit || "", reference: ref, flag: outOfRange(o), panel: o.panel, category: o.category,
+    };
   };
+  const fromRaw = (o: Observation): ObsRow =>
+    ({ name: o.type ?? "", value: String(o.value ?? ""), unit: o.unit || "", reference: o.reference_range || "", flag: null, panel: o.panel, category: o.category });
 
-  const rows = (useSaved ? savedForDoc : obs).map(normalize);
+  const rows: ObsRow[] = useSaved ? savedForDoc.map(fromSaved) : obs.map(fromRaw);
   const labRows = rows.filter((r) => r.category === "lab");
   const vitals = rows.filter((r) => r.category !== "lab");
 
@@ -313,7 +317,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Row({ label, value, className = "" }: { label: string; value: any; className?: string }) {
+function Row({ label, value, className = "" }: { label: string; value: React.ReactNode; className?: string }) {
   if (!value) return null;
   return (
     <div className="flex justify-between gap-3">

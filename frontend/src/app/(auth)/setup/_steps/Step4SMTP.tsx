@@ -64,7 +64,7 @@ export function Step4SMTP({ state, onChange, onSkip }: Props) {
           <label className="text-sm font-medium">{label}</label>
           <input
             type={type}
-            value={(state.smtp as any)[field]}
+            value={state.smtp[field as Exclude<keyof typeof state.smtp, "skip">]}
             onChange={(e) => onChange({ [field]: e.target.value })}
             className="w-full rounded-lg border px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />

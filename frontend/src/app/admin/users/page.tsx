@@ -15,7 +15,7 @@ export default async function AdminUsersPage() {
   const { data: users, error } = usersResult;
   const t = await getTranslations("AdminUsers");
   const tc = await getTranslations("Common");
-  const selfEmail = (session?.user as any)?.email;
+  const selfEmail = session?.user?.email;
 
   return (
     <AppLayout>
@@ -42,7 +42,7 @@ export default async function AdminUsersPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {users.map((u: any) => {
+            {users.map((u) => {
               const name = [u.first_name, u.last_name].filter(Boolean).join(" ");
               return (
                 <tr key={u.id} className="hover:bg-muted/30 transition-colors">

@@ -58,6 +58,7 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
   if (contentType.startsWith("image/")) {
     return (
       <div className={`flex items-center justify-center bg-muted rounded-xl overflow-hidden ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- a blob: URL, next/image cannot load it */}
         <img src={blobUrl} alt={t("document")} className="max-w-full max-h-full object-contain" />
       </div>
     );

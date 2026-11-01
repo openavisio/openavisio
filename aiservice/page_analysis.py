@@ -33,7 +33,7 @@ def _binary_rows(img: Image.Image, width: int = 400):
     g = img.convert("L")
     h = max(1, round(g.height * width / g.width))
     g = g.resize((width, h))
-    px = list(g.getdata())
+    px = list(g.get_flattened_data())
     # Otsu-lite: threshold at (mean - 0.5*stdev) so light grey shading stays "background".
     stat = ImageStat.Stat(g)
     thr = max(0.0, stat.mean[0] - 20)

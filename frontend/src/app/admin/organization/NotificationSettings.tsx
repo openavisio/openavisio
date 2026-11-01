@@ -2,15 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { updateNotificationSettings } from "@/lib/api";
+import { updateNotificationSettings, type NotificationSettings } from "@/lib/api";
 
-type Settings = {
-  event_reminder: boolean;
-  caregiver_added: boolean;
-  invitation: boolean;
-  include_content: boolean;
-  document_processed: boolean;
-};
+type Settings = NotificationSettings;
 
 // label/description are message keys in the Org namespace, not text.
 const LABELS: { key: keyof Settings; label: string; description: string }[] = [

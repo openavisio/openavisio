@@ -22,7 +22,7 @@ export default async function SettingsPage() {
   const s = await getTranslations("SettingsPage");
   const host = (await headers()).get("host");
   const isSystem = !cookieStore.has("NEXT_LOCALE");
-  const user = session?.user as any;
+  const user = session?.user;
 
   return (
     <AppLayout>
@@ -43,7 +43,7 @@ export default async function SettingsPage() {
               <dt className="text-muted-foreground">{s("Role")}</dt>
               <dd>
                 <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                  {["admin", "manager", "user"].includes(user?.role) ? s(`Roles.${user.role}`) : user?.role ?? "—"}
+                  {user?.role && ["admin", "manager", "user"].includes(user.role) ? s(`Roles.${user.role}`) : user?.role ?? "—"}
                 </span>
               </dd>
             </>

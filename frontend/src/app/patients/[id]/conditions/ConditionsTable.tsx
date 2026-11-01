@@ -7,15 +7,18 @@ import { formatDate, statusBadgeColor } from "@/lib/utils";
 import { ConditionActions } from "./ConditionActions";
 import { MergeConditionButton } from "./MergeConditionButton";
 import { ConditionName } from "./ConditionName";
+import type { S } from "@/lib/api";
 
-function sortedSources(sources: any[]) {
-  return [...sources].sort((a: any, b: any) => (a.issued_date ?? "9999").localeCompare(b.issued_date ?? "9999"));
+type Source = S<"ConditionSourceDto">;
+
+function sortedSources(sources: Source[]) {
+  return [...sources].sort((a, b) => (a.issued_date ?? "9999").localeCompare(b.issued_date ?? "9999"));
 }
 
-function Sources({ sources, patientId }: { sources: any[]; patientId: string }) {
+function Sources({ sources, patientId }: { sources: Source[]; patientId: string }) {
   const t = useTranslations("Conditions");
   const td = useTranslations("DocDetail");
-  const dates = sources.map((s: any) => s.issued_date).filter(Boolean).sort();
+  const dates = sources.map((s) => s.issued_date).filter(Boolean).sort();
   return (
     <div className="flex items-center gap-1.5 whitespace-nowrap">
       <span>
@@ -33,7 +36,7 @@ function Sources({ sources, patientId }: { sources: any[]; patientId: string }) 
           <FileText className="h-3.5 w-3.5" />
         </summary>
         <ul className="absolute right-0 z-10 mt-1 w-64 space-y-1 rounded-md border bg-card p-2 shadow-md">
-          {sortedSources(sources).map((s: any) => (
+          {sortedSources(sources).map((s) => (
             <li key={s.document_reference_id} className="truncate">
               <a
                 href={`/patients/${patientId}/documents/${s.document_reference_id}`}
@@ -52,12 +55,12 @@ function Sources({ sources, patientId }: { sources: any[]; patientId: string }) 
   );
 }
 
-function tSafe(t: any, key: string, raw: string | null | undefined) {
+function tSafe(t: (key: string) => string, key: string, raw: string | null | undefined) {
   if (!raw) return "—";
   try { return t(`${key}_${raw}`); } catch { return raw; }
 }
 
-export function ConditionsTable({ conditions, patientId }: { conditions: any[]; patientId: string }) {
+export function ConditionsTable({ conditions, patientId }: { conditions: S<"ConditionDto">[]; patientId: string }) {
   // Phone: the documents-list look — one card per condition, a tap reveals the
   // icon action bar under the card. Desktop keeps the table.
   const t = useTranslations("Conditions");
@@ -67,7 +70,7 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
   return (
     <>
       <div className="space-y-3 lg:hidden">
-        {conditions.map((c: any) => {
+        {conditions.map((c) => {
           const open = revealed === c.id;
           return (
             <div
@@ -93,7 +96,7 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
                   is a target nobody hits on the first try */}
               {open && c.sources?.length > 0 && (
                 <ul className="divide-y border-t">
-                  {sortedSources(c.sources).map((s: any) => (
+                  {sortedSources(c.sources).map((s) => (
                     <li key={s.document_reference_id}>
                       <a
                         href={`/patients/${patientId}/documents/${s.document_reference_id}`}
@@ -120,7 +123,7 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
                     <MergeConditionButton
                       id={c.id}
                       name={c.code_display}
-                      candidates={conditions.filter((x: any) => x.id !== c.id).map((x: any) => ({ id: x.id, name: x.code_display }))}
+                      candidates={conditions.filter((x) => x.id !== c.id).map((x) => ({ id: x.id, name: x.code_display }))}
                       iconBar
                     />
                   }
@@ -144,7 +147,7 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
             </tr>
           </thead>
           <tbody className="divide-y">
-            {conditions.map((c: any) => (
+            {conditions.map((c) => (
               <tr key={c.id} className={`hover:bg-muted/30 transition-colors ${c.clinical_status === "inactive" ? "opacity-50" : ""}`}>
                 <td className="px-4 py-3 font-medium max-w-0 w-1/2"><ConditionName name={c.code_display} />{c.verification_status === "provisional" && (
                     <span className="ml-2 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground">{t("suspected")}</span>
@@ -164,7 +167,7 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
                     <MergeConditionButton
                       id={c.id}
                       name={c.code_display}
-                      candidates={conditions.filter((x: any) => x.id !== c.id).map((x: any) => ({ id: x.id, name: x.code_display }))}
+                      candidates={conditions.filter((x) => x.id !== c.id).map((x) => ({ id: x.id, name: x.code_display }))}
                     />
                     <ConditionActions id={c.id} status={c.clinical_status} />
                   </div>

@@ -63,6 +63,7 @@ class DocumentDetailDto(OrmBase):
     description: str | None
     issued_date: date | None
     file_name: str | None
+    content_type: str | None = None
     processing_status: str
     pipeline_stage: str | None
     processing_error: str | None

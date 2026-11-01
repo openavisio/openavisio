@@ -23,7 +23,7 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
   // a hosted Deployment is run by the operator: the customer's admin sees invitations and the audit log
   const hosted = process.env.HOSTED_SETUP === "true"
 
-  const user = session?.user as any
+  const user = session?.user;
 
   let hasGroups = false
   try { hasGroups = (await getGroups()).length > 0 } catch {}
@@ -44,7 +44,7 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
-      <AppSidebar orgName={orgName} userRole={user?.role} userName={user?.name} hasGroups={hasGroups} isHousehold={isHousehold} hosted={hosted} favorites={favorites} />
+      <AppSidebar orgName={orgName} userRole={user?.role} userName={user?.name ?? undefined} hasGroups={hasGroups} isHousehold={isHousehold} hosted={hosted} favorites={favorites} />
       <SidebarInset>
         {/* No chrome header — the collapse toggle now lives in the sidebar
             itself, and on mobile the bottom nav is the sole navigation (ADR 030) */}
@@ -64,7 +64,7 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
           <AppFooter orgName={isHousehold ? undefined : orgName} />
         </div>
       </SidebarInset>
-      <MobileTabBar userRole={user?.role} userName={user?.name} hasGroups={hasGroups} isHousehold={isHousehold} hosted={hosted} favorites={favorites} />
+      <MobileTabBar userRole={user?.role} userName={user?.name ?? undefined} hasGroups={hasGroups} isHousehold={isHousehold} hosted={hosted} favorites={favorites} />
     </SidebarProvider>
   )
 }

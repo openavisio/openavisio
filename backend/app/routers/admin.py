@@ -15,6 +15,7 @@ from app.core.database import get_db
 from app.core.log_handler import REDIS_CHANNEL
 from app.deps import get_current_user, operator_only, require_admin
 from app.models.audit import AuditLog
+from app.models.chat import DocumentChunk
 from app.models.document import DocumentReference
 from app.models.log_entry import LogEntry
 from app.models.group import Group, GroupMembership
@@ -172,8 +173,13 @@ async def make_manager(user_id: uuid.UUID, admin: User = Depends(require_admin),
 
 @router.get("/groups", response_model=list[AdminGroupDto])
 async def list_groups(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Group).where(Group.is_deleted == False))  # noqa: E712
-    return result.scalars().all()
+    groups = (await db.execute(select(Group).where(Group.is_deleted == False))).scalars().all()  # noqa: E712
+    members = dict((await db.execute(
+        select(GroupMembership.group_id, func.count())
+        .where(GroupMembership.status == "active", GroupMembership.is_deleted == False)  # noqa: E712
+        .group_by(GroupMembership.group_id)
+    )).all())
+    return [AdminGroupDto(**AdminGroupDto.model_validate(g).model_dump(exclude={"member_count"}), member_count=members.get(g.id, 0)) for g in groups]
 
 
 @router.get("/groups/{group_id}/members", response_model=list[AdminGroupMemberDto])
@@ -261,6 +267,16 @@ async def _get_ai_model_settings(db: AsyncSession) -> dict[str, str | None]:
     return {row.key.removeprefix("ai.model."): row.value for row in rows.scalars().all()}
 
 
+async def _corpus_embed_models(db: AsyncSession) -> dict[str, int]:
+    """Chunks per embedding model; "" counts chunks from before the model was recorded (#238)."""
+    rows = await db.execute(
+        select(DocumentChunk.embedding_model, func.count())
+        .where(DocumentChunk.is_deleted == False)  # noqa: E712
+        .group_by(DocumentChunk.embedding_model)
+    )
+    return {model or "": n for model, n in rows.all()}
+
+
 @router.get("/ollama", dependencies=[Depends(operator_only)], response_model=OllamaSettingsDto)
 async def get_ollama_settings(admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     model_settings = await _get_ai_model_settings(db)
@@ -269,6 +285,7 @@ async def get_ollama_settings(admin: User = Depends(require_admin), db: AsyncSes
     connected = False
     ollama_url: str | None = None
     backend_type: str | None = None
+    embed_model: str | None = None
     try:
         async with httpx.AsyncClient(timeout=5, headers=settings.ai_service_headers) as client:
             resp = await client.get(f"{settings.ai_service_url}/models")
@@ -277,6 +294,7 @@ async def get_ollama_settings(admin: User = Depends(require_admin), db: AsyncSes
                 data = resp.json()
                 ollama_url = data.get("ollama_url")
                 backend_type = data.get("backend")
+                embed_model = data.get("embed_model")
                 for m in data.get("models", []):
                     models.append(OllamaModelInfo(
                         name=m.get("name", ""),
@@ -296,7 +314,8 @@ async def get_ollama_settings(admin: User = Depends(require_admin), db: AsyncSes
         connected=connected,
         url=ollama_url,
         models=models,
-        embed_model=None,
+        embed_model=embed_model,
+        corpus_embed_models=await _corpus_embed_models(db),
         classify_model=current.get("classify"),
         extract_model=current.get("extract"),
         vision_model=current.get("vision"),

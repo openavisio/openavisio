@@ -63,7 +63,7 @@ function LinkRow({ patientId, link, documents }: { patientId: string; link: Shar
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusClass(link.status)}`}>
-              {t(`status_${link.status}` as any)}
+              {t(`status_${link.status}`)}
             </span>
             <span className="text-sm text-muted-foreground">
               {link.documents.length} {t("documentsCount")}

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
+
+const never = () => () => {};
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { UserPlus, Trash2, ExternalLink, Link2, Copy, Check, Pencil, ChevronDown } from "lucide-react";
 import { grantAccessAction, revokeAccessAction, createCaregiverInviteAction, updateAccessAction, listUserDirectoryAction } from "./access-actions";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
+import type { S } from "@/lib/api";
 
 const LEVEL_VALUES = ["view", "contribute", "full", "admin"] as const;
 
@@ -88,21 +91,7 @@ function RelationshipSelect({
   );
 }
 
-type Caregiver = {
-  id: string;
-  user_id: string;
-  user_email: string;
-  source: "direct" | "group";
-  access_level?: string | null;
-  relationship?: string | null;
-  is_legal_representative?: boolean;
-  granted_at?: string | null;
-  expires_at?: string | null;
-  purpose?: string | null;
-  group_id?: string | null;
-  group_name?: string | null;
-  group_role?: string | null;
-};
+type Caregiver = S<"CaregiverDto">;
 
 function DirectRow({ caregiver, patientId, currentUserEmail }: { caregiver: Caregiver; patientId: string; currentUserEmail?: string }) {
   const t = useTranslations("Access");
@@ -446,7 +435,7 @@ function InviteForm({ patientId }: { patientId: string }) {
 function HandoverBanner({ patientId, caregivers, currentUserEmail }: { patientId: string; caregivers: Caregiver[]; currentUserEmail?: string }) {
   const t = useTranslations("Access");
   const [pending, startTransition] = useTransition();
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissedNow, setDismissed] = useState(false);
   const router = useRouter();
 
   const mine = caregivers.find(
@@ -456,9 +445,8 @@ function HandoverBanner({ patientId, caregivers, currentUserEmail }: { patientId
     (c) => c.access_level === "admin" && c.user_email !== currentUserEmail
   );
   const storageKey = `handoverDismissed:${patientId}`;
-  useEffect(() => {
-    setDismissed(localStorage.getItem(storageKey) === "1");
-  }, [storageKey]);
+  const dismissedBefore = useSyncExternalStore(never, () => localStorage.getItem(storageKey) === "1", () => false);
+  const dismissed = dismissedBefore || dismissedNow;
 
   if (!mine || !otherAdmin || dismissed) return null;
 

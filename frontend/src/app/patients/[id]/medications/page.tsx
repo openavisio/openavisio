@@ -10,8 +10,8 @@ import { AiNotice } from "@/components/AiNotice";
 export default async function MedicationsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const t = await getTranslations("Med");
-  let patient: any = null;
-  let medications: any[] = [];
+  let patient: Awaited<ReturnType<typeof getPatient>> | null = null;
+  let medications: Awaited<ReturnType<typeof getMedications>> = [];
   let fetchError = false;
 
   try { patient = await getPatient(id); } catch {}

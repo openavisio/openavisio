@@ -9,7 +9,7 @@ const API = process.env.API_URL || "http://localhost:8000";
 // Serve the decrypted photo inline so an <img src> works via the session cookie.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const token = ((await auth()) as any)?.accessToken ?? null;
+  const token = (await auth())?.accessToken ?? null;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const res = await fetch(`${API}/api/patients/${id}/photo`, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) return NextResponse.json({ error: "Not found" }, { status: res.status });
@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
-  const token = (session as any)?.accessToken ?? null;
+  const token = session?.accessToken ?? null;
   const formData = await req.formData();
   const res = await fetch(`${API}/api/patients/${id}/photo`, {
     method: "POST",
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
-  const token = (session as any)?.accessToken ?? null;
+  const token = session?.accessToken ?? null;
   const res = await fetch(`${API}/api/patients/${id}/photo`, {
     method: "DELETE",
     headers: token ? { Authorization: `Bearer ${token}` } : {},

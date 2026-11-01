@@ -9,6 +9,9 @@ Commands:
     changepassword <email> <pw>     Reset to a given password (non-interactive)
     createuser <email> <role>       Create a new user (prompts for password)
     listusers                       List all users
+    reembed                         Queue every chunk not embedded by the configured
+                                    embedding model for a new embedding (#238);
+                                    run again to pick up what is left
 """
 
 import asyncio
@@ -114,6 +117,40 @@ async def cmd_listusers():
             print(fmt.format(u.email, u.role, "yes" if u.is_active else "no", last))
 
 
+async def cmd_reembed():
+    import httpx
+    from sqlalchemy import or_, select
+    from app.core.config import settings
+    from app.core.database import AsyncSessionLocal
+    from app.models.chat import DocumentChunk
+    from app.workers.pipeline import embedding_stage
+    from app.workers.scheduler import diary_embedding_job
+
+    async with httpx.AsyncClient(timeout=10, headers=settings.ai_service_headers) as client:
+        resp = await client.get(f"{settings.ai_service_url}/models")
+        resp.raise_for_status()
+        model = resp.json().get("embed_model")
+    if not model:
+        print("The AI service names no embedding model.", file=sys.stderr)
+        sys.exit(1)
+
+    stale = (DocumentChunk.is_deleted == False) & or_(  # noqa: E712
+        DocumentChunk.embedding_model.is_(None), DocumentChunk.embedding_model != model,
+    )
+    async with AsyncSessionLocal() as db:
+        docs = (await db.execute(select(DocumentChunk.document_reference_id).where(
+            stale, DocumentChunk.document_reference_id.is_not(None)).distinct())).scalars().all()
+        entries = (await db.execute(select(DocumentChunk.diary_entry_id).where(
+            stale, DocumentChunk.diary_entry_id.is_not(None)).distinct())).scalars().all()
+
+    # the gpu queue runs them one by one and backs off while the AI service is busy
+    for doc_id in docs:
+        embedding_stage.delay(str(doc_id), quiet=True)
+    for entry_id in entries:
+        diary_embedding_job.delay(str(entry_id))
+    print(f"Queued {len(docs)} documents and {len(entries)} diary entries for {model}.")
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -140,6 +177,9 @@ def main():
 
     elif cmd == "listusers":
         asyncio.run(cmd_listusers())
+
+    elif cmd == "reembed":
+        asyncio.run(cmd_reembed())
 
     else:
         print(f"Unknown command: {cmd}", file=sys.stderr)

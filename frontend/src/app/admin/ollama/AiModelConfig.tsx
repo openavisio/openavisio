@@ -3,15 +3,9 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { saveAiModelsAction } from "./actions";
+import type { S } from "@/lib/api";
 
-interface ModelInfo {
-  name: string;
-  size?: number;
-  modified_at?: string;
-  tasks: string[];
-  hint?: string;
-  tags: string[];
-}
+type ModelInfo = S<"OllamaModelInfo">;
 
 interface Props {
   models: ModelInfo[];

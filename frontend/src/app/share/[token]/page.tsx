@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ShieldCheck, FileText, CalendarClock, AlertTriangle } from "lucide-react";
 import { PublicDocumentViewer } from "./PublicDocumentViewer";
+import type { ExtractionJson } from "@/lib/extraction";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -16,7 +17,7 @@ type PublicDoc = {
   size: number | null;
   type: string | null;
   issued_date: string | null;
-  extraction: Record<string, any> | null;
+  extraction: ExtractionJson | null;
 };
 
 type PublicShare = {
@@ -36,13 +37,13 @@ async function getShare(token: string): Promise<{ data?: PublicShare; status: nu
   return { data: await res.json(), status: 200 };
 }
 
-function ExtractionSummary({ json }: { json: Record<string, any> | null }) {
+function ExtractionSummary({ json }: { json: ExtractionJson | null }) {
   if (!json) return null;
   const counts = [
     { label: "diagnoses", n: json.diagnoses?.length ?? 0 },
     { label: "medications", n: json.medications?.length ?? 0 },
-    { label: "measurements", n: (json.observations ?? []).filter((o: any) => o.category !== "lab").length },
-    { label: "lab results", n: (json.observations ?? []).filter((o: any) => o.category === "lab").length },
+    { label: "measurements", n: (json.observations ?? []).filter((o) => o.category !== "lab").length },
+    { label: "lab results", n: (json.observations ?? []).filter((o) => o.category === "lab").length },
     { label: "events", n: json.appointments?.length ?? 0 },
     { label: "recommendations", n: json.recommendations?.length ?? 0 },
   ].filter((c) => c.n > 0);

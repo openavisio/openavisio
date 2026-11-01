@@ -70,7 +70,8 @@ def diary_embedding_job(self, entry_id: str):
                 resp = await client.post(f"{settings.ai_service_url}/embed", json={"texts": [text]})
                 if resp.status_code != 200:
                     return
-                embedding = resp.json()["embeddings"][0]
+                body = resp.json()
+                embedding = body["embeddings"][0]
 
             # Remove old chunks
             existing = await db.execute(select(DocumentChunk).where(DocumentChunk.diary_entry_id == uuid.UUID(entry_id)))
@@ -83,6 +84,7 @@ def diary_embedding_job(self, entry_id: str):
                 chunk_index=0,
                 content=encrypt_str(text, kek),
                 embedding=embedding,
+                embedding_model=body.get("model"),
             ))
             await db.commit()
 

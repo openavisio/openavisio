@@ -1,7 +1,21 @@
-import NextAuth, { CredentialsSignin } from "next-auth";
+import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { verifyChallengeFromCookieHeader } from "@/lib/passkey-challenge";
 import { forwardedFor } from "@/lib/forwarded";
+
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+    error?: string;
+    user: DefaultSession["user"] & { role?: string };
+  }
+  interface User {
+    role?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: string;
+  }
+}
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -79,10 +93,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       // Initial sign-in: store all fields from the authorize result
       if (user) {
-        token.accessToken = (user as any).accessToken;
-        token.refreshToken = (user as any).refreshToken;
-        token.role = (user as any).role;
-        token.expiresAt = (user as any).expiresAt;
+        token.accessToken = user.accessToken;
+        token.refreshToken = user.refreshToken;
+        token.role = user.role;
+        token.expiresAt = user.expiresAt;
         return token;
       }
 
@@ -94,7 +108,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // A refresh that already failed stays failed — the refresh token is dead,
       // and retrying it on every request meant a handful of 401s per page load.
-      if ((token as any).error) return token;
+      if (token.error) return token;
 
       // Attempt silent refresh
       try {
@@ -108,21 +122,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.accessToken = data.access_token;
           token.refreshToken = data.refresh_token;
           token.expiresAt = data.expires_at;
-          delete (token as any).error;
+          delete token.error;
         } else {
-          (token as any).error = "RefreshTokenExpired";
+          token.error = "RefreshTokenExpired";
         }
       } catch {
-        (token as any).error = "RefreshTokenExpired";
+        token.error = "RefreshTokenExpired";
       }
 
       return token;
     },
     async session({ session, token }) {
-      (session as any).accessToken = token.accessToken;
-      (session.user as any).role = token.role;
-      if ((token as any).error) {
-        (session as any).error = (token as any).error;
+      session.accessToken = token.accessToken as string | undefined;
+      session.user.role = token.role as string | undefined;
+      if (token.error) {
+        session.error = token.error as string;
       }
       return session;
     },

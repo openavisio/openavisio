@@ -8,7 +8,7 @@ const API = process.env.API_URL || "http://localhost:8000";
 
 export async function erasePatientAction(patientId: string, confirmName: string) {
   const session = await auth();
-  const token = (session as any)?.accessToken as string | undefined;
+  const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/patients/${patientId}/erase`, {

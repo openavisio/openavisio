@@ -8,7 +8,7 @@ const API = process.env.API_URL || "http://localhost:8000";
 
 async function token() {
   const session = await auth();
-  return (session as any)?.accessToken as string | undefined;
+  return session?.accessToken as string | undefined;
 }
 
 export async function createPurposeAction(input: {

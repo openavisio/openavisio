@@ -26,7 +26,7 @@ const THIRD_PARTY = [
 export default async function LicensePage() {
   const session = await auth();
   const t = await getTranslations("AdminLicense");
-  const accessToken = (session as any)?.accessToken;
+  const accessToken = session?.accessToken;
 
   let licenseInfo = {
     tier: "personal",

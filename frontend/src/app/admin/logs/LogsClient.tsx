@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 
 interface LogEntry {
@@ -36,7 +36,7 @@ interface TaskRun {
   created_at: string;
 }
 
-const TASKRUN_VARIANT: Record<string, string> = {
+const TASKRUN_VARIANT: Record<string, BadgeProps["variant"]> = {
   running: "info",
   success: "success",
   failure: "destructive",
@@ -52,7 +52,7 @@ const LEVEL_BADGE: Record<string, string> = {
   CRITICAL: "bg-red-200 text-red-900 dark:bg-red-900/50 dark:text-red-200 border-transparent",
 };
 
-const STATUS_VARIANT: Record<string, string> = {
+const STATUS_VARIANT: Record<string, BadgeProps["variant"]> = {
   pending: "muted",
   processing: "info",
   completed: "success",
@@ -280,7 +280,7 @@ export function LogsClient() {
                     <td className="px-4 py-3 text-xs">{task.patient_name}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{task.pipeline_stage ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={(STATUS_VARIANT[task.processing_status] ?? "outline") as any}>
+                      <Badge variant={STATUS_VARIANT[task.processing_status] ?? "outline"}>
                         {task.processing_status}
                       </Badge>
                     </td>
@@ -324,7 +324,7 @@ export function LogsClient() {
                       {run.args_summary ?? "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={(TASKRUN_VARIANT[run.status] ?? "outline") as any}>{run.status}</Badge>
+                      <Badge variant={TASKRUN_VARIANT[run.status] ?? "outline"}>{run.status}</Badge>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {run.started_at ? formatDate(run.started_at) : "—"}

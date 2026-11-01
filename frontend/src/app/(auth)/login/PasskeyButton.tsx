@@ -41,8 +41,8 @@ export function PasskeyButton() {
       } else {
         router.push(target);
       }
-    } catch (e: any) {
-      if (e?.name !== "NotAllowedError") {
+    } catch (e) {
+      if ((e as Error | null)?.name !== "NotAllowedError") {
         setError(t("PasskeyError"));
       }
     } finally {

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL = process.env.API_URL || "http://localhost:8000";
 
 export async function GET(req: NextRequest) {
-  const token = (await auth() as any)?.accessToken ?? null;
+  const token = (await auth())?.accessToken ?? null;
   if (!token) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 
   const limit = req.nextUrl.searchParams.get("limit") ?? "200";

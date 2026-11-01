@@ -26,6 +26,8 @@ class DocumentChunk(BaseModel):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(768))
+    # NULL: embedded before #238, model unknown
+    embedding_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     document: Mapped["DocumentReference | None"] = relationship("DocumentReference", back_populates="chunks")  # noqa: F821
     diary_entry: Mapped["DiaryEntry | None"] = relationship("DiaryEntry", back_populates="chunks")  # noqa: F821

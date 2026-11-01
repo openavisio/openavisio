@@ -41,7 +41,7 @@ if __name__ == "__main__":
     d.rectangle([0, 0, 120, 40], fill=210)      # light-grey shading
     d.text((6, 12), "14.1", fill=40)            # dark result value
     out = deshade(im)
-    px = list(out.getdata())
+    px = list(out.get_flattened_data())
     assert max(px) == 255, "shading should reach white"
     assert min(px) == 0, "text should stay black"
     white_frac = sum(1 for p in px if p == 255) / len(px)

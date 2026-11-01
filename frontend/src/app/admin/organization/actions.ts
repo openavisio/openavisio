@@ -25,7 +25,7 @@ export async function updateOrganizationAction(fields: {
   dpo_contact?: string | null;
 }): Promise<{ error?: string }> {
   const session = await auth();
-  const token = (session as any)?.accessToken;
+  const token = session?.accessToken;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
   const res = await fetch(`${API}/api/organization`, {

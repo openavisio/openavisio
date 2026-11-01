@@ -55,11 +55,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
             <StatCard label={tp("StatVerified")} value={dashboard.verified_documents} />
             <StatCard
               label={tp("StatActiveConditions")}
-              value={dashboard.condition_timeline?.filter((c: any) => c.status === "active").length ?? 0}
+              value={dashboard.condition_timeline?.filter((c) => c.status === "active").length ?? 0}
             />
             <StatCard
               label={tp("StatActiveMedications")}
-              value={dashboard.medication_timeline?.filter((m: any) => m.status === "active").length ?? 0}
+              value={dashboard.medication_timeline?.filter((m) => m.status === "active").length ?? 0}
             />
           </div>
 
@@ -70,7 +70,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
                 <CardTitle className="text-base">{tp("ConditionTimeline")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {dashboard.condition_timeline.map((c: any) => (
+                {dashboard.condition_timeline.map((c) => (
                   <div key={c.id} className="flex items-center justify-between gap-4 py-1">
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{c.display}</p>
@@ -99,7 +99,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
                 <CardTitle className="text-base">{tp("MedicationTimeline")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {dashboard.medication_timeline.map((m: any) => (
+                {dashboard.medication_timeline.map((m) => (
                   <div key={m.id} className="flex items-center justify-between gap-4 py-1">
                     <p className="text-sm font-medium truncate">{m.display}</p>
                     <Badge variant={statusVariant(m.status)} className="shrink-0">{med(m.status)}</Badge>

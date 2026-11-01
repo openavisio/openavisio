@@ -9,8 +9,8 @@ import { ConditionsTable } from "./ConditionsTable";
 export default async function ConditionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const t = await getTranslations("Conditions");
-  let patient: any = null;
-  let conditions: any[] = [];
+  let patient: Awaited<ReturnType<typeof getPatient>> | null = null;
+  let conditions: Awaited<ReturnType<typeof getConditions>> = [];
   let fetchError = false;
 
   try { patient = await getPatient(id); } catch {}
