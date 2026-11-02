@@ -119,6 +119,8 @@ _T = {
         "care_title": "Caregiver access granted",
         "care_line": "You have been granted access to the patient record for {patient} in OpenAvisio.",
         "care_button": "View patient",
+        "code_subject": "OpenAvisio: your sign-in code",
+        "code_line": "Your code for signing in on a new device: {code}. It is valid for 10 minutes. If you did not just try to sign in, change your password.",
         "inv_subject": "{inviter} invited you to OpenAvisio",
         "inv_line": '{inviter} invited you to join "{org}" in OpenAvisio.',
         "inv_here": "Create your account here: {url}",
@@ -156,6 +158,8 @@ _T = {
         "care_title": "Zugriff erteilt",
         "care_line": "Du hast in OpenAvisio Zugriff auf die Akte von {patient} bekommen.",
         "care_button": "Akte öffnen",
+        "code_subject": "OpenAvisio: dein Anmeldecode",
+        "code_line": "Dein Code für die Anmeldung auf einem neuen Gerät: {code}. Er gilt 10 Minuten. Wenn du dich gerade nicht anmelden wolltest, ändere dein Passwort.",
         "inv_subject": "{inviter} lädt dich zu OpenAvisio ein",
         "inv_line": "{inviter} hat dich zu „{org}“ in OpenAvisio eingeladen.",
         "inv_here": "Hier legst du dein Konto an: {url}",
@@ -357,6 +361,15 @@ async def send_caregiver_added_notification(patient_id: str, caregiver_user_id: 
 # ---------------------------------------------------------------------------
 # Invitation
 # ---------------------------------------------------------------------------
+
+async def send_login_code(db, smtp_cfg: dict, to_email: str, code: str) -> None:
+    """The second factor for a password sign-in from a new device (#338)."""
+    lang, _ = await _org(db)
+    t = _T[lang]
+    line = t["code_line"].format(code=code)
+    html = _page(lang, f"  <p>{escape(line)}</p>")
+    await _send_all(smtp_cfg, [to_email], t["code_subject"], html, f"{line}\n\n{t['footer']}", "Login code")
+
 
 async def send_invitation_email(to_email: str, token: str, inviter_id: str | None = None) -> None:
     """The sign-up link, with who invites and to what (ADR 054): neither is health data."""

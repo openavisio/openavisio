@@ -27,6 +27,15 @@ def create_refresh_token(data: dict) -> str:
     return jwt.encode({**data, "exp": expire, "type": "refresh"}, settings.app_secret, algorithm=ALGORITHM)
 
 
+DEVICE_DAYS = 30
+
+
+def create_device_token(user_id: str) -> str:
+    """A device that passed the mail code skips it for DEVICE_DAYS (#338)."""
+    expire = datetime.now(UTC) + timedelta(days=DEVICE_DAYS)
+    return jwt.encode({"sub": user_id, "exp": expire, "type": "device"}, settings.app_secret, algorithm=ALGORITHM)
+
+
 def decode_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, settings.app_secret, algorithms=[ALGORITHM])

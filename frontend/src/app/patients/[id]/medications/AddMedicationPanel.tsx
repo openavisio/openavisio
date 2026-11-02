@@ -17,6 +17,7 @@ export function AddMedicationPanel({ patientId, children }: { patientId: string;
   const [pending, startTransition] = useTransition();
 
   const [name, setName] = useState("");
+  const [ingredient, setIngredient] = useState("");
   const [unit, setUnit] = useState("Tablette");
   const [customUnit, setCustomUnit] = useState("");
   const [morning, setMorning] = useState("");
@@ -30,6 +31,7 @@ export function AddMedicationPanel({ patientId, children }: { patientId: string;
 
   function reset() {
     setName("");
+    setIngredient("");
     setUnit("Tablette");
     setCustomUnit("");
     setMorning("");
@@ -64,6 +66,7 @@ export function AddMedicationPanel({ patientId, children }: { patientId: string;
       try {
         await createMedication(patientId, {
           medication_display: name,
+          ingredient: ingredient.trim() || undefined,
           dosage_text: dosage,
           dose_unit: dosage ? resolvedUnit : undefined,
           effective_start: startDate || undefined,
@@ -139,6 +142,17 @@ export function AddMedicationPanel({ patientId, children }: { patientId: string;
                   />
                 )}
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">{t("Ingredient")}</label>
+              <input
+                type="text"
+                value={ingredient}
+                onChange={(e) => setIngredient(e.target.value)}
+                className={inputCls}
+                placeholder={t("IngredientPlaceholder")}
+              />
             </div>
 
             <div>

@@ -31,7 +31,7 @@ export function MedicationsTable({ medications }: { medications: Medication[] })
             <div key={m.id} className={`overflow-hidden rounded-xl border bg-card ${m.is_active ? "" : "opacity-60"}`}>
               <div className="p-4" onClick={() => setRevealed(open ? null : m.id)}>
                 <div className="flex items-start justify-between gap-2">
-                  <span className="min-w-0 truncate text-sm font-medium">{m.medication_display}</span>
+                  <span className="min-w-0 truncate text-sm font-medium">{m.medication_display}{m.ingredient && <span className="font-normal text-muted-foreground"> ({m.ingredient})</span>}</span>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${m.is_active ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
                     {m.is_active ? t("Active") : t("Ended")}
                   </span>
@@ -62,7 +62,7 @@ export function MedicationsTable({ medications }: { medications: Medication[] })
           <tbody className="divide-y">
             {medications.map((m) => (
               <tr key={m.id} className="hover:bg-muted/30 transition-colors">
-                <td className={`px-4 py-3 font-medium ${m.is_active ? "" : "opacity-50"}`}>{m.medication_display}</td>
+                <td className={`px-4 py-3 font-medium ${m.is_active ? "" : "opacity-50"}`}>{m.medication_display}{m.ingredient && <span className="font-normal text-muted-foreground"> ({m.ingredient})</span>}</td>
                 <td className={`px-4 py-3 text-muted-foreground ${m.is_active ? "" : "opacity-50"}`}>{formatDose(m) || "—"}</td>
                 <td className={`px-4 py-3 text-muted-foreground ${m.is_active ? "" : "opacity-50"}`}>{period(m, locale, t)}</td>
                 <td className="px-4 py-3">

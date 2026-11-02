@@ -22,7 +22,8 @@ async def get_current_user(
 ) -> User:
     token = credentials.credentials
     payload = decode_token(token)
-    if not payload or payload.get("type") == "refresh":
+    # access tokens carry no type; a refresh or device token (#338) is no session
+    if not payload or "type" in payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     user_id = payload.get("sub")

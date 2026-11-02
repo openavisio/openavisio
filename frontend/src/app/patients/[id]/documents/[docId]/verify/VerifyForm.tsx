@@ -298,10 +298,14 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <LabeledInput label={tc("Name")} value={editedMeds[i].name ?? ""} onChange={(v) => patchMed(i, "name", v)} />
                   <LabeledInput label={t("Dosage")} value={editedMeds[i].dosage ?? ""} onChange={(v) => patchMed(i, "dosage", v)} />
+                  <LabeledInput label={t("Ingredient")} value={editedMeds[i].ingredient ?? ""} onChange={(v) => patchMed(i, "ingredient", v)} />
                 </div>
               ) : (
                 <div className="text-sm">
-                  <div className="font-medium">{editedMeds[i].name ?? editedMeds[i].medication_display ?? tc("Unknown")}</div>
+                  <div className="font-medium">
+                    {editedMeds[i].name ?? editedMeds[i].medication_display ?? tc("Unknown")}
+                    {editedMeds[i].ingredient && <span className="font-normal text-muted-foreground"> ({editedMeds[i].ingredient})</span>}
+                  </div>
                   {editedMeds[i].dosage && <div className="text-muted-foreground">{editedMeds[i].dosage}</div>}
                 </div>
               )}

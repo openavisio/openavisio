@@ -12,6 +12,7 @@ class MedicationDto(OrmBase):
     status: str
     medication_code: str | None
     medication_display: str
+    ingredient: str | None
     date_asserted: str | None
     effective_start: str | None
     effective_end: str | None
@@ -30,6 +31,7 @@ class MedicationCreateRequest(BaseModel):
     status: str = "active"
     medication_code: str | None = None
     medication_display: str
+    ingredient: str | None = None
     date_asserted: str | None = None
     effective_start: str | None = None
     effective_end: str | None = None

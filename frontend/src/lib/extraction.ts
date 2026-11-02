@@ -32,7 +32,7 @@ export type Diagnosis = {
   [key: string]: unknown;
 };
 
-export type Medication = { name?: string; medication_display?: string; dosage?: string; [key: string]: unknown };
+export type Medication = { name?: string; medication_display?: string; ingredient?: string | null; dosage?: string; [key: string]: unknown };
 
 /** A Kassenbescheid's Rechtsbehelfsbelehrung, ADR 041. deadline_date is computed by the backend. */
 export type Decision = {

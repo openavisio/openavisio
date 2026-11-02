@@ -29,6 +29,9 @@ class User(BaseModel):
     # ADR 044: the only way back in when the password and the passkey device are
     # both gone. Shown once at setup, single use.
     recovery_code_hash: Mapped[str | None] = mapped_column(String(256))
+    # the mail code for a sign-in from a new device (#338)
+    login_code_hash: Mapped[str | None] = mapped_column(String(256))
+    login_code_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Relationships
     passkey_credentials: Mapped[list["PasskeyCredential"]] = relationship(  # noqa: F821

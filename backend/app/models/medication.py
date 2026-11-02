@@ -14,6 +14,8 @@ class MedicationStatement(OwnedResource):
     status: Mapped[str] = mapped_column(String(50), default="active")
     medication_code: Mapped[str | None] = mapped_column(String(100))
     medication_display: Mapped[str] = mapped_column(String(256), nullable=False)
+    # only what a person entered or a letter names itself, never the model's guess (#209)
+    ingredient: Mapped[str | None] = mapped_column(String(256))
     date_asserted: Mapped[str | None] = mapped_column(String(50))
     effective_start: Mapped[str | None] = mapped_column(String(50))
     effective_end: Mapped[str | None] = mapped_column(String(50))

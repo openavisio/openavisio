@@ -155,6 +155,7 @@ def extract_document(
 
     if isinstance(entities, dict):
         entities["diagnoses"] = _patients_own(entities.get("diagnoses") or [])
+    entities["medications"] = _written_ingredients(entities.get("medications") or [], text)
     return {
         "extracted_text": extracted_text,
         "entities": entities,
@@ -242,10 +243,20 @@ def extract_entities_from_text(
     if document_type in _NO_CLINICAL_TYPES:
         _drop(entities, ("diagnoses", "medications", "observations"), "questionnaire")
     entities["diagnoses"] = _patients_own(entities.get("diagnoses") or [])
+    entities["medications"] = _written_ingredients(entities.get("medications") or [], text)
     # No confidence score: the model gives us none. The 0.85 that used to sit here
     # was invented, and the threshold that read it was never wired up — a fake
     # number is worse than an honest absence (#111).
     return {"entities": entities}
+
+
+def _written_ingredients(meds: list, text: str) -> list:
+    """An ingredient the document does not spell out is the model's knowledge, not the record's (#209)."""
+    low = text.lower()
+    for m in meds:
+        if isinstance(m, dict) and m.get("ingredient") and m["ingredient"].lower() not in low:
+            m["ingredient"] = None
+    return meds
 
 
 # Counts only: condition names are health data, and log entries are stored in

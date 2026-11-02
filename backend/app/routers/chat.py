@@ -254,7 +254,9 @@ async def _structured_context(
     )).scalars().all()
     for m in meds:
         lines.append(_line(
-            L["medication"], m.effective_start, m.medication_display, m.dosage_text, m.route,
+            L["medication"], m.effective_start,
+            f"{m.medication_display} ({m.ingredient})" if m.ingredient else m.medication_display,
+            m.dosage_text, m.route,
             f"{L['until']} {m.effective_end[:10]}" if m.effective_end else None,
             f"{L['status']} {m.status}",
         ))

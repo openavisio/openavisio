@@ -1,6 +1,9 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+import secrets
+from datetime import timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +11,9 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.ratelimit import client_ip, enforce
 from app.core.security import (
+    DEVICE_DAYS,
     create_access_token,
+    create_device_token,
     create_refresh_token,
     decode_token,
     generate_recovery_code,
@@ -17,6 +22,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User, UserRole
+from app.services.email import _get_smtp_config, send_login_code
 from app.models.system import UserInvitation
 from app.deps import get_current_user
 from app.schemas.auth import (
@@ -71,10 +77,34 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
         if lockable:
             user.failed_login_attempts += 1
             if user.failed_login_attempts >= 5:
-                from datetime import timedelta
                 user.locked_until = now + timedelta(minutes=15)
             await db.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    device = None
+    smtp_cfg = None if demo or _known_device(body.device, user) else await _get_smtp_config(db)
+    if smtp_cfg:
+        # A new device: the password alone is not enough (#338). Without mail the
+        # Deployment cannot send a code, so it cannot ask for one either.
+        if not body.code:
+            code = f"{secrets.randbelow(10**6):06d}"
+            user.login_code_hash = hash_password(code)
+            user.login_code_expires_at = now + timedelta(minutes=10)
+            await db.commit()
+            await send_login_code(db, smtp_cfg, user.email, code)
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Code required")
+        valid = (user.login_code_hash and user.login_code_expires_at and user.login_code_expires_at > now
+                 and verify_password(body.code.strip(), user.login_code_hash))
+        if not valid:
+            if lockable:
+                user.failed_login_attempts += 1
+                if user.failed_login_attempts >= 5:
+                    user.locked_until = now + timedelta(minutes=15)
+                await db.commit()
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid code")
+        user.login_code_hash = None
+        user.login_code_expires_at = None
+        device = create_device_token(str(user.id))
 
     user.failed_login_attempts = 0
     user.locked_until = None
@@ -82,7 +112,6 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
     await db.commit()
 
     data = {"sub": str(user.id), "email": user.email, "role": user.role}
-    from datetime import timedelta
     expire = now + timedelta(minutes=settings.access_token_expire_minutes)
     return AuthResponse(
         access_token=create_access_token(data),
@@ -90,7 +119,13 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
         expires_at=expire.isoformat(),
         email=user.email,
         role=user.role,
+        device=device,
     )
+
+
+def _known_device(token: str | None, user: User) -> bool:
+    payload = decode_token(token) if token else None
+    return bool(payload and payload.get("type") == "device" and payload.get("sub") == str(user.id))
 
 
 @router.post("/refresh", response_model=AuthResponse)
@@ -132,7 +167,7 @@ async def change_password(
 
 
 @router.post("/recover", response_model=RecoverResponse)
-async def recover(request: Request, body: RecoverRequest, db: AsyncSession = Depends(get_db)):
+async def recover(request: Request, response: Response, body: RecoverRequest, db: AsyncSession = Depends(get_db)):
     """ADR 044: the way back in when the password and the passkey device are both gone."""
     ip = client_ip(request)
     await enforce(f"rl:recover:ip:{ip}", limit=5, window_seconds=900)
@@ -161,8 +196,10 @@ async def recover(request: Request, body: RecoverRequest, db: AsyncSession = Dep
     user.recovery_code_hash = hash_password(normalize_recovery_code(fresh))
     await db.commit()
 
-    # No token is issued here, deliberately: recovery sets a password, it does not
-    # sign anyone in, so it cannot become a way around a second factor (ADR 044).
+    # No session is issued here (ADR 044). The code does count as the second factor
+    # for this device, so a dead mailbox cannot lock the household out (#338).
+    response.set_cookie("oa_device", create_device_token(str(user.id)), max_age=DEVICE_DAYS * 86400,
+                        httponly=True, secure=settings.app_url.startswith("https"), samesite="lax")
     return RecoverResponse(recovery_code=fresh)
 
 

@@ -2898,6 +2898,8 @@ export interface components {
             email: string;
             /** Role */
             role: string;
+            /** Device */
+            device: string | null;
         };
         /** Body_upload_document_api_patients__patient_id__documents_upload_post */
         Body_upload_document_api_patients__patient_id__documents_upload_post: {
@@ -4667,6 +4669,10 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+            /** Code */
+            code?: string | null;
+            /** Device */
+            device?: string | null;
         };
         /** MedicationCreateRequest */
         MedicationCreateRequest: {
@@ -4679,6 +4685,8 @@ export interface components {
             medication_code?: string | null;
             /** Medication Display */
             medication_display: string;
+            /** Ingredient */
+            ingredient?: string | null;
             /** Date Asserted */
             date_asserted?: string | null;
             /** Effective Start */
@@ -4716,6 +4724,8 @@ export interface components {
             medication_code: string | null;
             /** Medication Display */
             medication_display: string;
+            /** Ingredient */
+            ingredient: string | null;
             /** Date Asserted */
             date_asserted: string | null;
             /** Effective Start */
@@ -4771,6 +4781,8 @@ export interface components {
             medication_code?: string | null;
             /** Medication Display */
             medication_display?: string | null;
+            /** Ingredient */
+            ingredient?: string | null;
             /** Date Asserted */
             date_asserted?: string | null;
             /** Effective Start */

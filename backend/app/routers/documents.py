@@ -492,6 +492,7 @@ async def verify_document(
                 owner_id=user.id,
                 document_reference_id=doc_id,
                 medication_display=med_name,
+                ingredient=med_data.get("ingredient") or None,
                 dosage_text=med_data.get("dosage"),
                 # The letter of 19.03. tells us what she was taking THEN. We used to
                 # throw that away and leave the start empty (#128); the document's own

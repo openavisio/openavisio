@@ -21,6 +21,9 @@ export function LoginForm({ demoMode = false }: { demoMode?: boolean }) {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // #338: a sign-in from a new device asks for the code we just mailed
+  const [codeStep, setCodeStep] = useState(false);
+  const [code, setCode] = useState("");
   const urlError = params.get("error");
   const registered = params.get("registered") === "true";
   const [error, setError] = useState(
@@ -39,15 +42,19 @@ export function LoginForm({ demoMode = false }: { demoMode?: boolean }) {
       const result = await signIn("credentials", {
         email,
         password,
+        code: codeStep ? code.trim() : "",
         redirect: false,
         redirectTo: target,
       });
-      if (result?.error) {
+      if (result?.code === "code_required") {
+        setCodeStep(true);
+      } else if (result?.error) {
         // Only CredentialsSignin means the password was wrong. Everything else
         // is our side failing, and calling that a bad password sent the tester
         // hunting for a typo that was not there.
         setError(
           result.code === "rate_limited" ? t("TooManyAttempts")
+          : result.code === "invalid_code" ? t("InvalidCode")
           : result.error === "CredentialsSignin" ? t("InvalidCredentials")
           : t("SignInFailed"),
         );
@@ -103,6 +110,25 @@ export function LoginForm({ demoMode = false }: { demoMode?: boolean }) {
                 className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
               />
             </div>
+            {codeStep && (
+              <div className="space-y-2">
+                <p className="rounded-lg bg-primary/10 px-4 py-3 text-sm">{t("CodeSent")}</p>
+                <label className="text-sm font-medium" htmlFor="login-code">{t("CodeLabel")}</label>
+                <input
+                  id="login-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  autoFocus
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("NoMailAccess")} <a href="/recover" className="underline hover:text-foreground">{t("UseRecoveryCode")}</a>
+                </p>
+              </div>
+            )}
             <button
               type="submit"
               disabled={loading}

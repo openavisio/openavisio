@@ -26,7 +26,7 @@ services:
       - caddy-data:/data
       - caddy-config:/config
   llm-proxy:
-    image: python:3.12.15-alpine
+    image: python:3.12.16-alpine   # ca-certificates 20261020: drops the emSign roots certifi 2026.10.19 dropped (#386)
     restart: unless-stopped
     mem_limit: 128m
     command: python /app/proxy.py

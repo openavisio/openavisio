@@ -23,6 +23,7 @@ export interface Med {
   // (extraction sets an end date without touching status).
   is_active: boolean;
   medication_display: string;
+  ingredient?: string | null;
   dosage_text?: string | null;
   effective_start?: string | null;
   effective_end?: string | null;
@@ -44,6 +45,7 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({
     medication_display: med.medication_display,
+    ingredient: med.ingredient ?? "",
     dosage_text: med.dosage_text ?? "",
     effective_start: med.effective_start ?? "",
     effective_end: med.effective_end ?? "",
@@ -157,6 +159,15 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
               />
             </div>
             <div>
+              <label className="text-sm font-medium">{t("Ingredient")}</label>
+              <input
+                value={form.ingredient}
+                onChange={(e) => setForm({ ...form, ingredient: e.target.value })}
+                placeholder={t("IngredientPlaceholder")}
+                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
               <label className="text-sm font-medium">{t("Dosage")}</label>
               <input
                 value={form.dosage_text}
@@ -197,6 +208,7 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
                 save(
                   {
                     medication_display: form.medication_display.trim(),
+                    ingredient: form.ingredient.trim() || null,
                     // empty string would be stored as an empty date, not as "unknown"
                     dosage_text: form.dosage_text.trim() || null,
                     effective_start: form.effective_start || null,

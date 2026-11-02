@@ -4,6 +4,8 @@ from pydantic import BaseModel, EmailStr, Field
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    code: str | None = None  # the mail code (#338)
+    device: str | None = None  # the token of a device that passed the code before
 
 
 class AuthResponse(BaseModel):
@@ -12,6 +14,7 @@ class AuthResponse(BaseModel):
     expires_at: str
     email: str
     role: str
+    device: str | None = None  # set when this sign-in passed the code: remember the device
 
 
 class RefreshRequest(BaseModel):

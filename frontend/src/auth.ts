@@ -2,6 +2,7 @@ import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { verifyChallengeFromCookieHeader } from "@/lib/passkey-challenge";
 import { forwardedFor } from "@/lib/forwarded";
+import { cookies } from "next/headers";
 
 declare module "next-auth" {
   interface Session {
@@ -23,6 +24,14 @@ const API = process.env.API_URL || "http://localhost:8000";
 class RateLimited extends CredentialsSignin {
   code = "rate_limited";
 }
+// #338: a new device; the login form asks for the mailed code and sends it again
+class CodeRequired extends CredentialsSignin {
+  code = "code_required";
+}
+class InvalidCode extends CredentialsSignin {
+  code = "invalid_code";
+}
+const DEVICE_COOKIE = "oa_device";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -31,16 +40,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        code: { type: "text" },
       },
       async authorize(credentials) {
+        const jar = await cookies();
         const res = await fetch(`${API}/api/auth/login`, {
           method: "POST",
           headers: { ...(await forwardedFor()), "Content-Type": "application/json" },
-          body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password,
+            code: credentials.code || undefined,
+            device: jar.get(DEVICE_COOKIE)?.value,
+          }),
         });
         if (res.status === 429) throw new RateLimited();
-        if (!res.ok) return null;
+        if (!res.ok) {
+          const detail = res.status === 401 ? (await res.json().catch(() => ({}))).detail : undefined;
+          if (detail === "Code required") throw new CodeRequired();
+          if (detail === "Invalid code") throw new InvalidCode();
+          return null;
+        }
         const data = await res.json();
+        if (data.device) {
+          jar.set(DEVICE_COOKIE, data.device, {
+            httpOnly: true, sameSite: "lax", path: "/", maxAge: 30 * 86400,
+            secure: (process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? "").startsWith("https"),
+          });
+        }
         return {
           id: data.email,
           email: data.email,
