@@ -51,10 +51,20 @@ def test_a_429_waits_longer_each_time():
     assert pauses[4] > pauses[0]
 
 
+def _status(code):
+    return httpx.Response(code, request=httpx.Request("POST", "http://ai/x"))
+
+
 def test_retries_end_and_other_statuses_pass():
     pipeline._wait_if_busy(_Task(pipeline._BUSY_RETRIES), _busy_response())
-    ok = httpx.Response(500, request=httpx.Request("POST", "http://ai/x"))
-    pipeline._wait_if_busy(_Task(0), ok)
+    pipeline._wait_if_busy(_Task(0), _status(422))
+
+
+def test_a_provider_error_is_tried_twice_more_then_fails():
+    for n in range(pipeline._FLAKY_RETRIES):
+        with pytest.raises(Retry):
+            pipeline._wait_if_busy(_Task(n), _status(500))
+    pipeline._wait_if_busy(_Task(pipeline._FLAKY_RETRIES), _status(500))
 
 
 def test_a_busy_provider_does_not_fail_the_document(monkeypatch):

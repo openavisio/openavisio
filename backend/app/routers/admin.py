@@ -639,20 +639,12 @@ async def upload_license(
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    from app.services.license import _DEFAULT_PUBLIC_KEY_B64, decode_license, get_license_info
+    from app.services.license import install_license
 
-    key = settings.license_public_key.strip() or _DEFAULT_PUBLIC_KEY_B64
     try:
-        decode_license(body.token.strip(), key)
+        info = await install_license(db, body.token, settings.license_public_key)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
-
-    result = await db.execute(select(Organization))
-    org = result.scalar_one()
-    org.license_token = body.token.strip()
-    await db.commit()
-
-    info = await get_license_info(db, settings.license_public_key)
     return _to_license_dto(info)
 
 

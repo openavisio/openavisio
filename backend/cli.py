@@ -9,6 +9,10 @@ Commands:
     changepassword <email> <pw>     Reset to a given password (non-interactive)
     createuser <email> <role>       Create a new user (prompts for password)
     listusers                       List all users
+    license <file>                  Install a License file (.lic); refuses one that does not
+                                    verify, then prints what the instance now runs under.
+                                    The way in on a hosted Deployment, whose license
+                                    routes are operator-only
     reembed                         Queue every chunk not embedded by the configured
                                     embedding model for a new embedding (#238);
                                     run again to pick up what is left
@@ -151,6 +155,21 @@ async def cmd_reembed():
     print(f"Queued {len(docs)} documents and {len(entries)} diary entries for {model}.")
 
 
+async def cmd_license(path: str):
+    from app.core.config import settings
+    from app.services.license import install_license
+
+    with open(path) as f:
+        token = f.read()
+    async with (await _session()) as db:
+        try:
+            info = await install_license(db, token, settings.license_public_key)
+        except ValueError as exc:
+            print(f"License refused: {exc}", file=sys.stderr)
+            sys.exit(1)
+    print(f"Tier {info.tier.value}, issued to {info.issued_to}, expires {info.expires_at:%Y-%m-%d}.")
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -177,6 +196,12 @@ def main():
 
     elif cmd == "listusers":
         asyncio.run(cmd_listusers())
+
+    elif cmd == "license":
+        if len(args) < 2:
+            print("Usage: cli.py license <file>", file=sys.stderr)
+            sys.exit(1)
+        asyncio.run(cmd_license(args[1]))
 
     elif cmd == "reembed":
         asyncio.run(cmd_reembed())

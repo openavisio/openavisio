@@ -139,3 +139,15 @@ async def get_license_info(db: AsyncSession, public_key_b64: str) -> LicenseInfo
     if org is None:
         return _PERSONAL_NO_LICENSE
     return evaluate_license(org.license_token, public_key_b64)
+
+
+async def install_license(db: AsyncSession, token: str, public_key_b64: str) -> LicenseInfo:
+    """Store a License after it verifies; raises ValueError, so a bad file never lands silently."""
+    from app.models.organization import Organization
+
+    token = token.strip()
+    decode_license(token, public_key_b64.strip() or _DEFAULT_PUBLIC_KEY_B64)
+    org = (await db.execute(select(Organization))).scalar_one()
+    org.license_token = token
+    await db.commit()
+    return evaluate_license(token, public_key_b64)

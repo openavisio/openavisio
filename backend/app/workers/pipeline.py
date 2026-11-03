@@ -14,15 +14,23 @@ logger = logging.getLogger(__name__)
 
 # The provider's rate limit is per contract, shared by every Deployment (#374):
 # a 429 waits with a growing pause (15 s up to 4 min, about 20 min in all)
-# instead of failing the document.
+# instead of failing the document. A 5xx is the provider failing once (IONOS
+# answers a stray 404 UPSTREAM_REJECTED, aiservice passes it on as 500): two more tries.
 _BUSY_RETRIES = 8
+_FLAKY_RETRIES = 2
 
 
 def _wait_if_busy(task, resp: httpx.Response) -> None:
-    if resp.status_code != 429 or task.request.retries >= _BUSY_RETRIES:
+    if resp.status_code == 429:
+        limit = _BUSY_RETRIES
+    elif resp.status_code >= 500:
+        limit = _FLAKY_RETRIES
+    else:
+        return
+    if task.request.retries >= limit:
         return
     pause = max(float(resp.headers.get("retry-after") or 0), 15 * 2 ** min(task.request.retries, 4))
-    raise task.retry(countdown=pause + random.uniform(0, 10), max_retries=_BUSY_RETRIES)
+    raise task.retry(countdown=pause + random.uniform(0, 10), max_retries=limit)
 
 
 def _run(coro):

@@ -256,3 +256,22 @@ async def test_invitation_not_limited_on_personal_tier(client: AsyncClient, db: 
         headers=_auth(tokens),
     )
     assert r.status_code == 201
+
+
+async def test_install_license_stores_a_valid_one_and_refuses_garbage(db: AsyncSession):
+    from sqlalchemy import select
+    from app.models.organization import Organization
+    from app.services.license import install_license
+
+    db.add(Organization(name="Verein"))
+    await db.commit()
+
+    with pytest.raises(ValueError):
+        await install_license(db, "not a license", _PUBLIC_B64)
+    org = (await db.execute(select(Organization))).scalar_one()
+    assert org.license_token is None
+
+    info = await install_license(db, _make_token(_PRIVATE, _commercial_claims()) + "\n", _PUBLIC_B64)
+    assert info.tier == Tier.commercial
+    await db.refresh(org)
+    assert org.license_token and not org.license_token.endswith("\n")
