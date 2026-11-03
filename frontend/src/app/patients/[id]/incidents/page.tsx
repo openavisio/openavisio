@@ -32,15 +32,19 @@ export default async function IncidentsPage({ params, searchParams }: {
     return <AppLayout><div className="text-center py-12 text-muted-foreground">{t("NotFound")}</div></AppLayout>;
   }
 
+  const crumb = <Breadcrumb crumbs={[{ label: `${patient.given_name} ${patient.family_name}`, href: `/patients/${id}` }]} current={t("Title")} className="" />;
+
   return (
     <AppLayout>
-      <Breadcrumb crumbs={[{ label: `${patient.given_name} ${patient.family_name}`, href: `/patients/${id}` }]} current={t("Title")} />
       {fetchError ? (
+        <>
+        <div className="mb-6">{crumb}</div>
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="size-4 shrink-0" />{t("LoadError")}
         </div>
+        </>
       ) : (
-        <IncidentsView key={open ?? ""} patientId={id} incidents={incidents} medications={medications} doses={doses} rescue={rescue} openId={open} />
+        <IncidentsView key={open ?? ""} patientId={id} incidents={incidents} medications={medications} doses={doses} rescue={rescue} openId={open}>{crumb}</IncidentsView>
       )}
     </AppLayout>
   );

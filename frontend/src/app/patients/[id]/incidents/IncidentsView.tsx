@@ -19,8 +19,9 @@ type Draft = { id?: string; incident_type: IncidentType; display: string; when: 
 
 export const TYPES: IncidentType[] = ["seizure", "fall", "allergic_reaction", "other"];
 
-export function IncidentsView({ patientId, incidents, medications, doses, rescue, openId }: {
+export function IncidentsView({ patientId, incidents, medications, doses, rescue, openId, children }: {
   patientId: string; incidents: Incident[]; medications: Medication[]; doses: Dose[]; rescue: string[]; openId?: string;
+  children: React.ReactNode;
 }) {
   const t = useTranslations("Incidents");
   const td = useTranslations("Dose");
@@ -41,6 +42,7 @@ export function IncidentsView({ patientId, incidents, medications, doses, rescue
     y: new Date(Date.now() - 365 * 86400000).toLocaleDateString("sv"),
   }));
 
+  const when = (i: Incident) => formatDate(i.occurred_at.slice(0, 10), locale) + (i.occurred_at.length > 10 ? ` ${i.occurred_at.slice(11, 16)}` : "");
   const label = (i: Incident) => i.incident_type_display || t(`types.${i.incident_type}`);
   const names = new Map(medications.map((m) => [m.id, m.medication_display]));
   const rescueSet = new Set(rescue);
@@ -110,9 +112,12 @@ export function IncidentsView({ patientId, incidents, medications, doses, rescue
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <IncidentNowButton patientId={patientId} lastType={incidents[0]?.incident_type} />
-        <Button variant="outline" onClick={openNew}><Plus className="size-4" />{t("Add")}</Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {children}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={openNew}><Plus className="size-4" />{t("Add")}</Button>
+          <IncidentNowButton patientId={patientId} lastType={incidents[0]?.incident_type} />
+        </div>
       </div>
       {error && !draft && !dose && <p className="text-sm text-destructive">{error}</p>}
 
@@ -149,10 +154,9 @@ export function IncidentsView({ patientId, incidents, medications, doses, rescue
                   const given = doses.filter((d) => d.incident_id === i.id);
                   return (
                     <li key={i.id} className="flex items-start gap-3 text-sm">
-                      <span className="w-24 shrink-0 tabular-nums text-muted-foreground">
-                        {formatDate(i.occurred_at.slice(0, 10), locale)}{i.occurred_at.length > 10 && <> {i.occurred_at.slice(11, 16)}</>}
-                      </span>
+                      <span className="hidden w-24 shrink-0 tabular-nums text-muted-foreground sm:block">{when(i)}</span>
                       <div className="min-w-0 flex-1">
+                        <div className="tabular-nums text-xs text-muted-foreground sm:hidden">{when(i)}</div>
                         <div className="font-medium">{label(i)}{i.duration_minutes != null && <span className="font-normal text-muted-foreground"> · {t("Minutes", { n: i.duration_minutes })}</span>}</div>
                         {i.actions_taken && <div>{i.actions_taken}</div>}
                         {i.note && <div className="whitespace-pre-line text-muted-foreground">{i.note}</div>}

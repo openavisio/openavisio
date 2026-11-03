@@ -90,3 +90,19 @@ async def test_a_device_token_is_no_session(client, db, monkeypatch):
     assert (await client.get("/api/auth/me", headers={"Authorization": f"Bearer {ok['access_token']}"})).status_code == 200
     r = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {ok['device']}"})
     assert r.status_code == 401
+
+
+async def test_the_code_stands_on_its_own_line(monkeypatch):
+    from app.services import email as mail
+    sent = {}
+
+    async def org(db):
+        return "de", None
+
+    async def send_all(cfg, to, subject, html, text, kind):
+        sent.update(html=html, text=text)
+    monkeypatch.setattr(mail, "_org", org)
+    monkeypatch.setattr(mail, "_send_all", send_all)
+    await mail.send_login_code(None, SMTP, "a@t.com", "042137")
+    assert "\n    042137\n" in sent["text"]
+    assert 'font-size:32px' in sent["html"] and ">042137</p>" in sent["html"]

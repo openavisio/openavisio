@@ -52,7 +52,7 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
       {/* Patient header — warm, personal, not a data sheet (tester feedback) */}
       <div className="relative mb-6 overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/[0.06] via-card to-card p-5 sm:p-6">
         <HeartHandshake className="pointer-events-none absolute -right-6 -bottom-6 size-44 text-primary/[0.05]" strokeWidth={1} />
-        <div className="relative flex items-start justify-between gap-3">
+        <div className="relative flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-4">
             <PatientPhotoEditor
               patientId={id}
@@ -86,10 +86,11 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-end gap-1">
+            <span className="mr-1 whitespace-nowrap"><IncidentNowButton patientId={id} lastType={incidents[0]?.incident_type} pill /></span>
             <Link
               href={`/patients/${id}/handout`}
-              className="mr-1 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+              className="mr-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
             >
               <Printer className="size-4" />
               {t("Handout")}
@@ -121,8 +122,6 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
           )}
         </div>
       </div>
-
-      <div className="mb-4"><IncidentNowButton patientId={id} lastType={incidents[0]?.incident_type} /></div>
 
       {/* Upload is the primary action — right on the overview, no detour to Documents (tester feedback) */}
       <div className="mb-6 rounded-2xl border bg-card p-4 sm:p-5">

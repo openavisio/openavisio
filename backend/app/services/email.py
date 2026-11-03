@@ -120,7 +120,8 @@ _T = {
         "care_line": "You have been granted access to the patient record for {patient} in OpenAvisio.",
         "care_button": "View patient",
         "code_subject": "OpenAvisio: your sign-in code",
-        "code_line": "Your code for signing in on a new device: {code}. It is valid for 10 minutes. If you did not just try to sign in, change your password.",
+        "code_intro": "Your code for signing in on a new device:",
+        "code_after": "It is valid for 10 minutes. If you did not just try to sign in, change your password.",
         "inv_subject": "{inviter} invited you to OpenAvisio",
         "inv_line": '{inviter} invited you to join "{org}" in OpenAvisio.',
         "inv_here": "Create your account here: {url}",
@@ -159,7 +160,8 @@ _T = {
         "care_line": "Du hast in OpenAvisio Zugriff auf die Akte von {patient} bekommen.",
         "care_button": "Akte öffnen",
         "code_subject": "OpenAvisio: dein Anmeldecode",
-        "code_line": "Dein Code für die Anmeldung auf einem neuen Gerät: {code}. Er gilt 10 Minuten. Wenn du dich gerade nicht anmelden wolltest, ändere dein Passwort.",
+        "code_intro": "Dein Code für die Anmeldung auf einem neuen Gerät:",
+        "code_after": "Er gilt 10 Minuten. Wenn du dich gerade nicht anmelden wolltest, ändere dein Passwort.",
         "inv_subject": "{inviter} lädt dich zu OpenAvisio ein",
         "inv_line": "{inviter} hat dich zu „{org}“ in OpenAvisio eingeladen.",
         "inv_here": "Hier legst du dein Konto an: {url}",
@@ -366,9 +368,13 @@ async def send_login_code(db, smtp_cfg: dict, to_email: str, code: str) -> None:
     """The second factor for a password sign-in from a new device (#338)."""
     lang, _ = await _org(db)
     t = _T[lang]
-    line = t["code_line"].format(code=code)
-    html = _page(lang, f"  <p>{escape(line)}</p>")
-    await _send_all(smtp_cfg, [to_email], t["code_subject"], html, f"{line}\n\n{t['footer']}", "Login code")
+    # the code on its own line, large and easy to copy, not inside a sentence
+    html = _page(lang, f"""  <p>{escape(t["code_intro"])}</p>
+  <p style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:32px;font-weight:bold;letter-spacing:6px;\
+background:#f3f4f6;border-radius:8px;padding:12px 20px;display:inline-block;margin:8px 0">{escape(code)}</p>
+  <p>{escape(t["code_after"])}</p>""")
+    text = f"{t['code_intro']}\n\n    {code}\n\n{t['code_after']}\n\n{t['footer']}"
+    await _send_all(smtp_cfg, [to_email], t["code_subject"], html, text, "Login code")
 
 
 async def send_invitation_email(to_email: str, token: str, inviter_id: str | None = None) -> None:
