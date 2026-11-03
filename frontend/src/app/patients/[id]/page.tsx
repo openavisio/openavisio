@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { getPatient, getCalendarFeed, getCurrentEinstufung, getConditions, type S } from "@/lib/api";
+import { getPatient, getCalendarFeed, getCurrentEinstufung, getConditions, getIncidents, type S } from "@/lib/api";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { Cake, Venus, Mars, User as UserIcon, HeartHandshake, ChevronRight, Cale
 import { Suspense } from "react";
 import { CreatedBanner } from "./CreatedBanner";
 import { FavoriteStar } from "@/components/FavoriteStar";
+import { IncidentNowButton } from "./incidents/IncidentNowButton";
 
 export default async function PatientDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,10 +27,11 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
   const today = new Date().toISOString().slice(0, 10);
   // The current Pflegegrad belongs where it is read off rather than looked up: it is
   // asked for on every form and every admission (ADR 042).
-  const [feed, einstufung, conditions] = await Promise.all([
+  const [feed, einstufung, conditions, incidents] = await Promise.all([
     getCalendarFeed(id, { from: today }).catch(() => []),
     getCurrentEinstufung(id).catch(() => null),
     getConditions(id, "active").catch(() => []),
+    getIncidents(id).catch(() => []),
   ]);
   // #193
   const allergies = conditions
@@ -119,6 +121,8 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
           )}
         </div>
       </div>
+
+      <div className="mb-4"><IncidentNowButton patientId={id} lastType={incidents[0]?.incident_type} /></div>
 
       {/* Upload is the primary action — right on the overview, no detour to Documents (tester feedback) */}
       <div className="mb-6 rounded-2xl border bg-card p-4 sm:p-5">

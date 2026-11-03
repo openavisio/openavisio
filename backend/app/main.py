@@ -25,6 +25,7 @@ from app.routers import (
     emergency_plan,
     care_notes,
     carer_updates,
+    doses,
     handouts,
     intake_forms,
     expenses,
@@ -85,6 +86,7 @@ app.include_router(einstufungen.router, prefix="/api", tags=["einstufungen"])
 app.include_router(emergency_plan.router, prefix="/api", tags=["emergency-plan"])
 app.include_router(care_notes.router, prefix="/api", tags=["care-notes"])
 app.include_router(carer_updates.router, prefix="/api", tags=["carer-updates"])
+app.include_router(doses.router, prefix="/api", tags=["doses"])
 app.include_router(intake_forms.router, prefix="/api", tags=["intake-forms"])
 app.include_router(handouts.router, prefix="/api", tags=["handouts"])
 app.include_router(expenses.router, prefix="/api", tags=["expenses"])

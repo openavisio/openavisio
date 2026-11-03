@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { TYPES } from "../incidents/IncidentsView";
 import Link from "next/link";
 import { AlertTriangle, Check, Copy, Download, Link2, ShieldAlert } from "lucide-react";
 import { createShareLinkAction } from "../share-link-actions";
@@ -9,7 +10,8 @@ import { downloadHandoutPdf } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import type { Handout } from "@/lib/handout";
 
-const BY_PERIOD = "carer_updates";
+// ADR 049, 060: one period for both
+const BY_PERIOD = new Set(["carer_updates", "rescue_doses"]);
 
 function within(date: string | null, p: { from: string; to: string }) {
   return !!date && !!p.from && !!p.to && date.slice(0, 10) >= p.from && date.slice(0, 10) <= p.to;
@@ -17,6 +19,10 @@ function within(date: string | null, p: { from: string; to: string }) {
 
 export function HandoutPreview({ patientId, handout, children }: { patientId: string; handout: Handout; children: React.ReactNode }) {
   const t = useTranslations("Handout");
+  const ti = useTranslations("Incidents");
+  // ADR 062: an Incident without its own word shows the type in the reader's language
+  const entryText = (e: { id: string; text: string }) =>
+    e.id.startsWith("incident:") && (TYPES as string[]).includes(e.text) ? ti(`types.${e.text}`) : e.text;
   const locale = useLocale();
   // ADR 048: starts from the variant on every visit
   const [excluded, setExcluded] = useState<Set<string>>(
@@ -42,7 +48,7 @@ export function HandoutPreview({ patientId, handout, children }: { patientId: st
 
   function pickPeriod(next: { from: string; to: string }) {
     setPeriod(next);
-    const entries = handout.sections.filter((s) => s.key === BY_PERIOD).flatMap((s) => s.entries);
+    const entries = handout.sections.filter((s) => BY_PERIOD.has(s.key)).flatMap((s) => s.entries);
     setExcluded((prev) => {
       const out = new Set(prev);
       for (const e of entries) {
@@ -151,7 +157,7 @@ export function HandoutPreview({ patientId, handout, children }: { patientId: st
         {sections.map((s) => (
           <section key={s.key}>
             <h2 className="mb-1 border-b pb-1 text-sm font-semibold">{t(`section.${s.key}`)}</h2>
-            {s.key === BY_PERIOD && (
+            {BY_PERIOD.has(s.key) && (
               <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
                 <label className="flex items-center gap-2">
                   {t("PeriodFrom")}
@@ -166,12 +172,12 @@ export function HandoutPreview({ patientId, handout, children }: { patientId: st
               </div>
             )}
             <ul className="space-y-1">
-              {s.entries.filter((e) => s.key !== BY_PERIOD || within(e.date, period)).map((e) => (
+              {s.entries.filter((e) => !BY_PERIOD.has(s.key) || within(e.date, period)).map((e) => (
                 <li key={e.id}>
                   <label className={`flex cursor-pointer items-start gap-2 text-sm ${excluded.has(e.id) ? "text-muted-foreground line-through" : ""}`}>
                     <input type="checkbox" className="mt-0.5" checked={!excluded.has(e.id)} onChange={() => toggle(e.id)} />
                     <span>
-                      <span className="font-medium">{e.text}</span>
+                      <span className="font-medium">{entryText(e)}</span>
                       {e.suspected && (
                         <span className="ml-1.5 rounded border border-amber-600 px-1 text-xs text-amber-700 dark:text-amber-400">{t("Suspected")}</span>
                       )}

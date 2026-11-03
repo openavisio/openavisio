@@ -150,6 +150,12 @@ export const getMedications = async (patientId: string, status?: string) => api.
 export const createMedication = async (patientId: string, data: S<"MedicationCreateRequest">) => api.post<S<"MedicationDto">>(`/api/patients/${patientId}/medications`, data);
 export const updateMedication = async (id: string, data: S<"MedicationUpdateRequest">) => api.put<S<"MedicationDto">>(`/api/medications/${id}`, data);
 export const deleteMedication = async (id: string) => api.delete<void>(`/api/medications/${id}`);
+// ADR 060
+export const getDoses = async (patientId: string, since?: string) => api.get<S<"DoseDto">[]>(`/api/patients/${patientId}/doses${since ? `?since=${since}` : ""}`);
+export const getIncidentDoses = async (patientId: string) => api.get<S<"DoseDto">[]>(`/api/patients/${patientId}/doses?with_incident=true`);
+export const createDoses = async (patientId: string, data: S<"DoseIn">[]) => api.post<S<"DoseDto">[]>(`/api/patients/${patientId}/doses`, data);
+export const updateDose = async (id: string, data: S<"DoseIn">) => api.put<S<"DoseDto">>(`/api/doses/${id}`, data);
+export const deleteDose = async (id: string) => api.delete<void>(`/api/doses/${id}`);
 
 // Expenses
 export const getExpenses = async (patientId: string, status?: string) => api.get<S<"ExpenseDto">[]>(`/api/patients/${patientId}/expenses${status ? `?status=${status}` : ""}`);
@@ -196,19 +202,14 @@ export const mergeCondition = async (winnerId: string, otherId: string) => api.p
 
 // Incidents
 export const getIncidents = async (patientId: string) => api.get<S<"IncidentDto">[]>(`/api/patients/${patientId}/incidents`);
-export const getIncidentSummary = async (patientId: string) => api.get<S<"IncidentSummaryDto">>(`/api/patients/${patientId}/incidents/summary`);
-export const createIncident = async (patientId: string, data: S<"IncidentCreateRequest">) => api.post<S<"IncidentDto">>(`/api/patients/${patientId}/incidents`, data);
-export const updateIncident = async (id: string, data: S<"IncidentUpdateRequest">) => api.put<S<"IncidentDto">>(`/api/incidents/${id}`, data);
+export const createIncident = async (patientId: string, data: S<"IncidentIn">) => api.post<S<"IncidentDto">>(`/api/patients/${patientId}/incidents`, data);
+export const updateIncident = async (id: string, data: S<"IncidentIn">) => api.put<S<"IncidentDto">>(`/api/incidents/${id}`, data);
 export const deleteIncident = async (id: string) => api.delete<void>(`/api/incidents/${id}`);
 
 // Calendar
 export const getCalendarFeed = async (patientId: string, params?: Record<string, string>) => {
   const q = params ? "?" + new URLSearchParams(params).toString() : "";
   return api.get<S<"CalendarFeedItem">[]>(`/api/patients/${patientId}/calendar/feed${q}`);
-};
-export const getCalendarTrends = async (patientId: string, params?: Record<string, string>) => {
-  const q = params ? "?" + new URLSearchParams(params).toString() : "";
-  return api.get<S<"TrendDataDto">>(`/api/patients/${patientId}/calendar/trends${q}`);
 };
 export const getCalendarEvent = async (id: string) => api.get<S<"CalendarEventDto">>(`/api/calendar/events/${id}`);
 export const createCalendarEvent = async (patientId: string, data: S<"CalendarEventCreateRequest">) => api.post<S<"CalendarEventDto">>(`/api/patients/${patientId}/calendar/events`, data);

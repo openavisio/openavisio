@@ -12,7 +12,16 @@ key**; the private key is held out-of-band and never touches the server.
 |---|---|---|
 | `clinical-YYYY-MM-DD.sql.age` | `vaultdb` **without** `patient_keys` | `RETENTION_CLINICAL_DAYS` (90) |
 | `keystore-YYYY-MM-DD.sql.age` | **only** `patient_keys` | `RETENTION_KEYSTORE_DAYS` (7) |
-| `documents-YYYY-MM-DD.tar.gz.age` | the encrypted blobs from `/data/documents` | `RETENTION_CLINICAL_DAYS` (90) |
+| `documents/` | a **restic repository** of the encrypted blobs from `/data/documents`, one snapshot per night tagged with its date | `RETENTION_CLINICAL_DAYS` (90), `restic forget --keep-within` |
+| `restic-password.age` | the repository's password (`RESTIC_PASSWORD`), encrypted to the age key; rewritten every night, so after a new `AGE_PUBKEY` it opens with the new key from the next backup on | as long as the repository |
+
+**Why the documents are a restic repository (#341):** a blob never changes once
+written and is already ciphertext, so a nightly tarball of all of them stored
+the whole volume 90 times over and compressed nothing. restic stores each blob
+once, however many snapshots hold it; 90 days of history cost about the live
+volume plus what was added. `restic check` runs after every backup, and the
+snapshot must hold as many files as the volume. Installs from before #341 still
+have `documents-YYYY-MM-DD.tar.gz.age` files; they age out after 90 days.
 
 **Why the keystore is separate and short-lived (ADR-031):** erasing a patient
 deletes their per-patient KEK, which makes their documents unrecoverable — but
@@ -31,6 +40,7 @@ burned down last night", not for "undo something from last month".
 | Secret | Without it | Where it must live |
 |---|---|---|
 | age private key (`AGE-SECRET-KEY-1…`) | backups are noise | password manager / paper, **not the server** |
+| `RESTIC_PASSWORD` | the documents repository stays closed | `.env`, and `restic-password.age` in the backup opens with the age key |
 | `DOCUMENT_ENCRYPTION_KEY` (master KEK) | every document and every extracted text stays ciphertext, forever | password manager / paper, **not only the server's `.env`** |
 | `APP_SECRET` | sessions invalid (users log in again — annoying, not fatal) | `.env` is enough |
 
@@ -58,10 +68,16 @@ age -d -i "$AGE_KEY" clinical-$D.sql.age \
 age -d -i "$AGE_KEY" keystore-$D.sql.age \
   | docker compose exec -T postgres psql -U "$POSTGRES_USER" -d vaultdb
 
-# 3. Document blobs back into the volume
-age -d -i "$AGE_KEY" documents-$D.tar.gz.age \
-  | docker run --rm -i -v openavisio_document-data:/data/documents -w /data/documents \
-      alpine:3.21 tar -xz
+# 3. Document blobs back into the volume: the snapshot tagged with the same date.
+#    The backup image has restic; the password comes from the backup itself.
+#    (A backup from before #341 has documents-$D.tar.gz.age instead:
+#    age -d -i "$AGE_KEY" documents-$D.tar.gz.age | docker run --rm -i
+#    -v openavisio_document-data:/data/documents -w /data/documents alpine:3.21 tar -xz)
+#    BACKUP_DIR as in .env; the backup service mounts it as /backups.
+age -d -i "$AGE_KEY" "$BACKUP_DIR/restic-password.age" \
+  | docker compose run --rm -T --no-deps --entrypoint sh -v openavisio_document-data:/restore backup \
+      -c 'read -r RESTIC_PASSWORD; export RESTIC_PASSWORD
+          restic -r /backups/documents --no-cache restore "latest:/data/documents" --host openavisio --tag '"$D"' --target /restore'
 
 # 4. Bring the rest up (migrations run on backend start)
 docker compose up -d
@@ -151,14 +167,18 @@ On the **target**, `/etc/cron.d/openavisio-backup-pull` (backups finish ~03:00,
 pull at 04:17):
 
 ```
-17 4 * * * root rsync -a -e "ssh -i /root/.ssh/openavisio-pull" root@APP_SERVER:/ /srv/openavisio-backups/ && find /srv/openavisio-backups -name 'keystore-*' -mtime +7 -delete && find /srv/openavisio-backups \( -name 'clinical-*' -o -name 'documents-*' \) -mtime +90 -delete
+17 4 * * * root rsync -a --exclude=/documents/ -e "ssh -i /root/.ssh/openavisio-pull" root@APP_SERVER:/ /srv/openavisio-backups/ && rsync -a --delete -e "ssh -i /root/.ssh/openavisio-pull" root@APP_SERVER:/documents/ /srv/openavisio-backups/documents/ && find /srv/openavisio-backups -name 'keystore-*' -mtime +7 -delete && find /srv/openavisio-backups \( -name 'clinical-*' -o -name 'documents-*' \) -mtime +90 -delete
 ```
 
 Two deliberate choices in that line:
 
-- **No `--delete`.** A mirror faithfully copies sabotage: whoever wipes
-  `/opt/openavisio-backups` on the app server would wipe the copies on the next
-  pull. The target does its own pruning instead —
+- **No `--delete`**, except for the documents repository. A mirror faithfully
+  copies sabotage: whoever wipes `/opt/openavisio-backups` on the app server
+  would wipe the copies on the next pull. The target does its own pruning
+  instead. The restic repository is the exception: its pruning happens inside
+  it (`restic forget --prune`), and a copy that kept every pruned file would
+  grow without end. Protect it with a filesystem snapshot on the target
+  (below) —
 - **which must match the source retention, because of ADR 031.** Crypto-shredding
   only reaches backups if an erased patient's KEK ages out of *every* keystore
   copy. A sync target that hoards keystore dumps forever quietly breaks the
@@ -203,9 +223,15 @@ already retention-pruned by `backup.sh`, so mirroring it propagates the ADR-031
 aging to the box — and sabotage-by-mirror is what the snapshots are for.
 
 **ADR-031 consequence of snapshots:** a keystore dump lives 7 days in the
-mirror plus up to 7 more in snapshots. An erased patient's KEK is therefore
-gone from *everything* after ~14 days, not 7. That is acceptable — but it is
-the number to quote when someone asks how long erasure takes to reach backups.
+mirror plus as many days as the snapshot plan keeps (7 above; a hosted box's
+BX11 keeps 10). An erased patient's KEK is therefore gone from *everything*
+after 7 days plus that count, ~14 or ~17 days, not 7. Snapshots cover the
+whole Storage Box, so no path on it escapes them. That is acceptable, but it
+is the number to quote when someone asks how long erasure takes to reach
+backups.
+
+The push must run **after** the backup has finished, or every night's backup
+reaches the box only with the next night's push.
 
 ### Either way
 

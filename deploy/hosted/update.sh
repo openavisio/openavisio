@@ -30,6 +30,8 @@ for ID in $ids; do
 
   (cd "$here/../.." && git archive "$REF" deploy/docker-compose.prod.yml deploy/docker-compose.hosted.yml \
     deploy/docker-compose.shared-box.yml) | ssh "$BOX" "tar -x -C $D --strip-components=1"
+  # #341: a Deployment from before restic gets its repository password, made on the box
+  ssh "$BOX" "grep -q '^RESTIC_PASSWORD=' $D/.env || echo RESTIC_PASSWORD=\$(openssl rand -hex 32) >> $D/.env"
   ssh "$BOX" "cd $D && sed -i 's/^TAG=.*/TAG=$TAG/' .env && docker compose $F pull -q \
     && docker compose $F up -d --no-build 2>&1 | tail -1 \
     && for i in \$(seq 1 60); do \

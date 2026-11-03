@@ -12,6 +12,7 @@ import {
   HandHeart,
   MessageSquareText,
   ClipboardPen,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ import {
 export const PATIENT_SECTIONS: { key: string; segment: string; Icon: LucideIcon; tint: string }[] = [
   { key: "Dashboard", segment: "dashboard", Icon: Activity, tint: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
   { key: "EmergencyPlan", segment: "emergency-plan", Icon: Siren, tint: "bg-red-500/10 text-red-600 dark:text-red-400" },
+  { key: "Incidents", segment: "incidents", Icon: Zap, tint: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400" },
   { key: "CareNotes", segment: "care-notes", Icon: HandHeart, tint: "bg-pink-500/10 text-pink-600 dark:text-pink-400" },
   { key: "CarerUpdates", segment: "carer-updates", Icon: MessageSquareText, tint: "bg-lime-500/10 text-lime-700 dark:text-lime-400" },
   { key: "IntakeForms", segment: "intake-forms", Icon: ClipboardPen, tint: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },

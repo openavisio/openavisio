@@ -77,7 +77,7 @@ async def test_structured_context_lists_every_source_and_caps_the_long_ones(clie
     db.add(Condition(patient_id=patient.id, owner_id=user.id, code_display="Epilepsie",
                      onset_date_time="2024-01-05"))
     db.add(Incident(patient_id=patient.id, owner_id=user.id, incident_type="seizure",
-                    severity="mild", occurred_at="2025-03-09"))
+                    occurred_at="2025-03-09"))
     await db.commit()
 
     await _set_org_language(db, "de")
@@ -87,7 +87,7 @@ async def test_structured_context_lists_every_source_and_caps_the_long_ones(clie
     assert "Meilenstein | 2025-06-01 | Freies Laufen" in text
     assert "Medikament | 2024-02-03 | Levetiracetam" in text
     assert "Diagnose | 2024-01-05 | Epilepsie" in text
-    assert "Vorfall | 2025-03-09 | seizure" in text
+    assert "Vorfall | 2025-03-09 | Anfall" in text
     # capped, and the cap is disclosed so the answer can say so
     assert len([ln for ln in lines if ln.startswith("Termin |")]) == chat_router.APPOINTMENT_LIMIT
     assert any("HINWEIS" in ln and "Termine" in ln for ln in lines)

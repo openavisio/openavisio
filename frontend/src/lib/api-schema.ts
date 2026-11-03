@@ -647,57 +647,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/patients/{patient_id}/incidents/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Incident Summary */
-        get: operations["get_incident_summary_api_patients__patient_id__incidents_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/patients/{patient_id}/incidents/by-date": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Incidents By Date */
-        get: operations["list_incidents_by_date_api_patients__patient_id__incidents_by_date_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/patients/{patient_id}/incidents/by-type/{inc_type}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Incidents By Type */
-        get: operations["list_incidents_by_type_api_patients__patient_id__incidents_by_type__inc_type__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/incidents/{incident_id}": {
         parameters: {
             query?: never;
@@ -860,6 +809,45 @@ export interface paths {
         post?: never;
         /** Delete Carer Update */
         delete: operations["delete_carer_update_api_carer_updates__update_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/patients/{patient_id}/doses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Doses */
+        get: operations["list_doses_api_patients__patient_id__doses_get"];
+        put?: never;
+        /**
+         * Create Doses
+         * @description Several at once: catching up on Doses over a period (ADR 060).
+         */
+        post: operations["create_doses_api_patients__patient_id__doses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/doses/{dose_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Dose */
+        put: operations["update_dose_api_doses__dose_id__put"];
+        post?: never;
+        /** Delete Dose */
+        delete: operations["delete_dose_api_doses__dose_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1291,40 +1279,6 @@ export interface paths {
         };
         /** Get Feed */
         get: operations["get_feed_api_patients__patient_id__calendar_feed_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/patients/{patient_id}/calendar/trends": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Trends */
-        get: operations["get_trends_api_patients__patient_id__calendar_trends_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/patients/{patient_id}/calendar/patterns": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Patterns */
-        get: operations["get_patterns_api_patients__patient_id__calendar_patterns_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3853,6 +3807,51 @@ export interface components {
              */
             recommendations: number;
         };
+        /** DoseDto */
+        DoseDto: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Medication Id
+             * Format: uuid
+             */
+            medication_id: string;
+            /** Given At */
+            given_at: string;
+            /** Given By */
+            given_by: string | null;
+            /** Amount */
+            amount: string | null;
+            /** Note */
+            note: string | null;
+            /** Incident Id */
+            incident_id: string | null;
+            /** Entered By */
+            entered_by: string;
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /** DoseIn */
+        DoseIn: {
+            /**
+             * Medication Id
+             * Format: uuid
+             */
+            medication_id: string;
+            /** Given At */
+            given_at: string;
+            /** Given By */
+            given_by?: string | null;
+            /** Amount */
+            amount?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Incident Id */
+            incident_id?: string | null;
+        };
         /** EinstufungCreateRequest */
         EinstufungCreateRequest: {
             /** Pflegegrad */
@@ -4308,55 +4307,6 @@ export interface components {
          * @enum {string}
          */
         IdentificationMode: "identified" | "anonymous";
-        /** IncidentCreateRequest */
-        IncidentCreateRequest: {
-            /** Incident Type */
-            incident_type: string;
-            /** Incident Type Display */
-            incident_type_display?: string | null;
-            /**
-             * Severity
-             * @default mild
-             */
-            severity?: string;
-            /** Occurred At */
-            occurred_at: string;
-            /** Duration Minutes */
-            duration_minutes?: number | null;
-            /** Location */
-            location?: string | null;
-            /** Suspected Trigger */
-            suspected_trigger?: string | null;
-            /** Symptoms */
-            symptoms?: string | null;
-            /** Actions Taken */
-            actions_taken?: string | null;
-            /** Outcome */
-            outcome?: string | null;
-            /** Note */
-            note?: string | null;
-            /** Weather Condition */
-            weather_condition?: string | null;
-            /** Temperature */
-            temperature?: number | null;
-            /** Humidity */
-            humidity?: number | null;
-            /** Pollen Level */
-            pollen_level?: string | null;
-            /** Air Quality Index */
-            air_quality_index?: number | null;
-            /** Activity At Time */
-            activity_at_time?: string | null;
-            /** Hours Since Last Meal */
-            hours_since_last_meal?: number | null;
-            /** Sleep Hours Previous Night */
-            sleep_hours_previous_night?: number | null;
-            /**
-             * Reported To Provider
-             * @default false
-             */
-            reported_to_provider?: boolean;
-        };
         /** IncidentDto */
         IncidentDto: {
             /**
@@ -4373,121 +4323,36 @@ export interface components {
             incident_type: string;
             /** Incident Type Display */
             incident_type_display: string | null;
-            /** Severity */
-            severity: string;
-            /** Status */
-            status: string;
             /** Occurred At */
             occurred_at: string;
             /** Duration Minutes */
             duration_minutes: number | null;
-            /** Resolved At */
-            resolved_at: string | null;
-            /** Location */
-            location: string | null;
-            /** Suspected Trigger */
-            suspected_trigger: string | null;
-            /** Symptoms */
-            symptoms: string | null;
             /** Actions Taken */
             actions_taken: string | null;
-            /** Outcome */
-            outcome: string | null;
             /** Note */
             note: string | null;
-            /** Reported To Provider */
-            reported_to_provider: boolean;
+            /** Entered By */
+            entered_by: string;
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /** IncidentIn */
+        IncidentIn: {
             /**
-             * Created At
-             * Format: date-time
+             * Incident Type
+             * @enum {string}
              */
-            created_at: string;
-        };
-        /** IncidentFrequencyDto */
-        IncidentFrequencyDto: {
-            /** Type */
-            type: string;
-            /** Count */
-            count: number;
-        };
-        /** IncidentFrequencyPoint */
-        IncidentFrequencyPoint: {
-            /** Date */
-            date: string;
-            /** Count */
-            count: number;
-        };
-        /** IncidentSummaryDto */
-        IncidentSummaryDto: {
-            /** Total Count */
-            total_count: number;
-            /** Last 30 Days */
-            last_30_days: number;
-            /** Count By Type */
-            count_by_type: {
-                [key: string]: number;
-            };
-            /** Count By Severity */
-            count_by_severity: {
-                [key: string]: number;
-            };
-            /** Most Common Type */
-            most_common_type: string | null;
-            /** Most Common Trigger */
-            most_common_trigger: string | null;
-        };
-        /** IncidentUpdateRequest */
-        IncidentUpdateRequest: {
-            /** Incident Type */
-            incident_type?: string | null;
+            incident_type: "seizure" | "fall" | "allergic_reaction" | "other";
             /** Incident Type Display */
             incident_type_display?: string | null;
-            /**
-             * Severity
-             * @default mild
-             */
-            severity?: string;
             /** Occurred At */
-            occurred_at?: string | null;
+            occurred_at: string;
             /** Duration Minutes */
             duration_minutes?: number | null;
-            /** Location */
-            location?: string | null;
-            /** Suspected Trigger */
-            suspected_trigger?: string | null;
-            /** Symptoms */
-            symptoms?: string | null;
             /** Actions Taken */
             actions_taken?: string | null;
-            /** Outcome */
-            outcome?: string | null;
             /** Note */
             note?: string | null;
-            /** Weather Condition */
-            weather_condition?: string | null;
-            /** Temperature */
-            temperature?: number | null;
-            /** Humidity */
-            humidity?: number | null;
-            /** Pollen Level */
-            pollen_level?: string | null;
-            /** Air Quality Index */
-            air_quality_index?: number | null;
-            /** Activity At Time */
-            activity_at_time?: string | null;
-            /** Hours Since Last Meal */
-            hours_since_last_meal?: number | null;
-            /** Sleep Hours Previous Night */
-            sleep_hours_previous_night?: number | null;
-            /**
-             * Reported To Provider
-             * @default false
-             */
-            reported_to_provider?: boolean;
-            /** Status */
-            status?: string | null;
-            /** Resolved At */
-            resolved_at?: string | null;
         };
         /** IntakeDocumentDto */
         IntakeDocumentDto: {
@@ -5214,11 +5079,6 @@ export interface components {
              */
             medication_timeline: components["schemas"]["MedicationTimelineDto"][];
             /**
-             * Incident Frequency
-             * @default []
-             */
-            incident_frequency: components["schemas"]["IncidentFrequencyDto"][];
-            /**
              * Total Documents
              * @default 0
              */
@@ -5283,23 +5143,6 @@ export interface components {
             active?: boolean | null;
             /** Identifier */
             identifier?: string | null;
-        };
-        /** PatternDetectionDto */
-        PatternDetectionDto: {
-            /**
-             * Last Incident Badges
-             * @default []
-             */
-            last_incident_badges: {
-                [key: string]: unknown;
-            }[];
-            /**
-             * Repeat Intervals
-             * @default []
-             */
-            repeat_intervals: {
-                [key: string]: unknown;
-            }[];
         };
         /** PdfRequest */
         PdfRequest: {
@@ -5772,36 +5615,6 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
-        };
-        /** TrendDataDto */
-        TrendDataDto: {
-            /**
-             * Mood Trend
-             * @default []
-             */
-            mood_trend: components["schemas"]["TrendPoint"][];
-            /**
-             * Pain Trend
-             * @default []
-             */
-            pain_trend: components["schemas"]["TrendPoint"][];
-            /**
-             * Sleep Trend
-             * @default []
-             */
-            sleep_trend: components["schemas"]["TrendPoint"][];
-            /**
-             * Incident Frequency
-             * @default []
-             */
-            incident_frequency: components["schemas"]["IncidentFrequencyPoint"][];
-        };
-        /** TrendPoint */
-        TrendPoint: {
-            /** Date */
-            date: string;
-            /** Value */
-            value: number | null;
         };
         /** UpdateAccessRequest */
         UpdateAccessRequest: {
@@ -7411,7 +7224,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IncidentCreateRequest"];
+                "application/json": components["schemas"]["IncidentIn"];
             };
         };
         responses: {
@@ -7422,103 +7235,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IncidentDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_incident_summary_api_patients__patient_id__incidents_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                patient_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncidentSummaryDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_incidents_by_date_api_patients__patient_id__incidents_by_date_get: {
-        parameters: {
-            query?: {
-                from?: string | null;
-                to?: string | null;
-            };
-            header?: never;
-            path: {
-                patient_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncidentDto"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_incidents_by_type_api_patients__patient_id__incidents_by_type__inc_type__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                patient_id: string;
-                inc_type: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncidentDto"][];
                 };
             };
             /** @description Validation Error */
@@ -7574,7 +7290,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IncidentUpdateRequest"];
+                "application/json": components["schemas"]["IncidentIn"];
             };
         };
         responses: {
@@ -8058,6 +7774,142 @@ export interface operations {
             header?: never;
             path: {
                 update_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_doses_api_patients__patient_id__doses_get: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD, inclusive */
+                since?: string | null;
+                incident_id?: string | null;
+                /** @description only Doses that point at an Incident (ADR 062) */
+                with_incident?: boolean;
+            };
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseDto"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_doses_api_patients__patient_id__doses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DoseIn"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseDto"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_dose_api_doses__dose_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dose_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DoseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_dose_api_doses__dose_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dose_id: string;
             };
             cookie?: never;
         };
@@ -9273,74 +9125,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CalendarFeedItem"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_trends_api_patients__patient_id__calendar_trends_get: {
-        parameters: {
-            query?: {
-                from?: string | null;
-                to?: string | null;
-                granularity?: string;
-            };
-            header?: never;
-            path: {
-                patient_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TrendDataDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_patterns_api_patients__patient_id__calendar_patterns_get: {
-        parameters: {
-            query?: {
-                windowDays?: number;
-            };
-            header?: never;
-            path: {
-                patient_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatternDetectionDto"];
                 };
             };
             /** @description Validation Error */

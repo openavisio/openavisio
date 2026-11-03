@@ -13,10 +13,11 @@ from app.deps import get_current_user
 from app.models.calendar import CalendarEvent, EventCategory
 from app.models.care_notes import HEADINGS as CARE_HEADINGS, CareNotes
 from app.models.carer_update import CarerUpdate
+from app.models.dose import Dose
 from app.models.chat import ChatMessage
 from app.models.emergency_plan import EmergencyPlan
 from app.models.condition import Condition
-from app.models.incident import Incident
+from app.models.incident import TYPE_LABELS, Incident
 from app.models.intake import HistoryFact
 from app.models.medication import MedicationStatement
 from app.models.observation import Observation
@@ -30,6 +31,7 @@ router = APIRouter()
 APPOINTMENT_LIMIT = 150
 INCIDENT_LIMIT = 100
 CARER_UPDATE_LIMIT = 100
+DOSE_LIMIT = 200
 # Labs are the one source that runs into the thousands, so they are capped per
 # parameter instead of overall: a yearly-checked parameter must not be pushed
 # out by a weekly-checked one (#200).
@@ -67,6 +69,7 @@ _LABELS = {
         "appointments": "appointments", "incidents": "incidents",
         "carer_update": "Carer update", "retold": "retold, not word for word",
         "carer_updates": "carer updates",
+        "dose": "Dose given", "given_by": "given by", "doses": "doses",
         "care_note": "Care note",
         "history_fact": "History fact",
         "care": {"communication": "Communication", "eating_drinking": "Eating and drinking", "sleep": "Sleep",
@@ -92,6 +95,7 @@ _LABELS = {
         "appointments": "Termine", "incidents": "Vorfälle",
         "carer_update": "Rückmeldung", "retold": "mündlich, nacherzählt",
         "carer_updates": "Rückmeldungen",
+        "dose": "Gabe", "given_by": "gegeben von", "doses": "Gaben",
         "care_note": "Alltagsinfo",
         "history_fact": "Angabe",
         "care": {"communication": "Kommunikation", "eating_drinking": "Essen und Trinken", "sleep": "Schlafen",
@@ -285,12 +289,28 @@ async def _structured_context(
     )).scalars().all()
     for i in incidents[:INCIDENT_LIMIT]:
         lines.append(_line(
-            L["incident"], i.occurred_at, i.incident_type_display or i.incident_type, i.severity,
-            f"{i.duration_minutes} min" if i.duration_minutes else None, i.symptoms, i.outcome,
+            L["incident"], i.occurred_at, i.incident_type_display or TYPE_LABELS[lang].get(i.incident_type, i.incident_type),
+            f"{i.duration_minutes} min" if i.duration_minutes else None, i.actions_taken, i.note,
         ))
     months.update(i.occurred_at[:7] for i in incidents[:INCIDENT_LIMIT] if i.occurred_at)
     if len(incidents) > INCIDENT_LIMIT:
         lines.append(L["cap"].format(n=INCIDENT_LIMIT, what=L["incidents"]))
+
+    # ADR 060: as recorded, with time and giver; nothing about what is due
+    names = {m.id: m.medication_display for m in meds}
+    doses = (await db.execute(
+        select(Dose)
+        .where(Dose.patient_id == patient_id, Dose.is_deleted == False)  # noqa: E712
+        .order_by(Dose.given_at.desc())
+        .limit(DOSE_LIMIT + 1)
+    )).scalars().all()
+    for d in (d for d in doses[:DOSE_LIMIT] if d.medication_id in names):
+        lines.append(_line(L["dose"], d.given_at, d.given_at[11:16], names.get(d.medication_id), d.amount,
+                           f"{L['given_by']} {d.given_by or ' '.join(filter(None, [d.owner.first_name, d.owner.last_name])) or d.owner.email}",
+                           d.note))
+    months.update(d.given_at[:7] for d in doses[:DOSE_LIMIT])
+    if len(doses) > DOSE_LIMIT:
+        lines.append(L["cap"].format(n=DOSE_LIMIT, what=L["doses"]))
 
     # ADR 049: always with who reported it and how
     updates = (await db.execute(

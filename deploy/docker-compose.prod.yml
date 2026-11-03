@@ -229,6 +229,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: vaultdb
       AGE_PUBKEY: ${AGE_PUBKEY}
+      # the documents' restic repository (#341); a copy encrypted to AGE_PUBKEY sits beside it
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD}
       BACKUP_HOUR: ${BACKUP_HOUR:-3}
       RETENTION_CLINICAL_DAYS: ${RETENTION_CLINICAL_DAYS:-90}
       # short, so an erased patient's KEK drops out of every backup (ADR-031)

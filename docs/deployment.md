@@ -182,6 +182,7 @@ Two layers, per ADR-022:
 
 - **ZFS native encryption** on the Postgres data volume — covers a stolen/decommissioned disk.
 - **age-encrypted `pg_dump`** of `vaultdb`, with the age key held **out-of-band** (never inside the backup) — covers backup exfiltration. Keep the `DOCUMENT_ENCRYPTION_KEY` (master KEK) backed up out-of-band too; losing it means permanent loss of all documents.
+- The document blobs, already ciphertext, go into a **restic repository** in the backup directory: each blob is stored once, not once per night (#341, ADR 061). The `backup` service does all of this; see `docs/backup-restore.md`.
 
 ### Keystore is a SEPARATE, short-retention stream (ADR-031)
 

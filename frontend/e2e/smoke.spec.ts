@@ -80,6 +80,13 @@ test("login, open a patient, and keep navigating", async ({ page, request }) => 
     .toBeVisible({ timeout: 15_000 });
   await page.goBack();
 
+  // Incidents tab (ADR 062): the one-tap button is there whether or not any Incident exists.
+  await page.locator('a[href$="/incidents"]').first().click();
+  await page.waitForURL(/\/incidents$/);
+  await expect(page.getByRole("button", { name: /Vorfall jetzt|Incident now/ }))
+    .toBeVisible({ timeout: 15_000 });
+  await page.goBack();
+
   // Care Notes tab (ADR 048), same rule as the Emergency Plan above.
   await page.locator('a[href$="/care-notes"]').first().click();
   await page.waitForURL(/\/care-notes$/);

@@ -102,8 +102,8 @@ the operator can never create their Organization, and the install is a brick.
 
 ### Backups ship, as a systemd timer
 
-`backup.sh` becomes a `.timer` (needs `age`, `postgresql-client-17`, `tar`,
-`gzip`). Prompt for an age public key; blank installs the timer **disabled**,
+`backup.sh` becomes a `.timer` (needs `age`, `postgresql-client-17`,
+`restic`). Prompt for an age public key; blank installs the timer **disabled**,
 never a generated key. The private key stays off the box or the encryption
 protects nothing from whoever owns the box.
 

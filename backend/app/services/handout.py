@@ -11,11 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.calendar import CalendarEvent, EventCategory
 from app.models.care_notes import HEADINGS as CARE_HEADINGS, CareNotes
 from app.models.carer_update import CarerUpdate
+from app.models.dose import Dose
 from app.models.condition import Condition
 from app.models.document import DocumentReference
 from app.models.einstufung import Einstufung
 from app.models.emergency_plan import EmergencyPlan
-from app.models.incident import Incident
+from app.models.incident import TYPE_LABELS, Incident
 from app.models.medication import MedicationStatement
 from app.models.observation import Observation
 from app.models.patient import Patient
@@ -29,7 +30,7 @@ CARE = [f"care_{h}" for h in CARE_HEADINGS]
 VARIANTS = {
     "doctors": dict.fromkeys(["allergies", "diagnoses_active", "diagnoses_resolved", "medications", "weight",
                               "incidents", "lab_results", "events", "correspondents", "documents"], True)
-    | {"carer_updates": False},  # ADR 049: only the period the User picks
+    | {"carer_updates": False, "rescue_doses": False},  # ADR 049, 060: only the period the User picks
     "emergency": dict.fromkeys(["allergies", "weight", "diagnoses_active", "medications", *PLAN, "correspondents"], True),
     "steckbrief": {"allergies": True, "diagnoses_active": False, "medications": True,
                    **dict.fromkeys(PLAN + CARE, True)},
@@ -55,6 +56,7 @@ LABELS = {
         "events": "Termine, Klinikaufenthalte und Therapien (12 Monate)",
         "correspondents": "Behandelnde Ärzte und Einrichtungen", "documents": "Dokumente (12 Monate)",
         "carer_updates": "Rückmeldungen von Betreuenden", "retold": "mündlich, nacherzählt",
+        "rescue_doses": "Gaben von Notfallmedikamenten",
         "footer": "Aus OpenAvisio, nur von der Familie bestätigte Einträge, so wie erfasst.",
     },
     "en": {
@@ -72,6 +74,7 @@ LABELS = {
         "events": "Appointments, hospital stays and therapies (12 months)",
         "correspondents": "Treating doctors and facilities", "documents": "Documents (12 months)",
         "carer_updates": "Updates from carers", "retold": "retold, not word for word",
+        "rescue_doses": "Doses of rescue medications",
         "footer": "From OpenAvisio, only entries the family confirmed, as recorded.",
     },
 }
@@ -139,6 +142,13 @@ async def build(patient_id: uuid.UUID, variant: str, db: AsyncSession) -> dict:
                          key=lambda d: d.issued_date, reverse=True)
     correspondents = {d.correspondent.id: d.correspondent.name for d in docs if d.id in verified and d.correspondent}
 
+    plan_row = (await db.execute(select(EmergencyPlan).where(EmergencyPlan.patient_id == patient_id))).scalar_one_or_none()
+    # ADR 060: a rescue medication is one the Emergency Plan points at, or a Dose given during an Incident
+    rescue = {str(st.get("medication_id")) for sit in (plan_row.situations if plan_row else []) for st in sit.get("steps", [])}
+    med_names = {m.id: m.medication_display for m in await rows(MedicationStatement)}
+    rescue_doses = sorted((d for d in await rows(Dose) if d.medication_id in med_names
+                           and (str(d.medication_id) in rescue or d.incident_id)), key=lambda d: d.given_at, reverse=True)
+
     sections = {
         "allergies": [dx(c) for c in conds if c.category == "allergy"],
         "diagnoses_active": [dx(c) for c in conds if c.category != "allergy" and c.clinical_status == "active"],
@@ -166,8 +176,10 @@ async def build(patient_id: uuid.UUID, variant: str, db: AsyncSession) -> dict:
         "carer_updates": [_entry(f"carer_update:{u.id}", ", ".join(filter(None, [u.correspondent.name, u.person])),
                                  u.text, u.day, retold=u.retold)
                           for u in sorted(await rows(CarerUpdate), key=lambda u: u.day, reverse=True)],
+        "rescue_doses": [_entry(f"dose:{d.id}", med_names[d.medication_id],
+                                ", ".join(filter(None, [d.given_at[11:16], d.amount])), d.given_at[:10])
+                         for d in rescue_doses],
     }
-    plan_row = (await db.execute(select(EmergencyPlan).where(EmergencyPlan.patient_id == patient_id))).scalar_one_or_none()
     plan = await plan_to_dto(plan_row, db) if plan_row else None
     notes = (await db.execute(select(CareNotes).where(CareNotes.patient_id == patient_id))).scalar_one_or_none()
     if plan:
@@ -214,7 +226,8 @@ def render_html(handout: dict, lang: str, exclude: set[str] = frozenset(), font_
         for e in s["entries"]:
             if e["id"] in exclude:
                 continue
-            bits = [f"<strong>{escape(e['text'] or '')}</strong>"]
+            text = TYPE_LABELS[lang].get(e["text"], e["text"]) if e["id"].startswith("incident:") else e["text"]
+            bits = [f"<strong>{escape(text or '')}</strong>"]
             if e["suspected"]:
                 bits.append(f'<span class="flag">{L["suspected"]}</span>')
             if e.get("retold"):

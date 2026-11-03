@@ -74,30 +74,6 @@ class CalendarFeedItem(BaseModel):
     classification: str | None = None
 
 
-class TrendPoint(BaseModel):
-    date: str
-    value: float | None
-
-
-class IncidentFrequencyPoint(BaseModel):
-    date: str
-    count: int
-
-
-class TrendDataDto(BaseModel):
-    mood_trend: list[TrendPoint] = []
-    pain_trend: list[TrendPoint] = []
-    sleep_trend: list[TrendPoint] = []
-    incident_frequency: list[IncidentFrequencyPoint] = []
-
-
-class PatternDetectionDto(BaseModel):
-    # No correlation/effectiveness fields on purpose — ruled out by
-    # docs/regulatory-positioning.md (#119); MDR assessment required first.
-    last_incident_badges: list[dict] = []
-    repeat_intervals: list[dict] = []
-
-
 class CalendarFeedDto(OrmBase):
     id: uuid.UUID
     patient_id: uuid.UUID

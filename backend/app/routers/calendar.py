@@ -1,6 +1,5 @@
 import uuid
-from collections import defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
@@ -25,10 +24,6 @@ from app.schemas.calendar import (
     CalendarFeedCreatedDto,
     CalendarFeedDto,
     CalendarFeedItem,
-    IncidentFrequencyPoint,
-    PatternDetectionDto,
-    TrendDataDto,
-    TrendPoint,
 )
 from app.services.calendar_feed import build_ics, generate_token, hash_token, window_start
 
@@ -265,66 +260,6 @@ async def get_feed(
 
     items.sort(key=lambda x: x.start, reverse=True)
     return items
-
-
-@router.get("/patients/{patient_id}/calendar/trends", response_model=TrendDataDto)
-async def get_trends(
-    patient_id: uuid.UUID,
-    from_: str | None = Query(None, alias="from"),
-    to: str | None = Query(None),
-    granularity: str = Query("day"),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    await require_patient_access(patient_id, user, db)
-    q = select(DiaryEntry).where(DiaryEntry.patient_id == patient_id, DiaryEntry.is_deleted == False)  # noqa: E712
-    if from_:
-        q = q.where(DiaryEntry.entry_date >= from_)
-    if to:
-        q = q.where(DiaryEntry.entry_date <= to)
-    entries = (await db.execute(q)).scalars().all()
-
-    mood_trend = [TrendPoint(date=e.entry_date, value=float(e.mood) if e.mood else None) for e in entries if e.mood is not None]
-    pain_trend = [TrendPoint(date=e.entry_date, value=float(e.pain_level) if e.pain_level else None) for e in entries if e.pain_level is not None]
-    sleep_trend = [TrendPoint(date=e.entry_date, value=e.sleep_hours) for e in entries if e.sleep_hours is not None]
-
-    inc_q = select(Incident).where(Incident.patient_id == patient_id, Incident.is_deleted == False)  # noqa: E712
-    if from_:
-        inc_q = inc_q.where(Incident.occurred_at >= from_)
-    incidents = (await db.execute(inc_q)).scalars().all()
-    freq: dict[str, int] = defaultdict(int)
-    for inc in incidents:
-        day = inc.occurred_at[:10]
-        freq[day] += 1
-    incident_frequency = [IncidentFrequencyPoint(date=d, count=c) for d, c in sorted(freq.items())]
-
-    return TrendDataDto(mood_trend=mood_trend, pain_trend=pain_trend, sleep_trend=sleep_trend, incident_frequency=incident_frequency)
-
-
-@router.get("/patients/{patient_id}/calendar/patterns", response_model=PatternDetectionDto)
-async def get_patterns(
-    patient_id: uuid.UUID,
-    window_days: int = Query(90, alias="windowDays"),
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    await require_patient_access(patient_id, user, db)
-    cutoff = (datetime.now(UTC) - timedelta(days=window_days)).isoformat()
-    result = await db.execute(select(Incident).where(
-        Incident.patient_id == patient_id,
-        Incident.is_deleted == False,  # noqa: E712
-        Incident.occurred_at >= cutoff,
-    ).order_by(Incident.occurred_at.desc()))
-    incidents = result.scalars().all()
-
-    # Last incident badges by type
-    by_type: dict[str, str] = {}
-    for inc in incidents:
-        if inc.incident_type not in by_type:
-            by_type[inc.incident_type] = inc.occurred_at
-
-    badges = [{"type": t, "last_occurred": d} for t, d in by_type.items()]
-    return PatternDetectionDto(last_incident_badges=badges)
 
 
 # --- iCal feed (ADR-037) -----------------------------------------------------

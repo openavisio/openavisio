@@ -1,7 +1,7 @@
 FROM alpine:3.21
 
 # postgresql17-client must match the server major (pgvector/pgvector:pg17)
-RUN apk add --no-cache postgresql17-client age tzdata tar gzip
+RUN apk add --no-cache postgresql17-client age tzdata restic
 
 COPY backup.sh /usr/local/bin/backup.sh
 RUN chmod +x /usr/local/bin/backup.sh

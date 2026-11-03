@@ -1,10 +1,11 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { getMedications, getPatient } from "@/lib/api";
+import { getDoses, getMedications, getPatient } from "@/lib/api";
 import { getTranslations } from "next-intl/server";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { AlertCircle } from "lucide-react";
 import { AddMedicationPanel } from "./AddMedicationPanel";
 import { MedicationsTable } from "./MedicationsTable";
+import { DosesPanel } from "./DosesPanel";
 import { AiNotice } from "@/components/AiNotice";
 
 export default async function MedicationsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -12,10 +13,13 @@ export default async function MedicationsPage({ params }: { params: Promise<{ id
   const t = await getTranslations("Med");
   let patient: Awaited<ReturnType<typeof getPatient>> | null = null;
   let medications: Awaited<ReturnType<typeof getMedications>> = [];
+  let doses: Awaited<ReturnType<typeof getDoses>> = [];
   let fetchError = false;
 
   try { patient = await getPatient(id); } catch {}
   try { medications = await getMedications(id); } catch { fetchError = true; }
+  // ADR 060: today and the two weeks before
+  try { doses = await getDoses(id, new Date(Date.now() - 14 * 86400000).toLocaleDateString("sv")); } catch {}
 
   if (!patient) {
     return (
@@ -43,7 +47,10 @@ export default async function MedicationsPage({ params }: { params: Promise<{ id
       ) : medications.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">{t("Empty")}</div>
       ) : (
-        <MedicationsTable medications={medications} />
+        <>
+          {medications.some((m) => m.is_active) && <DosesPanel patientId={id} medications={medications} doses={doses} />}
+          <MedicationsTable medications={medications} />
+        </>
       )}
       {medications.length > 0 && <AiNotice />}
 

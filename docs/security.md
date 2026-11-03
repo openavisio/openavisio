@@ -226,7 +226,7 @@ Three things must be backed up together to enable a full restore:
 | What | Where | How |
 |---|---|---|
 | Database | PostgreSQL in `openavisio-postgres-1` | `pg_dump` or volume snapshot |
-| Document storage | `/opt/openavisio/data/documents/` (local) or MinIO bucket | rsync / bucket replication |
+| Document storage | `/opt/openavisio/data/documents/` (local) or MinIO bucket | the `backup` service's restic repository (`docs/backup-restore.md`) / bucket replication |
 | Environment file | `/opt/openavisio/.env` | Encrypted offsite copy |
 
 **Without `.env`, encrypted documents cannot be decrypted.** Store it separately from the server — if the server is compromised or lost, you need the key to restore documents.

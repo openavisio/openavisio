@@ -263,7 +263,8 @@
       "EmergencyPlan": "Was im Notfall zu tun ist",
       "CareNotes": "Wie der Alltag gut gelingt",
       "CarerUpdates": "Was Kita, Schule und Betreuende berichten",
-      "IntakeForms": "Arztfragebögen aus der Akte beantworten"
+      "IntakeForms": "Arztfragebögen aus der Akte beantworten",
+      "Incidents": "Anfälle, Stürze und andere Vorfälle"
     },
     "TodayAtGlance": "Heute auf einen Blick",
     "ShowAllAppointments": "Alle Termine anzeigen",
@@ -1060,6 +1061,42 @@
       "what_overwhelms": "Was überfordert"
     }
   },
+  "Incidents": {
+    "Title": "Vorfälle",
+    "NotFound": "Patient nicht gefunden.",
+    "LoadError": "Die Vorfälle konnten nicht geladen werden.",
+    "SaveError": "Speichern hat nicht geklappt. Bitte noch einmal versuchen.",
+    "Now": "Vorfall jetzt",
+    "Add": "Vorfall nachtragen",
+    "Edit": "Vorfall bearbeiten",
+    "Empty": "Noch keine Vorfälle eingetragen.",
+    "All": "Alle Vorfälle",
+    "Filter": "Nach Art filtern",
+    "AllTypes": "Alle Arten",
+    "Type": "Art",
+    "Last3": "3 Monate",
+    "Last12": "12 Monate",
+    "Display": "Bezeichnung",
+    "DisplayPlaceholder": "z. B. Absence, wie der Arzt es nennt",
+    "When": "Wann",
+    "Duration": "Dauer (Minuten)",
+    "Minutes": "{n} Min.",
+    "Actions": "Was wurde getan",
+    "Note": "Notiz",
+    "EnteredBy": "eingetragen von {name}",
+    "AddDose": "Gabe dazu eintragen",
+    "Delete": "Löschen",
+    "DeleteConfirm": "Wirklich löschen",
+    "Cancel": "Abbrechen",
+    "Save": "Speichern",
+    "Saving": "Speichert …",
+    "types": {
+      "seizure": "Anfall",
+      "fall": "Sturz",
+      "allergic_reaction": "Allergische Reaktion",
+      "other": "Sonstiges"
+    }
+  },
   "CarerUpdates": {
     "Title": "Rückmeldungen",
     "NotFound": "Patient nicht gefunden.",
@@ -1125,7 +1162,8 @@
       "care_what_helps": "Was hilft",
       "care_what_overwhelms": "Was überfordert",
       "incidents_12m": "Vorfälle der letzten 12 Monate (Anzahl)",
-      "einstufungen": "Einstufungen (Pflegegrad)"
+      "einstufungen": "Einstufungen (Pflegegrad)",
+      "rescue_doses": "Gaben von Notfallmedikamenten"
     },
     "flag": {
       "medication_deleted": "Medikament nicht mehr in der Akte",
@@ -1719,5 +1757,44 @@
     "CorrespondentOutcomeSame": "Bei „Bestätigen“: {count, plural, one {# Brief bekommt} other {# Briefe bekommen}} den Absender {name}.",
     "CorrespondentOutcomeRenamed": "Bei „Bestätigen“: Der Absender {old} heißt künftig {name}, {count, plural, one {# Brief bekommt} other {# Briefe bekommen}} ihn.",
     "CorrespondentOutcomeNew": "Bei „Als Absender anlegen“: {name} wird angelegt, {count, plural, one {# Brief bekommt} other {# Briefe bekommen}} ihn als Absender."
+  },
+  "Dose": {
+    "Today": "Gaben heute",
+    "NoneToday": "Heute noch nichts eingetragen",
+    "Given": "Gegeben",
+    "GivenTitle": "Jetzt gegeben, von mir, Dosis wie im Plan",
+    "Details": "Andere Uhrzeit, Menge oder Person",
+    "CatchUp": "Nachtragen",
+    "CatchUpTitle": "Gaben nachtragen",
+    "CatchUpHint": "Für jeden Tag im Zeitraum wird pro Uhrzeit eine Gabe eingetragen. Abgewählte werden nicht gespeichert.",
+    "History": "Verlauf der letzten 14 Tage",
+    "NoHistory": "Keine Gaben in den letzten 14 Tagen.",
+    "NewTitle": "Gabe eintragen",
+    "EditTitle": "Gabe bearbeiten",
+    "Medication": "Medikament",
+    "When": "Zeitpunkt",
+    "From": "Von",
+    "To": "Bis",
+    "Times": "Uhrzeiten",
+    "AddTime": "Uhrzeit hinzufügen",
+    "RemoveTime": "Uhrzeit entfernen",
+    "GivenBy": "Gegeben von",
+    "Me": "mir",
+    "Someone": "jemand anderem",
+    "SomeonePlaceholder": "z.B. Kita, Oma",
+    "Amount": "Menge",
+    "AmountPlaceholder": "wie im Plan: {plan}",
+    "AmountPlanned": "wie im Plan",
+    "Note": "Notiz",
+    "EnteredBy": "eingetragen von {name}",
+    "AlreadyRecorded": "schon eingetragen",
+    "TooLong": "Höchstens {n} Tage auf einmal.",
+    "SaveCount": "{n, plural, one {# Gabe speichern} other {# Gaben speichern}}",
+    "Save": "Speichern",
+    "Saving": "Speichert…",
+    "Cancel": "Abbrechen",
+    "Delete": "Löschen",
+    "DeleteConfirm": "Wirklich löschen",
+    "SaveError": "Das hat nicht geklappt. Bitte noch einmal versuchen."
   }
 }

@@ -143,6 +143,11 @@ DOC_KEY_VAL=$(ask DOCUMENT_ENCRYPTION_KEY "DOCUMENT_ENCRYPTION_KEY" "" true)
 [ -z "$DOC_KEY_VAL" ] && DOC_KEY_VAL=$(openssl rand -base64 32) && info "Generated DOCUMENT_ENCRYPTION_KEY"
 set_env DOCUMENT_ENCRYPTION_KEY "$DOC_KEY_VAL"
 
+# The documents' restic repository in the backup (#341)
+RESTIC_VAL=$(ask RESTIC_PASSWORD "RESTIC_PASSWORD" "" true)
+[ -z "$RESTIC_VAL" ] && RESTIC_VAL=$(gen_secret) && info "Generated RESTIC_PASSWORD"
+set_env RESTIC_PASSWORD "$RESTIC_VAL"
+
 # One-time token gating the first-run setup wizard (POST /organization/init)
 BOOTSTRAP_TOKEN_VAL=$(ask BOOTSTRAP_TOKEN "BOOTSTRAP_TOKEN" "" true)
 [ -z "$BOOTSTRAP_TOKEN_VAL" ] && BOOTSTRAP_TOKEN_VAL=$(gen_secret) && info "Generated BOOTSTRAP_TOKEN"

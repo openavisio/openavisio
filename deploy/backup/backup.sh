@@ -6,10 +6,14 @@
 #              what makes crypto-shredding reach backups: once a patient's KEK
 #              has aged out of every keystore backup, the clinical backups still
 #              holding their ciphertext are permanently undecryptable.
-#   documents  the encrypted blobs on disk          long retention
+#   documents  the encrypted blobs on disk, in a    long retention
+#              restic repository: a blob never changes, so each is stored once
+#              however many nightly snapshots hold it (#341)
 #
 # A restore needs the clinical AND keystore stream OF THE SAME DATE, plus the
-# documents tarball, plus the out-of-band DOCUMENT_ENCRYPTION_KEY and age key.
+# documents snapshot tagged with that date, plus the out-of-band
+# DOCUMENT_ENCRYPTION_KEY and age key (the restic password is in
+# restic-password.age next to the repository).
 # See docs/backup-restore.md.
 set -eu
 # pipefail is the whole ballgame here. Without it, `pg_dump | age > file` reports
@@ -23,6 +27,8 @@ set -o pipefail
 : "${POSTGRES_USER:?}"
 : "${POSTGRES_PASSWORD:?}"
 : "${AGE_PUBKEY:?set AGE_PUBKEY (age1...) in deploy/.env}"
+: "${RESTIC_PASSWORD:?set RESTIC_PASSWORD in deploy/.env (openssl rand -hex 32)}"
+export RESTIC_PASSWORD
 PGHOST="${PGHOST:-postgres}"
 DB="${POSTGRES_DB:-vaultdb}"
 OUT="${BACKUP_DIR:-/backups}"
@@ -31,9 +37,13 @@ KEEP_KEYSTORE="${RETENTION_KEYSTORE_DAYS:-7}"
 HOUR="${BACKUP_HOUR:-3}"
 DOCS="${DOCUMENT_STORAGE_PATH:-/data/documents}"
 
+REPO="$OUT/documents"
+
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
 log() { echo "[backup] $(date -Iseconds) $*"; }
+# --no-cache: the container's home does not survive it; a local repository needs no cache
+r() { restic -r "$REPO" --no-cache "$@"; }
 
 run_backup() {
   day=$(date +%F)
@@ -72,23 +82,35 @@ run_backup() {
   pg_dump -h "$PGHOST" -U "$POSTGRES_USER" --table=patient_keys "$DB" \
     | age -r "$AGE_PUBKEY" > "$tmp/keystore-$day.sql.age"
 
-  log "document blobs"
-  tar -cz -C "$DOCS" . | age -r "$AGE_PUBKEY" > "$tmp/documents-$day.tar.gz.age"
+  log "document blobs (restic)"
+  # set -e is off inside run_backup (it is called as a condition), so every step says so itself
+  if [ ! -f "$REPO/config" ]; then
+    r init || return 1
+  fi
+  # the password must survive the box; rewritten each run, so a changed AGE_PUBKEY takes over the next night
+  printf '%s' "$RESTIC_PASSWORD" | age -r "$AGE_PUBKEY" > "$OUT/.tmp.restic-password.age" \
+    && mv "$OUT/.tmp.restic-password.age" "$OUT/restic-password.age" || return 1
+  # a run killed mid-way leaves a stale lock that would block every later one
+  r unlock || return 1
+  # fixed host: forget groups by it, and a container's hostname changes on every recreate
+  r backup --host openavisio --tag "$day" "$DOCS" || return 1
+  # a snapshot is atomic, but it could still miss files: it must hold as many as the volume
+  want=$(find "$DOCS" -type f | wc -l)
+  got=$(r ls latest --host openavisio --tag "$day" | grep -c "^$DOCS/" || true)
+  dirs=$(find "$DOCS" -mindepth 1 -type d | wc -l)
+  if [ "$got" -ne $((want + dirs)) ]; then
+    log "FEHLER: der Dokument-Snapshot hat $got Einträge, das Volume $want Dateien und $dirs Ordner — Abbruch"
+    return 1
+  fi
+  r check || return 1
 
   # "not empty" is not a check: age of an EMPTY stream is ~200 bytes and sails
   # through `-s`. Demand a plausible size per stream — a real clinical dump of
   # this schema is megabytes, a keystore is at least a kilobyte.
-  #
-  # documents is the exception: a fresh instance has zero blobs, so its tarball
-  # is legitimately ~300 bytes. The floor guards against a TRUNCATED archive of a
-  # FULL volume, so only apply it when the volume actually holds files.
-  docs_floor=1024
-  [ "$(find "$DOCS" -type f 2>/dev/null | head -1 | wc -l)" -eq 0 ] && docs_floor=1
   min_size() {
     case "$1" in
       clinical-*)  echo 65536 ;;   # 64 KB — an empty schema dump is already bigger
       keystore-*)  echo 1024  ;;   # 1 KB
-      documents-*) echo "$docs_floor" ;;
       *)           echo 1     ;;
     esac
   }
@@ -112,7 +134,9 @@ run_backup() {
 
   log "prune: clinical/documents > ${KEEP_CLINICAL}d, keystore > ${KEEP_KEYSTORE}d"
   find "$OUT" -maxdepth 1 -name 'clinical-*.sql.age'      -mtime "+$KEEP_CLINICAL" -delete
+  # the nightly tarballs before #341 age out on their own
   find "$OUT" -maxdepth 1 -name 'documents-*.tar.gz.age'  -mtime "+$KEEP_CLINICAL" -delete
+  r forget --host openavisio --keep-within "${KEEP_CLINICAL}d" --prune || return 1
   find "$OUT" -maxdepth 1 -name 'keystore-*.sql.age'      -mtime "+$KEEP_KEYSTORE" -delete
 
   touch "$OUT/.last-success"

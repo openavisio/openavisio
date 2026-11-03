@@ -45,7 +45,7 @@ _Avoid_: family, family group, care circle, ward
 **Erasure**:
 A GDPR Article 17 right-to-erasure action. Two variants:
 
-- **Patient Erasure** — triggered by any holder of an admin-level PatientAccess grant on the Patient. Cascade hard-deletes all clinical data (Diagnoses, Medications, Measurements, Lab Results, Incidents, Expenses, Events, Health Logs, Carer Updates, History Facts, Intake Forms, Documents + storage files, Document embeddings, Recommendations, AI Health Assistant messages), all access records (Caregiver links, PatientAccess grants, pending invites), all Shares and Share declines for that Patient, all external Document Share Links and their items (including the Handouts frozen into them), the Emergency Plan and the Care Notes, all Calendar Feeds (an outliving feed would be a working PHI URL for an erased person), and all prior AuditLog entries for that Patient's data (including external share-link access logs). A single tombstone AuditLog entry is written recording that erasure occurred. Immediate and irreversible. (Files a Purpose Manager already downloaded and forwarded externally are outside OpenAvisio's reach.)
+- **Patient Erasure** — triggered by any holder of an admin-level PatientAccess grant on the Patient. Cascade hard-deletes all clinical data (Diagnoses, Medications, Doses, Measurements, Lab Results, Incidents, Expenses, Events, Health Logs, Carer Updates, History Facts, Intake Forms, Documents + storage files, Document embeddings, Recommendations, AI Health Assistant messages), all access records (Caregiver links, PatientAccess grants, pending invites), all Shares and Share declines for that Patient, all external Document Share Links and their items (including the Handouts frozen into them), the Emergency Plan and the Care Notes, all Calendar Feeds (an outliving feed would be a working PHI URL for an erased person), and all prior AuditLog entries for that Patient's data (including external share-link access logs). A single tombstone AuditLog entry is written recording that erasure occurred. Immediate and irreversible. (Files a Purpose Manager already downloaded and forwarded externally are outside OpenAvisio's reach.)
 
 - **User Erasure** — triggered by an admin or the User themselves. Anonymises all PII fields on the User record and hard-deletes login credentials (PasskeyCredentials), access grants (GroupMemberships, PatientAccess) and their Calendar Feeds, which ride on that access. Blocked while the User is the last admin-level grant holder of any Patient — grant someone else admin level or erase those Patients first. A tombstone AuditLog entry is written and existing AuditLog entries for that User have `user_name` scrubbed to `[erased]`.
 
@@ -115,6 +115,10 @@ _Avoid_: Condition, problem, issue
 A drug or treatment a Patient is taking or has taken, including dosage and period. Medications can be entered manually or extracted by the Processing Pipeline.
 _Avoid_: MedicationStatement, drug, prescription
 
+**Dose**:
+One giving of a Medication to a Patient: when, by whom, optionally how much and a note. A Caregiver with at least contribute access records it, the signed-in User by default, otherwise a name as free text ("Kita", "Oma"); who entered it is always kept besides. Doses can be entered after the fact, also many at once over a period. A Dose given during an Incident (a rescue medication) may point at it. OpenAvisio shows the Doses of today and before, never which are due or missed: that would mean reading target times out of a dosage text and judging a gap, which is an assessment it does not make. Only who entered a Dose, or an admin, may change or remove it. The AI Health Assistant may quote Doses as recorded. Only the doctor Handout may include them, the Doses of rescue medications for a period the User picks; the printed emergency and day-to-day Handouts never do, since a list of today's Doses is stale once printed. Unlike the Health Log's medication compliance, which the Patient reports, a Dose is what a carer did. UI term in German: "Gabe".
+_Avoid_: administration, intake, MedicationAdministration
+
 **Measurement**:
 A physical metric recorded for a Patient over time — weight, height, blood pressure, temperature, oxygen saturation, etc. Used to track growth and physical development as well as health trends.
 _Avoid_: Observation, vital sign, vital
@@ -124,7 +128,7 @@ An outcome from a clinical test performed on a sample — blood test, urine test
 _Avoid_: Observation, test result, lab value
 
 **Incident**:
-An adverse event involving a Patient — a seizure, fall, allergic reaction, or other notable occurrence. Includes context such as suspected triggers and correlated Medications. The date of the earliest Incident of a given type is its _onset_ — no separate field is needed; onset is derived by querying the first recorded Incident.
+Something that happened to a Patient: a seizure, a fall, an allergic reaction, or something else worth telling the next carer. It records what happened and nothing around it: its type, the family's own name for it (e.g. "Absence"), when, how long, what was done, and a note. No triggers, weather or sleep, since a record that collects them invites a correlation the software must not make (ADR 062). A rescue Dose may point at its Incident. The date of the earliest Incident of a given type is its _onset_; no separate field is needed.
 _Avoid_: event, episode, adverse event
 
 **Event**:

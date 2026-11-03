@@ -24,6 +24,7 @@ from app.models.einstufung import Einstufung
 from app.models.emergency_plan import EmergencyPlan
 from app.models.care_notes import CareNotes
 from app.models.carer_update import CarerUpdate
+from app.models.dose import Dose
 from app.models.expense import Expense
 from app.models.incident import Incident
 from app.models.intake import HistoryFact, IntakeForm
@@ -83,6 +84,7 @@ async def erase_patient(
     exp_ids     = await _collect(Expense, Expense.patient_id)
     einst_ids   = await _collect(Einstufung, Einstufung.patient_id)
     carer_ids   = await _collect(CarerUpdate, CarerUpdate.patient_id)
+    dose_ids    = await _collect(Dose, Dose.patient_id)
     fact_ids    = await _collect(HistoryFact, HistoryFact.patient_id)
     form_ids    = [str(r.id) for r in forms]
     diary_ids   = await _collect(DiaryEntry, DiaryEntry.patient_id)
@@ -99,6 +101,8 @@ async def erase_patient(
     await db.execute(delete(Recommendation).where(Recommendation.patient_id == patient_id))
     await db.execute(delete(Observation).where(Observation.patient_id == patient_id))
     await db.execute(delete(Condition).where(Condition.patient_id == patient_id))
+    # before Medications and Incidents, which they point at (ADR 060)
+    await db.execute(delete(Dose).where(Dose.patient_id == patient_id))
     await db.execute(delete(MedicationStatement).where(MedicationStatement.patient_id == patient_id))
     await db.execute(delete(Incident).where(Incident.patient_id == patient_id))
     await db.execute(delete(Expense).where(Expense.patient_id == patient_id))
@@ -140,7 +144,7 @@ async def erase_patient(
     all_entity_ids = (
         [pid_str]
         + doc_ids + cond_ids + med_ids + obs_ids
-        + inc_ids + exp_ids + einst_ids + carer_ids + fact_ids + form_ids + diary_ids + cal_ids + feed_ids + rec_ids
+        + inc_ids + exp_ids + einst_ids + carer_ids + dose_ids + fact_ids + form_ids + diary_ids + cal_ids + feed_ids + rec_ids
         + share_ids + decline_ids + link_ids
     )
     await db.execute(delete(AuditLog).where(AuditLog.entity_id.in_(all_entity_ids)))

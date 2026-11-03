@@ -1,5 +1,4 @@
 import uuid
-from collections import Counter
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
@@ -10,13 +9,11 @@ from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.condition import Condition
 from app.models.document import DocumentReference
-from app.models.incident import Incident
 from app.models.medication import MedicationStatement
 from app.models.observation import Observation
 from app.models.user import User
 from app.schemas.dashboard import (
     ConditionTimelineDto,
-    IncidentFrequencyDto,
     MedicationTimelineDto,
     ObservationDataPointDto,
     ObservationTrendDto,
@@ -63,14 +60,6 @@ async def get_dashboard(
         for m in meds
     ]
 
-    # Incident frequency
-    inc_result = await db.execute(
-        select(Incident).where(Incident.patient_id == patient_id, Incident.is_deleted == False)  # noqa: E712
-    )
-    incidents = inc_result.scalars().all()
-    by_type = Counter(i.incident_type for i in incidents)
-    incident_frequency = [IncidentFrequencyDto(type=t, count=c) for t, c in by_type.most_common(10)]
-
     # Document counts
     doc_result = await db.execute(
         select(func.count()).where(DocumentReference.patient_id == patient_id, DocumentReference.is_deleted == False)  # noqa: E712
@@ -94,7 +83,6 @@ async def get_dashboard(
     return PatientDashboardDto(
         observation_trends=observation_trends,
         medication_timeline=medication_timeline,
-        incident_frequency=incident_frequency,
         total_documents=total_docs,
         verified_documents=verified_docs,
         condition_timeline=condition_timeline,

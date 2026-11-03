@@ -21,11 +21,6 @@ class MedicationTimelineDto(BaseModel):
     end: str | None
 
 
-class IncidentFrequencyDto(BaseModel):
-    type: str
-    count: int
-
-
 class ConditionTimelineDto(BaseModel):
     id: str
     display: str
@@ -37,7 +32,6 @@ class ConditionTimelineDto(BaseModel):
 class PatientDashboardDto(BaseModel):
     observation_trends: list[ObservationTrendDto] = []
     medication_timeline: list[MedicationTimelineDto] = []
-    incident_frequency: list[IncidentFrequencyDto] = []
     total_documents: int = 0
     verified_documents: int = 0
     condition_timeline: list[ConditionTimelineDto] = []

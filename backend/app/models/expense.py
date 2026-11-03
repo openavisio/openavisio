@@ -9,7 +9,7 @@ from app.models.base import OwnedResource
 
 # Fixed, coarse vocabulary — enough to group and sum in the overview/export,
 # cheap to maintain. Stored as a plain string like the other models' enums
-# (see Incident.severity); no DB enum type.
+# (see Incident.incident_type); no DB enum type.
 EXPENSE_CATEGORIES = ("pflegehilfsmittel", "medication_copay", "therapy", "aid", "travel", "other")
 
 

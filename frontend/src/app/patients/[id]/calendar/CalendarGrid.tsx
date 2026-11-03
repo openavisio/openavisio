@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { TYPES } from "../incidents/IncidentsView";
 import { ChevronLeft, ChevronRight, X, Plus, Pencil, Trash2, Pill, Check } from "lucide-react";
 import { getCalendarFeed, getCalendarEvent, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, type S } from "@/lib/api";
 
@@ -67,6 +68,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   const todayStr = toDateStr(today);
 
   const t = useTranslations("Calendar");
+  const ti = useTranslations("Incidents");
   const tc = useTranslations("DocDetail");  // class_* labels live with the detail page
   const tCommon = useTranslations("Common");
   const locale = useLocale();
@@ -173,6 +175,10 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
     // medication pills and document markers are informational — jump to their page
     if (item.url && (item.type === "medication" || item.type === "document")) {
       router.push(item.url);
+      return;
+    }
+    if (item.type === "incident") {
+      router.push(`/patients/${patientId}/incidents?open=${item.id}`);
       return;
     }
     setDrawerMode("detail");
@@ -314,6 +320,8 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   // The file name is a scanner artefact ("img20240405_08273634.pdf"), never a
   // title. Same rule as the documents list: say what it is and who wrote it.
   function eventLabel(ev: FeedItem): string {
+    // ADR 062: an Incident without its own name shows its type in the reader's language
+    if (ev.type === "incident" && (TYPES as string[]).includes(ev.title)) return ti(`types.${ev.title}`);
     if (ev.type !== "document") return ev.title;
     const cls = ev.classification;
     const label = cls && tc.has(`class_${cls}`) ? tc(`class_${cls}`) : null;

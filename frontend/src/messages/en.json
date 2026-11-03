@@ -263,7 +263,8 @@
       "EmergencyPlan": "What to do in an emergency",
       "CareNotes": "How an ordinary day goes well",
       "CarerUpdates": "What the Kita, school and carers report",
-      "IntakeForms": "Answer history forms from the record"
+      "IntakeForms": "Answer history forms from the record",
+      "Incidents": "Seizures, falls and other incidents"
     },
     "TodayAtGlance": "Today at a glance",
     "ShowAllAppointments": "Show all appointments",
@@ -1060,6 +1061,42 @@
       "what_overwhelms": "What overwhelms"
     }
   },
+  "Incidents": {
+    "Title": "Incidents",
+    "NotFound": "Patient not found.",
+    "LoadError": "The incidents could not be loaded.",
+    "SaveError": "Saving did not work. Please try again.",
+    "Now": "Incident now",
+    "Add": "Add an earlier incident",
+    "Edit": "Edit incident",
+    "Empty": "No incidents recorded yet.",
+    "All": "All incidents",
+    "Filter": "Filter by type",
+    "AllTypes": "All types",
+    "Type": "Type",
+    "Last3": "3 months",
+    "Last12": "12 months",
+    "Display": "Name",
+    "DisplayPlaceholder": "e.g. absence, as the doctor calls it",
+    "When": "When",
+    "Duration": "Duration (minutes)",
+    "Minutes": "{n} min",
+    "Actions": "What was done",
+    "Note": "Note",
+    "EnteredBy": "entered by {name}",
+    "AddDose": "Record a dose with it",
+    "Delete": "Delete",
+    "DeleteConfirm": "Really delete",
+    "Cancel": "Cancel",
+    "Save": "Save",
+    "Saving": "Saving …",
+    "types": {
+      "seizure": "Seizure",
+      "fall": "Fall",
+      "allergic_reaction": "Allergic reaction",
+      "other": "Other"
+    }
+  },
   "CarerUpdates": {
     "Title": "Carer updates",
     "NotFound": "Patient not found.",
@@ -1125,7 +1162,8 @@
       "care_what_helps": "What helps",
       "care_what_overwhelms": "What overwhelms",
       "incidents_12m": "Incidents in the last 12 months (count)",
-      "einstufungen": "Care assessments (Pflegegrad)"
+      "einstufungen": "Care assessments (Pflegegrad)",
+      "rescue_doses": "Doses of rescue medications"
     },
     "flag": {
       "medication_deleted": "medication no longer in the record",
@@ -1719,5 +1757,44 @@
     "CorrespondentOutcomeSame": "On \"Confirm\": {count, plural, one {# letter gets} other {# letters get}} the correspondent {name}.",
     "CorrespondentOutcomeRenamed": "On \"Confirm\": the correspondent {old} is renamed {name}, {count, plural, one {# letter gets} other {# letters get}} it.",
     "CorrespondentOutcomeNew": "On \"Set up as correspondent\": {name} is set up, {count, plural, one {# letter gets} other {# letters get}} it as correspondent."
+  },
+  "Dose": {
+    "Today": "Doses today",
+    "NoneToday": "Nothing recorded today",
+    "Given": "Given",
+    "GivenTitle": "Given now, by me, as planned",
+    "Details": "Other time, amount or person",
+    "CatchUp": "Catch up",
+    "CatchUpTitle": "Catch up on doses",
+    "CatchUpHint": "One dose is recorded per time on every day of the period. Unticked ones are not saved.",
+    "History": "Last 14 days",
+    "NoHistory": "No doses in the last 14 days.",
+    "NewTitle": "Record a dose",
+    "EditTitle": "Edit dose",
+    "Medication": "Medication",
+    "When": "When",
+    "From": "From",
+    "To": "To",
+    "Times": "Times",
+    "AddTime": "Add a time",
+    "RemoveTime": "Remove time",
+    "GivenBy": "Given by",
+    "Me": "me",
+    "Someone": "someone else",
+    "SomeonePlaceholder": "e.g. nursery, grandma",
+    "Amount": "Amount",
+    "AmountPlaceholder": "as planned: {plan}",
+    "AmountPlanned": "as planned",
+    "Note": "Note",
+    "EnteredBy": "entered by {name}",
+    "AlreadyRecorded": "already recorded",
+    "TooLong": "At most {n} days at once.",
+    "SaveCount": "{n, plural, one {Save # dose} other {Save # doses}}",
+    "Save": "Save",
+    "Saving": "Saving…",
+    "Cancel": "Cancel",
+    "Delete": "Delete",
+    "DeleteConfirm": "Really delete",
+    "SaveError": "That did not work. Please try again."
   }
 }

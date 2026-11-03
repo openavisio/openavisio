@@ -22,6 +22,7 @@ from app.models.calendar import CalendarEvent
 from app.models.chat import ChatMessage
 from app.models.condition import Condition
 from app.models.document import DocumentReference
+from app.models.dose import Dose
 from app.models.emergency_plan import EmergencyPlan
 from app.models.incident import Incident
 from app.models.intake import HistoryFact
@@ -201,10 +202,26 @@ async def _bundle(patient_id: uuid.UUID, db: AsyncSession) -> dict:
                 "subject": _PATIENT_REF(pid),
                 "event": {"text": inc.incident_type_display or inc.incident_type},
                 "date": inc.occurred_at,
-                "severity": {"text": inc.severity} if inc.severity else None,
-                "outcome": {"text": inc.outcome} if inc.outcome else None,
-                "description": inc.note,
-                "suspectEntity": [{"instance": {"display": t.strip()}} for t in (inc.suspected_trigger or "").split(",") if t.strip()],
+                "description": "\n".join(filter(None, [inc.actions_taken, inc.note])) or None,
+            },
+        })
+
+    # --- MedicationAdministrations (Doses, ADR 060) ---
+    for d in (await db.execute(
+        select(Dose).where(Dose.patient_id == pid, Dose.is_deleted == False)  # noqa: E712
+    )).scalars().all():
+        entries.append({
+            "fullUrl": f"urn:uuid:{d.id}",
+            "resource": {
+                "resourceType": "MedicationAdministration",
+                "id": str(d.id),
+                "status": "completed",
+                "subject": _PATIENT_REF(pid),
+                "medicationReference": {"reference": f"urn:uuid:{d.medication_id}"},
+                "effectiveDateTime": d.given_at,
+                "performer": [{"actor": {"display": d.given_by or " ".join(filter(None, [d.owner.first_name, d.owner.last_name])) or d.owner.email}}],
+                "dosage": {"text": d.amount} if d.amount else None,
+                "note": [{"text": d.note}] if d.note else [],
             },
         })
 
