@@ -17,7 +17,7 @@ The version lives in three places that must stay in lockstep:
 ```bash
 # 1. bump both manifests to the new version (same value), commit via PR, merge
 # 2. from an up-to-date master:
-git tag -a vX.Y.Z -m "Release vX.Y.Z — <one-line summary>"
+git tag -a vX.Y.Z -m "Release vX.Y.Z: <one-line summary>"
 git push origin vX.Y.Z
 ```
 

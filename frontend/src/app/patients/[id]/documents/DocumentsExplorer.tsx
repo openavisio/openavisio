@@ -4,10 +4,11 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useLocale, useTranslations } from "next-intl";
 import {
   FileText, ClipboardCheck, Eye, Search, X, Download, Star, Loader2,
-  LayoutGrid, LayoutList, Table2,
+  LayoutGrid, LayoutList, SlidersHorizontal, Table2,
 } from "lucide-react";
 import { getDocumentNovelty, getDocuments, type S } from "@/lib/api";
 import { formatDate, statusBadgeColor } from "@/lib/utils";
@@ -176,6 +177,7 @@ export function DocumentsExplorer({
   const [sortBy, setSortBy] = useState<SortKey>("doc");
   const [action, setAction] = useState(false);
   const [onlyFavs, setOnlyFavs] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   // loaded after the list: it waits on the model's grouping, the list must not
   const [novelty, setNovelty] = useState<Record<string, Novelty> | null>(null);
   useEffect(() => {
@@ -223,11 +225,13 @@ export function DocumentsExplorer({
     return () => clearInterval(id);
   }, [hasActive, patientId]);
 
+  // #199: the pipeline's class, not the free-text title, so a renamed document stays filterable
   const types = useMemo(() => {
     const m = new Map<string, number>();
-    docs.forEach((d) => d.type && m.set(d.type, (m.get(d.type) ?? 0) + 1));
-    return [...m.entries()].sort();
-  }, [docs]);
+    docs.forEach((d) => d.document_classification && m.set(d.document_classification, (m.get(d.document_classification) ?? 0) + 1));
+    const label = (c: string) => (tc.has(`class_${c}`) ? tc(`class_${c}`) : c);
+    return [...m.entries()].map(([c, n]) => [c, label(c), n] as const).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [docs, tc]);
 
   const correspondents = useMemo(() => {
     const m = new Map<string, { name: string; count: number }>();
@@ -243,7 +247,7 @@ export function DocumentsExplorer({
   const cutoff = now - RANGES[range] * 86_400_000;
   const filtered = docs.filter(
     (d) =>
-      (!type || d.type === type) &&
+      (!type || d.document_classification === type) &&
       (!corr || d.correspondent?.id === corr) &&
       (range === "all" || docDate(d, sortBy).getTime() >= cutoff) &&
       (!action || needsAction(d)) &&
@@ -279,6 +283,85 @@ export function DocumentsExplorer({
   const selectCls =
     "rounded-lg border border-input bg-card px-2.5 py-1.5 text-sm text-foreground max-w-40";
 
+  const activeFilters = [type, corr, range !== "all", action, onlyFavs].filter(Boolean).length;
+  const filterControls = (
+    <>
+      <select value={type} onChange={(e) => setType(e.target.value)} className={selectCls}>
+        <option value="">{t("allTypes")}</option>
+        {types.map(([slug, name, count]) => (
+          <option key={slug} value={slug}>{name} ({count})</option>
+        ))}
+      </select>
+      <select value={corr} onChange={(e) => setCorr(e.target.value)} className={selectCls}>
+        <option value="">{t("allCorrespondents")}</option>
+        {correspondents.map(([id, { name, count }]) => (
+          <option key={id} value={id}>{name} ({count})</option>
+        ))}
+      </select>
+      <select value={range} onChange={(e) => setRange(e.target.value as RangeKey)} className={selectCls}>
+        <option value="all">{t("rangeAll")}</option>
+        <option value="12m">{t("range12m")}</option>
+        <option value="3m">{t("range3m")}</option>
+      </select>
+      <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+        <input type="checkbox" checked={action} onChange={(e) => setAction(e.target.checked)} />
+        {t("actionNeeded")}
+      </label>
+
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <input type="checkbox" checked={onlyFavs} onChange={(e) => setOnlyFavs(e.target.checked)} />
+        <Star className="size-3.5 text-amber-500" fill="currentColor" />
+        {t("onlyFavorites")}
+      </label>
+    </>
+  );
+  const viewSwitches = (
+    <>
+      <div className="inline-flex items-center rounded-md border border-border p-0.5">
+        {(["month", "correspondent"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setGroupBy(k)}
+            className={`px-2 py-0.5 rounded font-medium transition-colors ${
+              groupBy === k ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t(k === "month" ? "groupByMonth" : "groupByCorrespondent")}
+          </button>
+        ))}
+      </div>
+      <div className="inline-flex items-center rounded-md border border-border p-0.5">
+        {([["cards", LayoutList], ["table", Table2], ["preview", LayoutGrid]] as const).map(([k, Icon]) => (
+          <button
+            key={k}
+            onClick={() => setView(k)}
+            title={t(`view_${k}`)}
+            aria-label={t(`view_${k}`)}
+            // a segment of the switch, as tall as its text neighbours, not a 44px touch button
+            className={`min-h-0 min-w-0 px-2 py-1 rounded transition-colors ${k === "table" ? "hidden md:block" : ""} ${
+              view === k ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="size-3.5" />
+          </button>
+        ))}
+      </div>
+      <div className="inline-flex items-center rounded-md border border-border p-0.5">
+        {(["doc", "added"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setSortBy(k)}
+            className={`px-2 py-0.5 rounded font-medium transition-colors ${
+              sortBy === k ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t(k === "doc" ? "sortByDocDate" : "sortByAdded")}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -292,33 +375,30 @@ export function DocumentsExplorer({
             className="w-full rounded-lg border border-input bg-card pl-9 pr-3 py-1.5 text-sm"
           />
         </div>
-        <select value={type} onChange={(e) => setType(e.target.value)} className={selectCls}>
-          <option value="">{t("allTypes")}</option>
-          {types.map(([name, count]) => (
-            <option key={name} value={name}>{name} ({count})</option>
-          ))}
-        </select>
-        <select value={corr} onChange={(e) => setCorr(e.target.value)} className={selectCls}>
-          <option value="">{t("allCorrespondents")}</option>
-          {correspondents.map(([id, { name, count }]) => (
-            <option key={id} value={id}>{name} ({count})</option>
-          ))}
-        </select>
-        <select value={range} onChange={(e) => setRange(e.target.value as RangeKey)} className={selectCls}>
-          <option value="all">{t("rangeAll")}</option>
-          <option value="12m">{t("range12m")}</option>
-          <option value="3m">{t("range3m")}</option>
-        </select>
-        <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-          <input type="checkbox" checked={action} onChange={(e) => setAction(e.target.checked)} />
-          {t("actionNeeded")}
-        </label>
-
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <input type="checkbox" checked={onlyFavs} onChange={(e) => setOnlyFavs(e.target.checked)} />
-          <Star className="size-3.5 text-amber-500" fill="currentColor" />
-          {t("onlyFavorites")}
-        </label>
+        <div className="contents max-md:hidden">{filterControls}</div>
+        {/* a phone gets one button; the rest waits in a sheet */}
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetTrigger className="md:hidden inline-flex items-center gap-1.5 rounded-lg border border-input bg-card px-3 py-1.5 text-sm font-medium">
+            <SlidersHorizontal className="size-4" />
+            {t("filters")}
+            {activeFilters > 0 && (
+              <span className="rounded-full bg-primary px-1.5 text-xs text-primary-foreground">{activeFilters}</span>
+            )}
+          </SheetTrigger>
+          <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <SheetTitle className="pb-1 text-base">{t("filters")}</SheetTitle>
+            <div className="flex flex-col gap-3 [&_select]:w-full [&_select]:max-w-none">
+              {filterControls}
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">{viewSwitches}</div>
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="mt-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+              >
+                {t("showDocs", { count: filtered.length })}
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -335,50 +415,7 @@ export function DocumentsExplorer({
             </button>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex items-center rounded-md border border-border p-0.5">
-          {(["month", "correspondent"] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => setGroupBy(k)}
-              className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                groupBy === k ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t(k === "month" ? "groupByMonth" : "groupByCorrespondent")}
-            </button>
-          ))}
-        </div>
-        <div className="inline-flex items-center rounded-md border border-border p-0.5">
-          {([["cards", LayoutList], ["table", Table2], ["preview", LayoutGrid]] as const).map(([k, Icon]) => (
-            <button
-              key={k}
-              onClick={() => setView(k)}
-              title={t(`view_${k}`)}
-              aria-label={t(`view_${k}`)}
-              // a segment of the switch, as tall as its text neighbours, not a 44px touch button
-              className={`min-h-0 min-w-0 px-2 py-1 rounded transition-colors ${k === "table" ? "hidden md:block" : ""} ${
-                view === k ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Icon className="size-3.5" />
-            </button>
-          ))}
-        </div>
-        <div className="inline-flex items-center rounded-md border border-border p-0.5">
-          {(["doc", "added"] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => setSortBy(k)}
-              className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                sortBy === k ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t(k === "doc" ? "sortByDocDate" : "sortByAdded")}
-            </button>
-          ))}
-        </div>
-        </div>
+        <div className="flex flex-wrap items-center gap-2 max-md:hidden">{viewSwitches}</div>
       </div>
 
       {filtered.length === 0 ? (

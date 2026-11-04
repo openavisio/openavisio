@@ -181,7 +181,7 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
         <button
           type="button"
           onClick={startSampleUpload}
-          className="flex h-28 w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border px-4 cursor-pointer transition-colors select-none text-center hover:border-primary/50 hover:bg-muted/30"
+          className="flex py-3 md:h-28 w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border px-4 cursor-pointer transition-colors select-none text-center hover:border-primary/50 hover:bg-muted/30"
         >
           <Upload className="h-7 w-7 text-muted-foreground shrink-0" />
           <span className="text-sm font-medium">{t("demoUploadButton")}</span>
@@ -212,15 +212,17 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
-          className={`flex h-28 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed px-4 cursor-pointer transition-colors select-none text-center ${
+          className={`flex h-12 md:h-28 flex-1 md:flex-col items-center justify-center gap-2 md:gap-1.5 rounded-xl border-2 border-dashed px-4 cursor-pointer transition-colors select-none text-center ${
             dragging
               ? "border-primary bg-primary/5"
               : "border-border hover:border-primary/50 hover:bg-muted/30"
           }`}
         >
-          <Upload className="h-7 w-7 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium">{t("dropHint")}</span>
-          <span className="text-xs text-muted-foreground">{t("fileTypes")}</span>
+          <Upload className="size-5 md:size-7 text-muted-foreground shrink-0" />
+          {/* nothing to drag on a phone */}
+          <span className="text-sm font-medium md:hidden">{t("uploadTitle")}</span>
+          <span className="text-sm font-medium max-md:hidden">{t("dropHint")}</span>
+          <span className="text-xs text-muted-foreground max-md:hidden">{t("fileTypes")}</span>
           <input
             ref={inputRef}
             type="file"
@@ -233,7 +235,8 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
         <button
           type="button"
           onClick={() => cameraRef.current?.click()}
-          className="flex size-28 flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-sm font-medium hover:bg-muted/50 transition-colors shrink-0"
+          aria-label={t("takePhoto")}
+          className="flex size-12 md:size-28 flex-col items-center justify-center gap-1.5 rounded-xl border px-2 text-sm font-medium hover:bg-muted/50 transition-colors shrink-0"
         >
           <Camera className="h-6 w-6" />
           <span className="hidden sm:inline">{t("takePhoto")}</span>

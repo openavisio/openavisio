@@ -123,6 +123,10 @@ test("login, open a patient, and keep navigating", async ({ page, request }) => 
   await expect(page.getByText(/ein paar Minuten|a few minutes/)).toBeVisible({ timeout: 15_000 });
   await page.getByRole("link", { name: /Fortschritt in den Dokumenten|See progress in Documents/ }).click();
   await page.waitForURL(/\/documents$/);
+  // #199: the type filter offers the class, never a family's own title
+  const typeFilter = page.locator("select", { has: page.locator("option", { hasText: /^(Alle Typen|All types)$/ }) });
+  await expect(typeFilter.locator("option", { hasText: /Arztbrief|Doctor's letter/ })).toHaveCount(1);
+  await expect(typeFilter.locator("option", { hasText: "MRT Kopf" })).toHaveCount(0);
   // the list has three views; the table is the one with columns (ADR 058)
   await page.getByRole("button", { name: /^(Tabelle|Table)$/ }).click();
   await expect(page.getByRole("columnheader", { name: /Absender|Correspondent/ })).toBeVisible();

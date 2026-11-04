@@ -36,11 +36,11 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between md:mb-6 max-md:contents">
         <Breadcrumb
           crumbs={[{ label: `${patient.given_name} ${patient.family_name}`, href: `/patients/${id}` }]}
           current={tp("Documents")}
-          className=""
+          className="max-md:sr-only"
         />
         {failedDocIds.length > 0 && <RetryAllButton failedDocIds={failedDocIds} />}
       </div>
@@ -61,7 +61,10 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
 
       <UploadPanel patientId={id} demoMode={process.env.DEMO_MODE === "true"} />
 
-      {documents.length > 0 && <ShareWithSpecialistPanel patientId={id} documents={documents} />}
+      {/* on a phone the list comes first, sharing is the rare step (#199 follow-up) */}
+      <div className="max-md:hidden">
+        <ShareWithSpecialistPanel patientId={id} documents={documents} />
+      </div>
 
       {fetchError ? (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
@@ -71,6 +74,9 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
       ) : (
         <DocumentsExplorer patientId={id} initialDocuments={documents} />
       )}
+      <div className="md:hidden mt-6">
+        <ShareWithSpecialistPanel patientId={id} documents={documents} />
+      </div>
       {documents.length > 0 && <AiNotice />}
 
     </AppLayout>

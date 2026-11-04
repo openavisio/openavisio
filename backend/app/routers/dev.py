@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.security import hash_password
 from app.models import Organization, Patient, User, UserRole
 from app.models.access import PatientAccess
+from app.models.document import DocumentReference
 
 router = APIRouter()
 
@@ -49,6 +50,11 @@ async def seed(db: AsyncSession = Depends(get_db)):
         db.add(PatientAccess(
             patient_id=patient.id, user_id=admin.id, access_level="admin",
             granted_by_user_id=admin.id, granted_at=datetime.now(UTC),
+        ))
+        # a family's own title next to the pipeline's class: the filter lists the class (#199)
+        db.add(DocumentReference(
+            patient_id=patient.id, owner_id=admin.id, type="MRT Kopf 03/2026",
+            document_classification="doctor_letter", processing_status="completed", file_name="mrt.pdf",
         ))
 
     await db.commit()
