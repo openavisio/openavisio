@@ -19,10 +19,6 @@ class CreateCorrespondentRequest(BaseModel):
     name: str
 
 
-class UpdateCorrespondentRequest(BaseModel):
-    name: str
-
-
 async def _get_org_id(db: AsyncSession) -> uuid.UUID:
     org = (await db.execute(select(Organization))).scalar_one_or_none()
     if not org:
@@ -52,24 +48,6 @@ async def create_correspondent(
     org_id = await _get_org_id(db)
     c = Correspondent(name=body.name.strip(), organization_id=org_id)
     db.add(c)
-    await db.commit()
-    await db.refresh(c)
-    return c
-
-
-@router.patch("/correspondents/{correspondent_id}", response_model=CorrespondentDto)
-async def update_correspondent(
-    correspondent_id: uuid.UUID,
-    body: UpdateCorrespondentRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    c = (await db.execute(
-        select(Correspondent).where(Correspondent.id == correspondent_id, Correspondent.is_deleted == False)  # noqa: E712
-    )).scalar_one_or_none()
-    if not c:
-        raise HTTPException(status_code=404)
-    c.name = body.name.strip()
     await db.commit()
     await db.refresh(c)
     return c

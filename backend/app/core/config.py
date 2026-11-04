@@ -42,7 +42,6 @@ class Settings(BaseSettings):
 
     # OCR / Pipeline
     embedding_scheduler_batch_size: int = 50
-    embedding_scheduler_cron: str = "*/15 * * * *"
 
     # WebAuthn / Passkeys
     webauthn_rp_id: str = "localhost"

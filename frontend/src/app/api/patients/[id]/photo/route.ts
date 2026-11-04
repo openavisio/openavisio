@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 // auth() is called directly in each handler (not via a helper) — mirrors the
 // working document upload route; nesting it can drop the request context here.
@@ -11,7 +10,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const token = (await auth())?.accessToken ?? null;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const res = await fetch(`${API}/api/patients/${id}/photo`, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await backendFetch(`/api/patients/${id}/photo`, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) return NextResponse.json({ error: "Not found" }, { status: res.status });
   return new NextResponse(res.body, {
     headers: {
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const session = await auth();
   const token = session?.accessToken ?? null;
   const formData = await req.formData();
-  const res = await fetch(`${API}/api/patients/${id}/photo`, {
+  const res = await backendFetch(`/api/patients/${id}/photo`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
@@ -45,7 +44,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const session = await auth();
   const token = session?.accessToken ?? null;
-  const res = await fetch(`${API}/api/patients/${id}/photo`, {
+  const res = await backendFetch(`/api/patients/${id}/photo`, {
     method: "DELETE",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });

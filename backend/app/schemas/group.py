@@ -23,10 +23,6 @@ class GroupCreateRequest(BaseModel):
     name: str
 
 
-class GroupUpdateRequest(BaseModel):
-    name: str
-
-
 class GroupMemberDto(BaseModel):
     id: uuid.UUID
     group_id: uuid.UUID

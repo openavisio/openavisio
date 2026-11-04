@@ -1,3 +1,5 @@
+import asyncio
+
 from celery import Celery
 from celery.signals import worker_process_init
 
@@ -8,6 +10,11 @@ from app.core.config import settings
 def _setup_worker_logging(**kwargs):
     from app.core.log_handler import setup_log_handler
     setup_log_handler(settings.redis_url, source="worker")
+
+
+def run_async(coro):
+    return asyncio.get_event_loop().run_until_complete(coro)
+
 
 celery_app = Celery(
     "openavisio",

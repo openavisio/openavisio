@@ -5,14 +5,11 @@ DB access reuses the worker's event loop (the asyncpg pool is loop-bound), match
 the pattern in ``app.workers.scheduler``.
 """
 
-import asyncio
 from datetime import UTC, datetime
 
 from celery.signals import task_failure, task_postrun, task_prerun
 
-
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+from app.workers.celery_app import run_async
 
 
 def _summarize(args, kwargs) -> str | None:
@@ -69,7 +66,7 @@ async def _record_finish(task_id: str, status: str, error: str | None = None) ->
 @task_prerun.connect
 def _on_prerun(task_id=None, task=None, args=None, kwargs=None, **extra):
     try:
-        _run(_record_start(task_id, getattr(task, "name", "unknown"), _summarize(args, kwargs)))
+        run_async(_record_start(task_id, getattr(task, "name", "unknown"), _summarize(args, kwargs)))
     except Exception:
         pass
 
@@ -77,7 +74,7 @@ def _on_prerun(task_id=None, task=None, args=None, kwargs=None, **extra):
 @task_postrun.connect
 def _on_postrun(task_id=None, task=None, state=None, **extra):
     try:
-        _run(_record_finish(task_id, "success" if state == "SUCCESS" else "failure"))
+        run_async(_record_finish(task_id, "success" if state == "SUCCESS" else "failure"))
     except Exception:
         pass
 
@@ -86,6 +83,6 @@ def _on_postrun(task_id=None, task=None, state=None, **extra):
 def _on_failure(task_id=None, exception=None, einfo=None, **extra):
     try:
         error = str(einfo) if einfo else (str(exception) if exception else "unknown error")
-        _run(_record_finish(task_id, "failure", error))
+        run_async(_record_finish(task_id, "failure", error))
     except Exception:
         pass

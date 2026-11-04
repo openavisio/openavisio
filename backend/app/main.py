@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import engine
-from app.core.log_handler import setup_log_handler, start_db_flush_task, start_ring_buffer_subscriber
+from app.core.log_handler import setup_log_handler, start_db_flush_task, start_log_subscriber
 from app.models import Base  # noqa: F401 — ensure models registered
 from app.routers import (
     access,
@@ -45,7 +45,7 @@ from app.routers import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_log_handler(settings.redis_url, source="api")
-    subscriber_task = asyncio.create_task(start_ring_buffer_subscriber(settings.redis_url))
+    subscriber_task = asyncio.create_task(start_log_subscriber(settings.redis_url))
     flush_task = asyncio.create_task(start_db_flush_task(engine))
     yield
     subscriber_task.cancel()
@@ -146,7 +146,3 @@ async def health():
         return JSONResponse(status_code=503, content={"status": "degraded", "checks": checks})
     return {"status": "ok", "checks": checks}
 
-
-@app.get("/alive")
-async def alive():
-    return {"status": "alive"}

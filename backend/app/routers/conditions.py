@@ -45,20 +45,6 @@ async def create_condition(
     return cond
 
 
-@router.get("/conditions/{condition_id}", response_model=ConditionDto)
-async def get_condition(
-    condition_id: uuid.UUID,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document)).where(Condition.id == condition_id, Condition.is_deleted == False))  # noqa: E712
-    cond = result.scalar_one_or_none()
-    if not cond:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    await require_patient_access(cond.patient_id, user, db)
-    return cond
-
-
 @router.put("/conditions/{condition_id}", response_model=ConditionDto)
 async def update_condition(
     condition_id: uuid.UUID,

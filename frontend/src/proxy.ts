@@ -23,6 +23,7 @@ export default auth(async function middleware(req) {
       const apiUrl = process.env.API_URL || "http://localhost:8000";
       const res = await fetch(`${apiUrl}/api/organization/status`, {
         cache: "no-store",
+        headers: { "X-Forwarded-For": req.headers.get("x-forwarded-for") ?? "" },
       });
       if (res.ok) {
         const { initialized } = await res.json();

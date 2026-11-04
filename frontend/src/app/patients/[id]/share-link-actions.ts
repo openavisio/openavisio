@@ -3,8 +3,7 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function token() {
   const session = await auth();
@@ -21,7 +20,7 @@ export async function createShareLinkAction(
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
   if (documentIds.length === 0 && !handout) return { error: await actionError("Common.SelectAtLeastOne") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/share-links`, {
+  const res = await backendFetch(`/api/patients/${patientId}/share-links`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ document_ids: documentIds, expiry_days: expiryDays, handout }),
@@ -43,7 +42,7 @@ export async function addShareLinkDocumentsAction(
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
   if (documentIds.length === 0) return { error: await actionError("Common.SelectAtLeastOne") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/share-links/${linkId}/documents`, {
+  const res = await backendFetch(`/api/patients/${patientId}/share-links/${linkId}/documents`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ document_ids: documentIds }),
@@ -63,7 +62,7 @@ export async function revokeShareLinkAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/share-links/${linkId}/revoke`, {
+  const res = await backendFetch(`/api/patients/${patientId}/share-links/${linkId}/revoke`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });

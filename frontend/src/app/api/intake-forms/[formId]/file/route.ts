@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { backendFetch } from "@/lib/backend";
 
 export const GET = auth(async (req, context: { params: Promise<{ formId: string }> }) => {
   const { formId } = await context.params;
@@ -9,8 +10,7 @@ export const GET = auth(async (req, context: { params: Promise<{ formId: string 
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const apiUrl = process.env.API_URL || "http://localhost:8000";
-  const res = await fetch(`${apiUrl}/api/intake-forms/${formId}/file`, {
+  const res = await backendFetch(`/api/intake-forms/${formId}/file`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

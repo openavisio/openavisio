@@ -18,6 +18,18 @@ const eslintConfig = defineConfig([
       "react-hooks/refs": "warn",
     },
   },
+  {
+    // Calls that skip backendFetch drop the visitor's IP, and every visitor then shares
+    // one per-IP budget. auth.ts cannot use it (backendFetch calls auth()); the proxy
+    // and the cached locale lookup forward or need none, the next.config rewrite forwards itself.
+    ignores: ["src/lib/backend.ts", "src/auth.ts", "src/proxy.ts", "src/i18n/request.ts", "next.config.ts"],
+    rules: {
+      "no-restricted-syntax": ["error", {
+        selector: "MemberExpression[object.object.name='process'][object.property.name='env'][property.name='API_URL']",
+        message: "Call the backend through backendFetch() from @/lib/backend.",
+      }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

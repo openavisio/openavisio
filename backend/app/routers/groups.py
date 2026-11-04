@@ -22,7 +22,6 @@ from app.schemas.group import (
     GroupListItemDto,
     GroupMemberDto,
     GroupPatientDto,
-    GroupUpdateRequest,
     UpdateMemberRoleRequest,
 )
 
@@ -99,28 +98,6 @@ async def create_group(body: GroupCreateRequest, user: User = Depends(require_ma
 async def get_group(group_id: uuid.UUID, user: User = Depends(require_manager), db: AsyncSession = Depends(get_db)):
     group, _ = await _member_group(group_id, user, db)
     return group
-
-
-@router.put("/groups/{group_id}", response_model=GroupDto)
-async def update_group(group_id: uuid.UUID, body: GroupUpdateRequest, user: User = Depends(require_manager), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Group).where(Group.id == group_id, Group.is_deleted == False))  # noqa: E712
-    group = result.scalar_one_or_none()
-    if not group or group.owner_id != user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    group.name = body.name
-    await db.commit()
-    await db.refresh(group)
-    return group
-
-
-@router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_group(group_id: uuid.UUID, user: User = Depends(require_manager), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Group).where(Group.id == group_id, Group.is_deleted == False))  # noqa: E712
-    group = result.scalar_one_or_none()
-    if not group or group.owner_id != user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    group.is_deleted = True
-    await db.commit()
 
 
 @router.get("/groups/{group_id}/members", response_model=list[GroupMemberDto])

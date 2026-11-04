@@ -2,8 +2,7 @@
 
 import { auth } from "@/auth";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function createPatientAction(data: {
   given_name: string;
@@ -16,7 +15,7 @@ export async function createPatientAction(data: {
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients`, {
+  const res = await backendFetch(`/api/patients`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),

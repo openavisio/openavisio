@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { signChallenge } from "@/lib/passkey-challenge";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function GET() {
   const session = await auth();
@@ -11,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const res = await fetch(`${API}/api/auth/passkey/register/begin`, {
+  const res = await backendFetch(`/api/auth/passkey/register/begin`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

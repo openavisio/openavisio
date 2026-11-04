@@ -8,7 +8,7 @@ import uuid
 import httpx
 from celery.exceptions import Retry
 
-from app.workers.celery_app import celery_app
+from app.workers.celery_app import celery_app, run_async
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +31,6 @@ def _wait_if_busy(task, resp: httpx.Response) -> None:
         return
     pause = max(float(resp.headers.get("retry-after") or 0), 15 * 2 ** min(task.request.retries, 4))
     raise task.retry(countdown=pause + random.uniform(0, 10), max_retries=limit)
-
-
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
 
 
 async def _get_doc(doc_id: str):
@@ -133,7 +129,7 @@ def ocr_stage(self, doc_id: str):
             await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
 
-    _run(_run_ocr())
+    run_async(_run_ocr())
 
 
 @celery_app.task(bind=True, autoretry_for=(Exception,), max_retries=2, default_retry_delay=30)
@@ -173,7 +169,7 @@ def classification_stage(self, doc_id: str):
             await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
 
-    _run(_run_classify())
+    run_async(_run_classify())
 
 
 @celery_app.task(bind=True, autoretry_for=(Exception,), max_retries=2, default_retry_delay=30)
@@ -253,7 +249,7 @@ def extraction_stage(self, doc_id: str):
             await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
 
-    _run(_run_extract())
+    run_async(_run_extract())
 
 
 @celery_app.task(bind=True, autoretry_for=(Exception,), max_retries=2, default_retry_delay=30)
@@ -321,7 +317,7 @@ def embedding_stage(self, doc_id: str, quiet: bool = False):
                 await _update_doc(doc_id, processing_status="failed", processing_error=(str(e) or type(e).__name__))
             raise
 
-    _run(_run_embed())
+    run_async(_run_embed())
 
 
 @celery_app.task
@@ -333,7 +329,7 @@ def intake_form_stage(form_id: str):
         async with AsyncSessionLocal() as db:
             await read_form(uuid.UUID(form_id), db)
 
-    _run(_read())
+    run_async(_read())
 
 
 def _chunk_text(text: str, max_tokens: int = 500, overlap: int = 50) -> list[str]:

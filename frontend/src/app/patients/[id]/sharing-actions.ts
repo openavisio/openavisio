@@ -3,8 +3,7 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function token() {
   const session = await auth();
@@ -20,7 +19,7 @@ export async function consentShareAction(
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
   if (documentIds.length === 0) return { error: await actionError("Common.SelectAtLeastOne") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/sharing/purposes/${purposeId}/consent`, {
+  const res = await backendFetch(`/api/patients/${patientId}/sharing/purposes/${purposeId}/consent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ document_ids: documentIds }),
@@ -40,7 +39,7 @@ export async function declineShareAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/sharing/purposes/${purposeId}/decline`, {
+  const res = await backendFetch(`/api/patients/${patientId}/sharing/purposes/${purposeId}/decline`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });
@@ -59,7 +58,7 @@ export async function revokeShareAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/sharing/shares/${shareId}/revoke`, {
+  const res = await backendFetch(`/api/patients/${patientId}/sharing/shares/${shareId}/revoke`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });

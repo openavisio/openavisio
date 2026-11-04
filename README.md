@@ -373,7 +373,7 @@ Key endpoint groups:
 - `GET/POST /api/groups` + members + invite flow
 - `GET/POST /api/patients/{id}/caregivers` + invite/revoke
 - `GET /api/admin/*` — users, groups, invitations, audit, AI settings, license
-- `POST /api/dev/seed` + `/api/dev/reset` (development only)
+- `POST /api/dev/seed` (development only)
 
 ## Production deployment
 

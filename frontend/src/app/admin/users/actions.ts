@@ -3,15 +3,14 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function adminFetch(path: string, body: unknown) {
   const session = await auth();
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}${path}`, {
+  const res = await backendFetch(`${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
@@ -34,7 +33,7 @@ export async function eraseUserAction(userId: string, confirmEmail: string) {
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${process.env.API_URL || "http://localhost:8000"}/api/admin/users/${userId}/erase`, {
+  const res = await backendFetch(`/api/admin/users/${userId}/erase`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ confirm_email: confirmEmail }),

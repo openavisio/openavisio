@@ -1,8 +1,7 @@
 "use server";
 
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function registerAction(
   token: string,
@@ -13,7 +12,7 @@ export async function registerAction(
 ): Promise<{ error?: string }> {
   let res: Response;
   try {
-    res = await fetch(`${API}/api/auth/register`, {
+    res = await backendFetch(`/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

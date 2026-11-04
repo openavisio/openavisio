@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export type LicenseInfo = {
   tier: string;
@@ -20,7 +19,7 @@ export async function uploadLicenseAction(token: string): Promise<{ error?: stri
   const accessToken = session?.accessToken;
   if (!accessToken) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/admin/license`, {
+  const res = await backendFetch(`/api/admin/license`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ token: token.trim() }),
@@ -49,7 +48,7 @@ export async function deleteLicenseAction(): Promise<{ error?: string; info?: Li
   const accessToken = session?.accessToken;
   if (!accessToken) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/admin/license`, {
+  const res = await backendFetch(`/api/admin/license`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${accessToken}` },
   });

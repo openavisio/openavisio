@@ -3,10 +3,8 @@ import json
 import logging
 import queue
 import threading
-from collections import deque
 from datetime import UTC, datetime
 
-_ring_buffer: deque = deque(maxlen=500)
 _db_queue: asyncio.Queue = asyncio.Queue()
 REDIS_CHANNEL = "openavisio:logs"
 _handler_installed = False
@@ -96,12 +94,8 @@ def setup_log_handler(redis_url: str, source: str = "api") -> None:
         logging.getLogger(name).setLevel(logging.WARNING)
 
 
-def get_log_history() -> list[dict]:
-    return list(_ring_buffer)
-
-
-async def start_ring_buffer_subscriber(redis_url: str) -> None:
-    """Background task: subscribes to Redis log channel and populates the in-process ring buffer."""
+async def start_log_subscriber(redis_url: str) -> None:
+    """Background task: subscribes to Redis log channel and queues entries for the DB flush."""
     import redis.asyncio as aioredis
 
     client = aioredis.Redis.from_url(redis_url, decode_responses=True)
@@ -113,7 +107,6 @@ async def start_ring_buffer_subscriber(redis_url: str) -> None:
             if message and message.get("type") == "message":
                 try:
                     entry = json.loads(message["data"])
-                    _ring_buffer.append(entry)
                     await _db_queue.put(entry)
                 except Exception:
                     pass

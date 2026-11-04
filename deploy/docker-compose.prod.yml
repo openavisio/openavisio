@@ -85,7 +85,6 @@ services:
       DEMO_LOCKED_UPLOAD_SHA256: ${DEMO_LOCKED_UPLOAD_SHA256:-}
       DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-}
       DOCUMENT_STORAGE_PATH: /data/documents
-      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
       EMBEDDING_SCHEDULER_BATCH_SIZE: ${EMBEDDING_SCHEDULER_BATCH_SIZE:-50}
       CORS_ORIGINS: ${CORS_ORIGINS}
       APP_URL: https://${DOMAIN}
@@ -186,7 +185,6 @@ services:
       AI_SERVICE_URL: http://aiservice:8000
       AISERVICE_TOKEN: ${AISERVICE_TOKEN:-}
       APP_SECRET: ${APP_SECRET}
-      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
     depends_on:
       redis:
         condition: service_healthy

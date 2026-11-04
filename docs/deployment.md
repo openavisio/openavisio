@@ -62,7 +62,7 @@ Failure modes worth recognising:
 Which model each stage uses is a database setting, not an env var, and is changed
 in the admin UI (ADR 005). `ai.model.*` in `system_settings`.
 
-Note that `EMBEDDING_SCHEDULER_CRON` (default `*/15 * * * *`) sends work at the
+Note that the embedding scheduler (every 15 minutes) sends work at the
 embedding host on a timer, so a freshly rebuilt host gets traffic before anyone
 asks for it. Stop the stack while rebuilding if that is in the way.
 

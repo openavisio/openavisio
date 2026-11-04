@@ -3,8 +3,7 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function token() {
   const session = await auth();
@@ -20,7 +19,7 @@ export async function createPurposeAction(input: {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/sharing-purposes`, {
+  const res = await backendFetch(`/api/sharing-purposes`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({
@@ -43,7 +42,7 @@ export async function closePurposeAction(purposeId: string): Promise<{ error?: s
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/sharing-purposes/${purposeId}/close`, {
+  const res = await backendFetch(`/api/sharing-purposes/${purposeId}/close`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });

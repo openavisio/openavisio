@@ -7,7 +7,6 @@ keeping dark text makes the values legible to any model. Pillow-only.
 """
 from __future__ import annotations
 
-import io
 
 from PIL import Image, ImageOps
 
@@ -23,12 +22,6 @@ def deshade(img: Image.Image, black: int = 60, white: int = 170) -> Image.Image:
     span = max(1, white - black)
     lut = [0 if p < black else 255 if p > white else round((p - black) * 255 / span) for p in range(256)]
     return g.point(lut)
-
-
-def preprocess_bytes(image_bytes: bytes, fmt: str = "PNG") -> bytes:
-    out = io.BytesIO()
-    deshade(Image.open(io.BytesIO(image_bytes))).save(out, fmt)
-    return out.getvalue()
 
 
 if __name__ == "__main__":

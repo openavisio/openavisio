@@ -6,8 +6,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { verifyChallenge } from "@/lib/passkey-challenge";
 import { getTranslations } from "next-intl/server";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function updateProfileAction(
   firstName: string,
@@ -37,8 +36,8 @@ export async function changePasswordAction(
 
   let res: Response;
   try {
-    res = await fetch(
-      `${process.env.API_URL || "http://localhost:8000"}/api/auth/me/password`,
+    res = await backendFetch(
+      `/api/auth/me/password`,
       {
         method: "POST",
         headers: {
@@ -84,7 +83,7 @@ export async function registerPasskeyAction(
 
   let res: Response;
   try {
-    res = await fetch(`${API}/api/auth/passkey/register/complete`, {
+    res = await backendFetch(`/api/auth/passkey/register/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ credential, expected_challenge: challenge, label }),
@@ -109,7 +108,7 @@ export async function renamePasskeyAction(
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: t("SessionExpired") };
 
-  const res = await fetch(`${API}/api/auth/passkey/${id}`, {
+  const res = await backendFetch(`/api/auth/passkey/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ label }),
@@ -124,7 +123,7 @@ export async function deletePasskeyAction(id: string): Promise<{ error?: string 
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: t("SessionExpired") };
 
-  const res = await fetch(`${API}/api/auth/passkey/${id}`, {
+  const res = await backendFetch(`/api/auth/passkey/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });

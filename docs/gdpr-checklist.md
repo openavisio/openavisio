@@ -56,6 +56,6 @@ OpenAvisio processes health data, which is special-category under Art. 9. Any fe
 | FHIR export | `backend/app/routers/export.py` |
 | Encryption | `backend/app/core/encryption.py` |
 | Access control | `backend/app/auth/access.py` |
-| Audit logging | `backend/app/core/audit.py` |
+| Audit logging | `backend/app/models/audit.py`, written by the routers that change data |
 | Security ops | `docs/security.md` |
 | ADRs | `docs/adr/` |

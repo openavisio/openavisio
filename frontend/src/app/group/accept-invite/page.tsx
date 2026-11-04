@@ -3,11 +3,10 @@ import { auth } from "@/auth";
 import { AcceptButton } from "./AcceptButton";
 import { Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function getInviteInfo(token: string, accessToken: string) {
-  const res = await fetch(`${API}/api/groups/invite/info?token=${encodeURIComponent(token)}`, {
+  const res = await backendFetch(`/api/groups/invite/info?token=${encodeURIComponent(token)}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });

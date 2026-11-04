@@ -3,11 +3,10 @@ import { auth } from "@/auth";
 import { AcceptButton } from "./AcceptButton";
 import { UserCheck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function getInviteInfo(token: string) {
-  const res = await fetch(`${API}/api/patients/caregiver-invite/info?token=${encodeURIComponent(token)}`, {
+  const res = await backendFetch(`/api/patients/caregiver-invite/info?token=${encodeURIComponent(token)}`, {
     cache: "no-store",
   });
   if (!res.ok) return null;

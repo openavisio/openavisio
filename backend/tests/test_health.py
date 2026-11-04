@@ -39,9 +39,3 @@ async def test_health_goes_degraded_when_a_dependency_is_down(client: AsyncClien
     assert r.json()["status"] == "degraded"
     assert "error" in r.json()["checks"]["database"]
 
-
-async def test_alive_stays_dumb(client: AsyncClient):
-    """Liveness must not depend on anything — it answers "the process runs"."""
-    r = await client.get("/alive")
-    assert r.status_code == 200
-    assert r.json() == {"status": "alive"}

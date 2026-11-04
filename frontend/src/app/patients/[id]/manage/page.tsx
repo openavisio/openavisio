@@ -9,11 +9,10 @@ import { SharingConsentPanel } from "../SharingConsentPanel";
 import { ShareLinksPanel } from "../ShareLinksPanel";
 import { ErasePatientButton } from "../ErasePatientButton";
 import type { S } from "@/lib/api";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function getCaregivers(patientId: string, accessToken: string): Promise<{ caregivers: S<"CaregiverDto">[]; canManage: boolean }> {
-  const res = await fetch(`${API}/api/patients/${patientId}/access`, {
+  const res = await backendFetch(`/api/patients/${patientId}/access`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });

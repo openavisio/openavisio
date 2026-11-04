@@ -20,7 +20,7 @@ class _Ollama:
 
 def _ollama(used):
     b = OllamaBackend("http://ollama:11434")
-    b._clients = {"http://ollama:11434": _Ollama(used)}
+    b._client = _Ollama(used)
     return b
 
 

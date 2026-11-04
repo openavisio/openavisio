@@ -54,10 +54,3 @@ async def seed(db: AsyncSession = Depends(get_db)):
     await db.commit()
     return {"seeded": True, "admin": "admin@openavisio.dev", "password": "Admin123!Admin"}
 
-
-@router.post("/reset")
-async def reset(db: AsyncSession = Depends(get_db)):
-    from sqlalchemy import text
-    await db.execute(text("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"))
-    await db.commit()
-    return await seed(db)

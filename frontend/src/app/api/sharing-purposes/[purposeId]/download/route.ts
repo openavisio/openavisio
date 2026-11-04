@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { backendFetch } from "@/lib/backend";
 
 export const GET = auth(async (req, context: { params: Promise<{ purposeId: string }> }) => {
   const { purposeId } = await context.params;
@@ -9,8 +10,7 @@ export const GET = auth(async (req, context: { params: Promise<{ purposeId: stri
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const apiUrl = process.env.API_URL || "http://localhost:8000";
-  const res = await fetch(`${apiUrl}/api/sharing-purposes/${purposeId}/download`, {
+  const res = await backendFetch(`/api/sharing-purposes/${purposeId}/download`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

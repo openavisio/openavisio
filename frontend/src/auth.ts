@@ -100,7 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const res = await fetch(`${API}/api/auth/passkey/authenticate/complete`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...(await forwardedFor()), "Content-Type": "application/json" },
           body: JSON.stringify({ credential: assertion, expected_challenge: challenge }),
         });
         if (!res.ok) return null;
@@ -141,7 +141,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       try {
         const res = await fetch(`${API}/api/auth/refresh`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...(await forwardedFor()), "Content-Type": "application/json" },
           body: JSON.stringify({ refresh_token: token.refreshToken }),
         });
         if (res.ok) {

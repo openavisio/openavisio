@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -1237,7 +1237,7 @@ wheels = [
 
 [[package]]
 name = "openavisio-backend"
-version = "0.7.0"
+version = "0.7.1"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
@@ -1245,32 +1245,21 @@ dependencies = [
     { name = "bcrypt" },
     { name = "celery", extra = ["redis"] },
     { name = "cryptography" },
-    { name = "email-validator" },
     { name = "fastapi", extra = ["standard"] },
-    { name = "flower" },
     { name = "httpx" },
     { name = "minio" },
     { name = "pgvector" },
-    { name = "pillow" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
-    { name = "python-multipart" },
     { name = "redis" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "weasyprint" },
     { name = "webauthn" },
 ]
 
-[package.optional-dependencies]
-dev = [
-    { name = "httpx" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.dev-dependencies]
 dev = [
+    { name = "flower" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1284,29 +1273,21 @@ requires-dist = [
     { name = "bcrypt", specifier = ">=4.0.0" },
     { name = "celery", extras = ["redis"], specifier = ">=5.4.0" },
     { name = "cryptography", specifier = ">=43.0.0" },
-    { name = "email-validator", specifier = ">=2.2.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.0" },
-    { name = "flower", specifier = ">=2.0.0" },
     { name = "httpx", specifier = ">=0.28.0" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
     { name = "minio", specifier = ">=7.0.0" },
     { name = "pgvector", specifier = ">=0.3.0" },
-    { name = "pillow", specifier = ">=11.0.0" },
     { name = "pydantic-settings", specifier = ">=2.6.0" },
     { name = "pyjwt", specifier = ">=2.10.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
-    { name = "python-multipart", specifier = ">=0.0.18" },
     { name = "redis", specifier = ">=5.2.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
     { name = "weasyprint", specifier = ">=62.0" },
     { name = "webauthn", specifier = ">=2.0.0" },
 ]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "flower", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "pytest-cov", specifier = ">=6.0.0" },

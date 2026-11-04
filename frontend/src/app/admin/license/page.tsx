@@ -2,8 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
 import { getTranslations } from "next-intl/server";
 import { LicenseForm } from "./LicenseForm";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +38,7 @@ export default async function LicensePage() {
 
   if (accessToken) {
     try {
-      const res = await fetch(`${API}/api/admin/license`, {
+      const res = await backendFetch(`/api/admin/license`, {
         headers: { Authorization: `Bearer ${accessToken}` },
         cache: "no-store",
       });

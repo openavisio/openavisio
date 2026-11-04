@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function getToken(): Promise<string | undefined> {
   const session = await auth();
@@ -15,7 +14,7 @@ export async function deleteDocumentAction(docId: string, patientId: string): Pr
   const token = await getToken();
   if (!token) return { error: await actionError("Auth.SessionExpired") };
 
-  const res = await fetch(`${API}/api/documents/${docId}`, {
+  const res = await backendFetch(`/api/documents/${docId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -35,7 +34,7 @@ export async function updateIssuedDateAction(
   const token = await getToken();
   if (!token) return { error: await actionError("Auth.SessionExpired") };
 
-  const res = await fetch(`${API}/api/documents/${docId}`, {
+  const res = await backendFetch(`/api/documents/${docId}`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ issued_date: issuedDate }),

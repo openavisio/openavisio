@@ -44,17 +44,6 @@ class DocumentDto(OrmBase):
     created_at: datetime
 
 
-class ExtractionSummary(BaseModel):
-    summary: str | None = None
-    mentioned_persons: list[dict] = []
-    observations: list[dict] = []
-    diagnoses: list[dict] = []
-    medications: list[dict] = []
-    appointments: list[dict] = []
-    recommendations: list[str] = []
-    expenses: list[dict] = []
-
-
 class DocumentDetailDto(OrmBase):
     id: uuid.UUID
     patient_id: uuid.UUID

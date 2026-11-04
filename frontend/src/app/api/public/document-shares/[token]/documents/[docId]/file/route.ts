@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { backendFetch } from "@/lib/backend";
 
 // Public, unauthenticated proxy for a shared document file (ADR-021).
 // Forwards the recipient's IP + user-agent so the backend can audit access.
@@ -8,15 +9,13 @@ export async function GET(
 ) {
   const { token, docId } = await context.params;
   const download = req.nextUrl.searchParams.get("download");
-  const apiUrl = process.env.API_URL || "http://localhost:8000";
 
-  const fwd = req.headers.get("x-forwarded-for") ?? "";
   const ua = req.headers.get("user-agent") ?? "";
 
   const qs = download ? "?download=true" : "";
-  const res = await fetch(
-    `${apiUrl}/api/public/document-shares/${encodeURIComponent(token)}/documents/${docId}/file${qs}`,
-    { headers: { "X-Forwarded-For": fwd, "User-Agent": ua }, cache: "no-store" },
+  const res = await backendFetch(
+    `/api/public/document-shares/${encodeURIComponent(token)}/documents/${docId}/file${qs}`,
+    { headers: { "User-Agent": ua } },
   );
 
   if (!res.ok) {

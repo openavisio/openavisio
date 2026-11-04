@@ -2,8 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { ShieldCheck, FileText, CalendarClock, AlertTriangle } from "lucide-react";
 import { PublicDocumentViewer } from "./PublicDocumentViewer";
 import type { ExtractionJson } from "@/lib/extraction";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 // External, anonymous page — never index (ADR-021 hardening).
 export const metadata = {
@@ -29,7 +28,7 @@ type PublicShare = {
 };
 
 async function getShare(token: string): Promise<{ data?: PublicShare; status: number }> {
-  const res = await fetch(`${API}/api/public/document-shares/${encodeURIComponent(token)}`, {
+  const res = await backendFetch(`/api/public/document-shares/${encodeURIComponent(token)}`, {
     cache: "no-store",
     headers: { "X-Robots-Tag": "noindex" },
   });

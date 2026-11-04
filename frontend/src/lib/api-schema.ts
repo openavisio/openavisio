@@ -654,8 +654,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Incident */
-        get: operations["get_incident_api_incidents__incident_id__get"];
+        get?: never;
         /** Update Incident */
         put: operations["update_incident_api_incidents__incident_id__put"];
         post?: never;
@@ -1376,11 +1375,9 @@ export interface paths {
         };
         /** Get Group */
         get: operations["get_group_api_groups__group_id__get"];
-        /** Update Group */
-        put: operations["update_group_api_groups__group_id__put"];
+        put?: never;
         post?: never;
-        /** Delete Group */
-        delete: operations["delete_group_api_groups__group_id__delete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1585,8 +1582,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Condition */
-        get: operations["get_condition_api_conditions__condition_id__get"];
+        get?: never;
         /** Update Condition */
         put: operations["update_condition_api_conditions__condition_id__put"];
         post?: never;
@@ -1852,23 +1848,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/groups/{group_id}/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Group Members */
-        get: operations["list_group_members_api_admin_groups__group_id__members_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/invitations": {
         parameters: {
             query?: never;
@@ -1948,57 +1927,6 @@ export interface paths {
         get?: never;
         /** Save Ai Model Config */
         put: operations["save_ai_model_config_api_admin_ollama_models_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/ollama/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Test Ollama */
-        post: operations["test_ollama_api_admin_ollama_test_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/ollama/pull": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Pull Model */
-        post: operations["pull_model_api_admin_ollama_pull_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/ollama/pull/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Pull Status */
-        get: operations["get_pull_status_api_admin_ollama_pull_status_get"];
-        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2246,8 +2174,7 @@ export interface paths {
         delete: operations["delete_correspondent_api_correspondents__correspondent_id__delete"];
         options?: never;
         head?: never;
-        /** Update Correspondent */
-        patch: operations["update_correspondent_api_correspondents__correspondent_id__patch"];
+        patch?: never;
         trace?: never;
     };
     "/api/patients/{patient_id}/chat": {
@@ -2647,23 +2574,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dev/reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reset */
-        post: operations["reset_api_dev_reset_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/health": {
         parameters: {
             query?: never;
@@ -2680,23 +2590,6 @@ export interface paths {
          *     dependencies without which the app is a shell.
          */
         get: operations["health_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/alive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Alive */
-        get: operations["alive_alive_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2733,28 +2626,6 @@ export interface components {
              * @default 0
              */
             member_count: number;
-        };
-        /** AdminGroupMemberDto */
-        AdminGroupMemberDto: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
-            /** Role */
-            role: string;
-            /** Status */
-            status: string;
         };
         /** AdminUserDto */
         AdminUserDto: {
@@ -4257,11 +4128,6 @@ export interface components {
             /** Family Name */
             family_name: string;
         };
-        /** GroupUpdateRequest */
-        GroupUpdateRequest: {
-            /** Name */
-            name: string;
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -4754,13 +4620,6 @@ export interface components {
             /** Data Points */
             data_points: components["schemas"]["ObservationDataPointDto"][];
         };
-        /** OllamaConnectionTestResult */
-        OllamaConnectionTestResult: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message: string;
-        };
         /** OllamaModelInfo */
         OllamaModelInfo: {
             /** Name */
@@ -4783,11 +4642,6 @@ export interface components {
              * @default []
              */
             tags: string[];
-        };
-        /** OllamaPullRequest */
-        OllamaPullRequest: {
-            /** Model */
-            model: string;
         };
         /** OllamaSettingsDto */
         OllamaSettingsDto: {
@@ -5628,11 +5482,6 @@ export interface components {
             relationship?: string | null;
             /** Is Legal Representative */
             is_legal_representative?: boolean | null;
-        };
-        /** UpdateCorrespondentRequest */
-        UpdateCorrespondentRequest: {
-            /** Name */
-            name: string;
         };
         /** UpdateDataCategoryRequest */
         UpdateDataCategoryRequest: {
@@ -7230,37 +7079,6 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncidentDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_incident_api_incidents__incident_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                incident_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9347,70 +9165,6 @@ export interface operations {
             };
         };
     };
-    update_group_api_groups__group_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                group_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_group_api_groups__group_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                group_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_members_api_groups__group_id__members_get: {
         parameters: {
             query?: never;
@@ -9913,37 +9667,6 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConditionDto"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_condition_api_conditions__condition_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                condition_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10513,37 +10236,6 @@ export interface operations {
             };
         };
     };
-    list_group_members_api_admin_groups__group_id__members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                group_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminGroupMemberDto"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_invitations_api_admin_invitations_get: {
         parameters: {
             query?: never;
@@ -10712,79 +10404,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_ollama_api_admin_ollama_test_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OllamaConnectionTestResult"];
-                };
-            };
-        };
-    };
-    pull_model_api_admin_ollama_pull_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OllamaPullRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_pull_status_api_admin_ollama_pull_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
         };
@@ -11274,41 +10893,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_correspondent_api_correspondents__correspondent_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                correspondent_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateCorrespondentRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CorrespondentDto"];
-                };
             };
             /** @description Validation Error */
             422: {
@@ -12135,47 +11719,7 @@ export interface operations {
             };
         };
     };
-    reset_api_dev_reset_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
     health_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    alive_alive_get: {
         parameters: {
             query?: never;
             header?: never;

@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { forwardedFor } from "@/lib/forwarded";
+import { backendFetch } from "@/lib/backend";
 
 export async function POST(
   req: NextRequest,
@@ -10,14 +10,13 @@ export async function POST(
   const session = await auth();
   const token = session?.accessToken ?? null;
 
-  const apiUrl = process.env.API_URL || "http://localhost:8000";
   const formData = await req.formData();
 
-  const res = await fetch(
-    `${apiUrl}/api/patients/${patientId}/documents/upload`,
+  const res = await backendFetch(
+    `/api/patients/${patientId}/documents/upload`,
     {
       method: "POST",
-      headers: { ...(await forwardedFor()), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     }
   );

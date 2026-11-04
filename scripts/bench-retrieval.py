@@ -55,9 +55,9 @@ import urllib.request
 from pathlib import Path
 
 # ponytail: characters, not tokens, so this script needs no tokenizer. 2000 chars
-# is roughly the 500-token production chunk for German text (aiservice/chunking.py).
+# is roughly the 500-token production chunk for German text (_chunk_text in backend/app/workers/pipeline.py).
 # Only consistency across the models being compared matters here; if a benchmark
-# ever has to mirror production chunking exactly, import chunk_text instead.
+# ever has to mirror production chunking exactly, use _chunk_text instead.
 CHUNK_CHARS, OVERLAP_CHARS = 2000, 200
 
 GEN_PROMPT = (

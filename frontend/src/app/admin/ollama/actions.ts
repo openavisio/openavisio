@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { actionError } from "@/lib/action-errors";
+import { backendFetch } from "@/lib/backend";
 
 export async function saveAiModelsAction(config: {
   extract_model: string | null;
@@ -13,8 +14,8 @@ export async function saveAiModelsAction(config: {
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(
-    `${process.env.API_URL || "http://localhost:8000"}/api/admin/ollama/models`,
+  const res = await backendFetch(
+    `/api/admin/ollama/models`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

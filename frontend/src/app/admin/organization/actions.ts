@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function updateOrganizationAction(fields: {
   name?: string;
@@ -28,7 +27,7 @@ export async function updateOrganizationAction(fields: {
   const token = session?.accessToken;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/organization`, {
+  const res = await backendFetch(`/api/organization`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(fields),

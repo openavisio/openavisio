@@ -3,15 +3,14 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function erasePatientAction(patientId: string, confirmName: string) {
   const session = await auth();
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/erase`, {
+  const res = await backendFetch(`/api/patients/${patientId}/erase`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ confirm_name: confirmName }),

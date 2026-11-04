@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { signChallenge } from "@/lib/passkey-challenge";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function GET() {
-  const res = await fetch(`${API}/api/auth/passkey/authenticate/begin`, {
+  const res = await backendFetch(`/api/auth/passkey/authenticate/begin`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   });

@@ -19,13 +19,13 @@ class _Backend:
 
 
 def _read(model, table_like):
-    saved = vision_ocr.analyze_page
-    vision_ocr.analyze_page = lambda _: {"table_like": table_like}
+    saved = vision_ocr.is_table_like
+    vision_ocr.is_table_like = lambda _: table_like
     try:
         backend = _Backend()
         return vision_ocr._read_page(backend, model, b"png"), backend.prompts
     finally:
-        vision_ocr.analyze_page = saved
+        vision_ocr.is_table_like = saved
 
 
 def test_glm_table_page_keeps_the_prose():

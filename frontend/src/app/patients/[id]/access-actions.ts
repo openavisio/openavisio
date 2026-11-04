@@ -3,8 +3,7 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function token() {
   const session = await auth();
@@ -23,7 +22,7 @@ export async function grantAccessAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/access`, {
+  const res = await backendFetch(`/api/patients/${patientId}/access`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ email, access_level: accessLevel, expires_at: expiresAt || null, purpose: purpose || null, relationship: relationship || null, is_legal_representative: !!isLegalRepresentative }),
@@ -46,7 +45,7 @@ export async function createCaregiverInviteAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients/${patientId}/caregiver-invite`, {
+  const res = await backendFetch(`/api/patients/${patientId}/caregiver-invite`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ email: email || null, access_level: accessLevel }),
@@ -68,7 +67,7 @@ export async function acceptCaregiverInviteAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/patients/caregiver-invite/accept?token=${encodeURIComponent(inviteToken)}`, {
+  const res = await backendFetch(`/api/patients/caregiver-invite/accept?token=${encodeURIComponent(inviteToken)}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });
@@ -89,7 +88,7 @@ export async function updateAccessAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/access/${grantId}`, {
+  const res = await backendFetch(`/api/access/${grantId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify(fields),
@@ -111,7 +110,7 @@ export async function revokeAccessAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/access/${grantId}`, {
+  const res = await backendFetch(`/api/access/${grantId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${t}` },
   });
@@ -127,7 +126,7 @@ export async function revokeAccessAction(
 export async function listUserDirectoryAction(): Promise<{ email: string; name?: string | null }[]> {
   const t = await token();
   if (!t) return [];
-  const res = await fetch(`${API}/api/users/directory`, {
+  const res = await backendFetch(`/api/users/directory`, {
     headers: { Authorization: `Bearer ${t}` },
     cache: "no-store",
   });

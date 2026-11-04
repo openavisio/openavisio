@@ -3,15 +3,14 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export async function createGroupAction(name: string): Promise<{ id?: string; error?: string }> {
   const session = await auth();
   const token = session?.accessToken as string | undefined;
   if (!token) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/groups`, {
+  const res = await backendFetch(`/api/groups`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ name }),

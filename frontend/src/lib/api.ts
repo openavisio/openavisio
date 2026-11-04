@@ -1,7 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
-import { forwardedFor } from "@/lib/forwarded";
+import { backendFetch } from "@/lib/backend";
 import type { Einstufung, EinstufungInput, Scale } from "@/lib/einstufung";
 import type { EmergencyPlan, EmergencyPlanInput } from "@/lib/emergencyPlan";
 import type { CareNotes } from "@/lib/careNotes";
@@ -31,25 +30,13 @@ export interface SystemInfo {
   counts: { users: number; patients: number; documents: number };
 }
 
-const API_URL = process.env.API_URL || "http://localhost:8000";
-
-async function getToken(): Promise<string | null> {
-  const session = await auth();
-  return session?.accessToken ?? null;
-}
-
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = await getToken();
-  const headers: Record<string, string> = {
-    ...(await forwardedFor()),
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  // Never cache: everything here is live, per-user data. A cached response once
-  // froze the admin AI-backend status on "Disconnected" long after it recovered.
-  const res = await fetch(`${API_URL}${path}`, { cache: "no-store", ...options, headers });
+  // Never cache (backendFetch's default): a cached response once froze the admin
+  // AI-backend status on "Disconnected" long after it recovered.
+  const res = await backendFetch(path, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...(options.headers as Record<string, string>) },
+  });
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`API error ${res.status}: ${err}`);
@@ -60,19 +47,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 // Like request() but returns the raw body as text — for CSV and other non-JSON downloads.
 async function requestText(path: string): Promise<string> {
-  const token = await getToken();
-  const headers: Record<string, string> = await forwardedFor();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  const res = await fetch(`${API_URL}${path}`, { cache: "no-store", headers });
+  const res = await backendFetch(path);
   if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
   return res.text();
 }
 
 async function requestBase64(path: string, body: unknown): Promise<string> {
-  const token = await getToken();
-  const headers: Record<string, string> = { ...(await forwardedFor()), "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  const res = await fetch(`${API_URL}${path}`, { method: "POST", cache: "no-store", headers, body: JSON.stringify(body) });
+  const res = await backendFetch(path, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
   if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
   return Buffer.from(await res.arrayBuffer()).toString("base64");
 }
@@ -94,9 +77,6 @@ export const getFavoritePatients = async () => api.get<S<"PatientDto">[]>(`/api/
 export const addFavorite = async (id: string) => api.put<void>(`/api/patients/${id}/favorite`);
 export const removeFavorite = async (id: string) => api.delete<void>(`/api/patients/${id}/favorite`);
 export const getPatient = async (id: string) => api.get<S<"PatientDto">>(`/api/patients/${id}`);
-export const createPatient = async (data: S<"PatientCreateRequest">) => api.post<S<"PatientDto">>("/api/patients", data);
-export const updatePatient = async (id: string, data: S<"PatientUpdateRequest">) => api.put<S<"PatientDto">>(`/api/patients/${id}`, data);
-export const deletePatient = async (id: string) => api.delete<void>(`/api/patients/${id}`);
 
 // Dashboard
 export const getDashboard = async (patientId: string) => api.get<S<"PatientDashboardDto">>(`/api/patients/${patientId}/dashboard`);
@@ -114,7 +94,6 @@ export const getDocuments = async (patientId: string, params?: Record<string, st
   const q = params ? "?" + new URLSearchParams(params).toString() : "";
   return api.get<S<"DocumentDto">[]>(`/api/patients/${patientId}/documents${q}`);
 };
-export const getDocument = async (id: string) => api.get<S<"DocumentDto">>(`/api/documents/${id}`);
 export const getDocumentDetail = async (id: string) => api.get<S<"DocumentDetailDto">>(`/api/documents/${id}/detail`);
 export const verifyDocument = async (id: string, data: S<"VerifyDocumentRequest">) => api.post<S<"DocumentDetailDto">>(`/api/documents/${id}/verify`, data);
 export const updateDocument = async (id: string, data: { issued_date?: string | null; description?: string | null; type?: string | null; correspondent_id?: string | null }) => api.patch<S<"DocumentDto">>(`/api/documents/${id}`, data);
@@ -161,7 +140,6 @@ export const deleteDose = async (id: string) => api.delete<void>(`/api/doses/${i
 export const getExpenses = async (patientId: string, status?: string) => api.get<S<"ExpenseDto">[]>(`/api/patients/${patientId}/expenses${status ? `?status=${status}` : ""}`);
 export const getExpenseSummary = async (patientId: string) => api.get<S<"ExpenseSummaryDto">>(`/api/patients/${patientId}/expenses/summary`);
 export const createExpense = async (patientId: string, data: S<"ExpenseCreateRequest">) => api.post<S<"ExpenseDto">>(`/api/patients/${patientId}/expenses`, data);
-export const updateExpense = async (id: string, data: S<"ExpenseUpdateRequest">) => api.put<S<"ExpenseDto">>(`/api/expenses/${id}`, data);
 export const confirmExpense = async (id: string) => api.post<S<"ExpenseDto">>(`/api/expenses/${id}/confirm`);
 export const deleteExpense = async (id: string) => api.delete<void>(`/api/expenses/${id}`);
 export const exportExpensesCsv = async (patientId: string) => requestText(`/api/patients/${patientId}/expenses/export.csv`);
@@ -171,8 +149,6 @@ export const getEinstufungen = async (patientId: string) => api.get<Einstufung[]
 export const getCurrentEinstufung = async (patientId: string) => api.get<Einstufung | null>(`/api/patients/${patientId}/einstufungen/current`);
 export const getEinstufungScale = async (patientId: string) => api.get<Scale | null>(`/api/patients/${patientId}/einstufungen/scale`);
 export const createEinstufung = async (patientId: string, data: EinstufungInput) => api.post<Einstufung>(`/api/patients/${patientId}/einstufungen`, data);
-export const updateEinstufung = async (id: string, data: EinstufungInput) => api.put<Einstufung>(`/api/einstufungen/${id}`, data);
-export const deleteEinstufung = async (id: string) => api.delete<void>(`/api/einstufungen/${id}`);
 
 // Emergency Plan (ADR 048)
 export const getEmergencyPlan = async (patientId: string) => api.get<EmergencyPlan | null>(`/api/patients/${patientId}/emergency-plan`);
@@ -195,7 +171,6 @@ export const downloadHandoutPdf = async (patientId: string, variant: string, exc
 
 // Conditions
 export const getConditions = async (patientId: string, status?: string) => api.get<S<"ConditionDto">[]>(`/api/patients/${patientId}/conditions${status ? `?status=${status}` : ""}`);
-export const createCondition = async (patientId: string, data: S<"ConditionCreateRequest">) => api.post<S<"ConditionDto">>(`/api/patients/${patientId}/conditions`, data);
 export const updateCondition = async (id: string, data: S<"ConditionUpdateRequest">) => api.put<S<"ConditionDto">>(`/api/conditions/${id}`, data);
 export const deleteCondition = async (id: string) => api.delete<void>(`/api/conditions/${id}`);
 export const mergeCondition = async (winnerId: string, otherId: string) => api.post<S<"ConditionDto">>(`/api/conditions/${winnerId}/merge`, { other_id: otherId });
@@ -217,26 +192,17 @@ export const updateCalendarEvent = async (id: string, data: S<"CalendarEventUpda
 export const deleteCalendarEvent = async (id: string) => api.delete<void>(`/api/calendar/events/${id}`);
 
 // Diary
-export const getDiaryEntries = async (patientId: string, params?: Record<string, string>) => {
-  const q = params ? "?" + new URLSearchParams(params).toString() : "";
-  return api.get<S<"DiaryEntryDto">[]>(`/api/patients/${patientId}/diary${q}`);
-};
-export const createDiaryEntry = async (patientId: string, data: S<"DiaryEntryCreateRequest">) => api.post<S<"DiaryEntryDto">>(`/api/patients/${patientId}/diary`, data);
 
 // Groups
 export const getGroups = async () => api.get<S<"GroupListItemDto">[]>("/api/groups");
 export const getGroup = async (id: string) => api.get<S<"GroupDto">>(`/api/groups/${id}`);
 export const getGroupMembers = async (id: string) => api.get<S<"GroupMemberDto">[]>(`/api/groups/${id}/members`);
-export const createGroup = async (data: S<"GroupCreateRequest">) => api.post<S<"GroupDto">>("/api/groups", data);
-export const inviteGroupMember = async (id: string, data: S<"GroupInviteRequest">) => api.post<S<"GroupInviteResult">>(`/api/groups/${id}/members/invite`, data);
 export const getGroupPatients = async (id: string) => api.get<S<"GroupPatientDto">[]>(`/api/groups/${id}/patients`);
 
 
 // User / account
 export const getMe = async () => api.get<{ id: string; email: string; first_name: string | null; last_name: string | null; role: string; last_login_at: string | null }>("/api/auth/me");
 export const updateMe = async (data: { first_name?: string; last_name?: string }) => api.patch<void>("/api/auth/me", data);
-export const changePassword = async (currentPassword: string, newPassword: string) =>
-  api.post<void>("/api/auth/me/password", { current_password: currentPassword, new_password: newPassword });
 
 // Passkeys
 export interface PasskeyInfo {
@@ -247,20 +213,12 @@ export interface PasskeyInfo {
   last_used_at: string | null;
 }
 export const getMyPasskeys = async () => api.get<PasskeyInfo[]>("/api/auth/passkey");
-export const renamePasskey = async (id: string, label: string) => api.patch<void>(`/api/auth/passkey/${id}`, { label });
-export const deletePasskeyApi = async (id: string) => api.delete<void>(`/api/auth/passkey/${id}`);
 
 // Organization
 export const getOrganization = async () => api.get<S<"OrganizationDto">>("/api/organization");
 
 // Admin
 export const getAdminUsers = async () => api.get<S<"AdminUserDto">[]>("/api/admin/users");
-export const setUserRole = async (id: string, role: string) => api.post<{ ok: boolean }>(`/api/admin/users/${id}/role`, { role });
-export const setUserActive = async (id: string, isActive: boolean) => api.post<{ ok: boolean }>(`/api/admin/users/${id}/active`, { is_active: isActive });
-export const getAuditLogs = async (params?: Record<string, string>) => {
-  const q = params ? "?" + new URLSearchParams(params).toString() : "";
-  return api.get<S<"PagedResult_AuditLogDto_">>(`/api/admin/audit${q}`);
-};
 export const getAdminInvitations = async () => api.get<S<"InvitationDto">[]>("/api/admin/invitations");
 export const createInvitation = async (email: string) => api.post<S<"InvitationDto">>("/api/admin/invitations", { email });
 export const revokeInvitation = async (id: string) => api.delete<void>(`/api/admin/invitations/${id}`);
@@ -282,14 +240,7 @@ export const getAuditLog = async (params?: Record<string, string>) => {
 };
 export const getOllamaStatus = async () => api.get<S<"OllamaSettingsDto">>("/api/admin/ollama");
 
-export const saveAiModelConfig = async (config: {
-  extract_model?: string | null;
-  classify_model?: string | null;
-  chat_model?: string | null;
-  vision_model?: string | null;
-}) => api.put<{ ok: boolean }>("/api/admin/ollama/models", config);
 
-export const getAdminPipelineTasks = async () => api.get<S<"PipelineTaskDto">[]>("/api/admin/logs/tasks");
 export const getSystemInfo = async () => api.get<SystemInfo>("/api/admin/system");
 
 // Data sharing — Purpose Manager (Coordinator/admin)

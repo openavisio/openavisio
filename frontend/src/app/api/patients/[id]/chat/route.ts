@@ -1,8 +1,6 @@
 import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { forwardedFor } from "@/lib/forwarded";
-
-const API_URL = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 /** A route handler rather than a server action: an action makes Next refresh the
  *  RSC tree afterwards, which re-suspends the overlay's boundary and tears the
@@ -12,9 +10,9 @@ async function proxy(id: string, init?: RequestInit) {
   const token = (await auth())?.accessToken ?? null;
   if (!token) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
 
-  const res = await fetch(`${API_URL}/api/patients/${id}/chat${init ? "" : "/history"}`, {
+  const res = await backendFetch(`/api/patients/${id}/chat${init ? "" : "/history"}`, {
     ...init,
-    headers: { ...(await forwardedFor()), Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     cache: "no-store",
   });
   return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });

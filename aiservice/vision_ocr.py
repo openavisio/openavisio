@@ -10,7 +10,7 @@ import pypdfium2 as pdfium
 
 from backend import get_vision_backend, get_model, get_num_ctx
 from image_prep import deshade
-from page_analysis import analyze_page
+from page_analysis import is_table_like
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def _read_page(backend, model: str, img: bytes) -> str:
             num_ctx=get_num_ctx("vision"),  # else the model loads at its 32k default (#73)
         ).strip()
 
-    if _GLM not in model.lower() or not analyze_page(img)["table_like"]:
+    if _GLM not in model.lower() or not is_table_like(img):
         return ask(False)
     return ask(False) + "\n\n" + ask(True)
 

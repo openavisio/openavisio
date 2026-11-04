@@ -3,8 +3,7 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function token() {
   const session = await auth();
@@ -18,7 +17,7 @@ export async function inviteMemberAction(
 ): Promise<{ token?: string; invite_url?: string; error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
-  const res = await fetch(`${API}/api/groups/${groupId}/members/invite`, {
+  const res = await backendFetch(`/api/groups/${groupId}/members/invite`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ email, role }),
@@ -38,7 +37,7 @@ export async function removeMemberAction(
 ): Promise<{ error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
-  const res = await fetch(`${API}/api/groups/${groupId}/members/${membershipId}`, {
+  const res = await backendFetch(`/api/groups/${groupId}/members/${membershipId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${t}` },
   });
@@ -55,7 +54,7 @@ export async function updateMemberRoleAction(
 ): Promise<{ error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
-  const res = await fetch(`${API}/api/groups/${groupId}/members/${membershipId}/role`, {
+  const res = await backendFetch(`/api/groups/${groupId}/members/${membershipId}/role`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ role }),
@@ -75,7 +74,7 @@ export async function assignPatientAction(
 ): Promise<{ error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
-  const res = await fetch(`${API}/api/patients/${patientId}/group`, {
+  const res = await backendFetch(`/api/patients/${patientId}/group`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ group_id: groupId }),
@@ -94,7 +93,7 @@ export async function removePatientAction(
 ): Promise<{ error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
-  const res = await fetch(`${API}/api/patients/${patientId}/group`, {
+  const res = await backendFetch(`/api/patients/${patientId}/group`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${t}` },
   });
@@ -108,7 +107,7 @@ export async function acceptGroupInviteAction(
 ): Promise<{ group_id?: string; error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
-  const res = await fetch(`${API}/api/groups/invite/accept?token=${encodeURIComponent(inviteToken)}`, {
+  const res = await backendFetch(`/api/groups/invite/accept?token=${encodeURIComponent(inviteToken)}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${t}` },
   });

@@ -51,12 +51,6 @@ async def _get(incident_id: uuid.UUID, user: User, db: AsyncSession, minimum: Ac
     return row, await _level(row.patient_id, user, db, minimum)
 
 
-@router.get("/incidents/{incident_id}", response_model=IncidentDto)
-async def get_incident(incident_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    row, level = await _get(incident_id, user, db, AccessLevel.view)
-    return _dto(row, user, level)
-
-
 @router.post("/patients/{patient_id}/incidents", response_model=IncidentDto, status_code=status.HTTP_201_CREATED)
 async def create_incident(patient_id: uuid.UUID, body: IncidentIn, user: User = Depends(get_current_user),
                           db: AsyncSession = Depends(get_db)):

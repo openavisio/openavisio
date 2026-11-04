@@ -5,8 +5,7 @@ Supports Ollama (default) and vLLM or any OpenAI-compatible endpoint.
 """
 
 from fastapi import Depends, FastAPI, UploadFile, File, Header, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 from openai import RateLimitError
 from pydantic import BaseModel
 from typing import Optional
@@ -16,20 +15,14 @@ import logging
 import os
 import secrets
 
-from extraction import extract_document, extract_entities_from_text
+from extraction import _load_prompt, extract_entities_from_text
 from ocr import ocr_pdf, ocr_image
 from vision_ocr import vision_ocr
 from classification import classify_document
 from intake import answer_questions, read_questions
 from backend import ContextOverflow, get_backend, get_embed_backend, get_model, get_num_ctx, get_ollama_url, get_vision_backend
 
-_PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 _MODELS_JSON = os.path.join(os.path.dirname(__file__), "models.json")
-
-
-def _load_prompt(filename: str) -> str:
-    with open(os.path.join(_PROMPT_DIR, filename)) as f:
-        return f.read().strip()
 
 
 def _load_model_annotations() -> list[dict]:
@@ -87,31 +80,10 @@ async def provider_busy(request: Request, exc: RateLimitError):
     retry_after = exc.response.headers.get("retry-after") or "5"
     return JSONResponse(status_code=429, content={"detail": "provider_busy"}, headers={"Retry-After": retry_after})
 
-# Server-to-server service: no browser origin is allowed unless explicitly configured.
-_cors_origins = [o.strip() for o in os.getenv("AISERVICE_CORS_ORIGINS", "").split(",") if o.strip()]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_cors_origins,
-    allow_credentials=bool(_cors_origins),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 class HealthResponse(BaseModel):
     service: str
     status: str
     version: str
-
-
-class ExtractionResult(BaseModel):
-    success: bool
-    document_type: Optional[str] = None
-    extracted_text: Optional[str] = None
-    entities: Optional[dict] = None
-    confidence: Optional[float] = None
-    error: Optional[str] = None
 
 
 @app.get("/", response_model=HealthResponse)
@@ -122,42 +94,6 @@ async def root():
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     return HealthResponse(service="OpenAvisio.AiService", status="healthy", version="0.3.0")
-
-
-@app.post("/extract", response_model=ExtractionResult)
-async def extract_endpoint(file: UploadFile = File(...)):
-    """Extract structured data from a medical document (PDF or image)."""
-    allowed_types = ["image/png", "image/jpeg", "image/jpg", "application/pdf"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file type: {file.content_type}. Allowed: {allowed_types}",
-        )
-
-    logger.info("Received document: %s, type: %s", file.filename, file.content_type)
-
-    try:
-        file_bytes = await file.read()
-        result = extract_document(file_bytes, file.content_type)
-
-        doc_type = None
-        if result.get("entities"):
-            doc_type = result["entities"].get("document_type")
-
-        return ExtractionResult(
-            success=True,
-            document_type=doc_type,
-            extracted_text=result.get("extracted_text"),
-            entities=result.get("entities"),
-            confidence=result.get("confidence"),
-        )
-    except Exception as e:
-        logger.exception("Extraction failed for %s", file.filename)
-        return ExtractionResult(
-            success=False,
-            error=str(e),
-            confidence=0.0,
-        )
 
 
 class OcrResult(BaseModel):
@@ -202,22 +138,6 @@ async def ocr_endpoint(file: UploadFile = File(...)):
         raise
     except Exception as e:
         logger.exception("OCR failed for %s", file.filename)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/ocr/vision", response_model=OcrResult)
-async def ocr_vision_endpoint(file: UploadFile = File(...)):
-    """Extract text from a document using vision model (fallback for low-confidence OCR)."""
-    file_bytes = await file.read()
-    content_type = file.content_type or "application/octet-stream"
-
-    try:
-        result = vision_ocr(file_bytes, content_type)
-        return OcrResult(**result)
-    except RateLimitError:
-        raise
-    except Exception as e:
-        logger.exception("Vision OCR failed for %s", file.filename)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -349,23 +269,6 @@ async def list_models():
     if errors:
         result["error"] = "; ".join(errors)
     return result
-
-
-@app.get("/connection/test")
-async def test_connection():
-    """Test backend connectivity and return status."""
-    try:
-        backend = get_backend()
-        result = await asyncio.to_thread(backend.test_connection)
-        result["backend"] = backend.name
-        return result
-    except Exception as e:
-        return {
-            "connected": False,
-            "model_count": 0,
-            "error": str(e),
-            "backend": "unknown",
-        }
 
 
 class PullRequest(BaseModel):
@@ -701,51 +604,6 @@ async def render_page_endpoint(page: int = 0, width: int = 1200, file: UploadFil
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
     return Response(png, media_type="image/png", headers={"X-Page-Count": str(count)})
-
-
-async def _iter_in_thread(sync_gen):
-    """Wrap a synchronous generator to run in a thread executor."""
-    loop = asyncio.get_event_loop()
-    sentinel = object()
-    it = iter(sync_gen)
-    while True:
-        value = await loop.run_in_executor(None, next, it, sentinel)
-        if value is sentinel:
-            break
-        yield value
-
-
-@app.post("/chat/stream")
-async def chat_stream_endpoint(request: ChatRequest):
-    """RAG chat with SSE streaming: tokens sent as they arrive."""
-    backend = get_backend()
-    messages = _build_chat_messages(request)
-
-    async def generate():
-        try:
-            async for token in _iter_in_thread(backend.chat_stream(request.model or get_model("chat"), messages,
-                                                    num_ctx=get_num_ctx("chat"), think=False)):
-                yield f"data: {json.dumps({'token': token})}\n\n"
-        except Exception as e:
-            logger.exception("Chat stream failed")
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        yield "data: [DONE]\n\n"
-
-    return StreamingResponse(generate(), media_type="text/event-stream")
-
-
-@app.get("/backend")
-async def backend_info():
-    """Return info about the active inference backend."""
-    try:
-        backend = get_backend()
-        return {
-            "name": backend.name,
-            "supports_pull": backend.supports_pull,
-            "supports_vision": backend.supports_vision,
-        }
-    except Exception as e:
-        return {"name": "unknown", "supports_pull": False, "supports_vision": False, "error": str(e)}
 
 
 if __name__ == "__main__":

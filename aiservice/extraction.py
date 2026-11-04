@@ -3,15 +3,13 @@ Medical document extraction using AI inference backends.
 Handles PDF text extraction, image extraction, and LLM-based structured summarization.
 """
 
-import io
 import json
 import logging
 import os
 from typing import Optional
 
-import pypdfium2 as pdfium
 
-from backend import get_backend, get_vision_backend, get_model, get_num_ctx
+from backend import get_backend, get_model, get_num_ctx
 from lab_table import parse_lab_tables
 
 logger = logging.getLogger(__name__)
@@ -27,34 +25,8 @@ def _load_prompt(filename: str) -> str:
 EXTRACTION_PROMPT = _load_prompt("extraction.md")
 
 _LANGUAGE_NAMES: dict[str, str] = {
-    "en": "English", "de": "German", "fr": "French", "es": "Spanish", "it": "Italian",
+    "en": "English", "de": "German",
 }
-
-
-def extract_text_from_pdf(file_bytes: bytes) -> tuple[str, list[bytes]]:
-    """Extract text and page images from a PDF using pypdfium2.
-
-    Returns:
-        Tuple of (extracted_text, list_of_page_images_as_png_bytes)
-    """
-    doc = pdfium.PdfDocument(file_bytes)
-    text_parts = []
-    images = []
-
-    for page in doc:
-        textpage = page.get_textpage()
-        text_parts.append(textpage.get_text_range())
-        textpage.close()
-
-        # Render page as image for vision model fallback
-        bitmap = page.render(scale=200 / 72)
-        pil_image = bitmap.to_pil()
-        buf = io.BytesIO()
-        pil_image.save(buf, format="PNG")
-        images.append(buf.getvalue())
-
-    doc.close()
-    return "\n".join(text_parts).strip(), images
 
 
 def _parse_llm_response(response_text: str) -> dict:
@@ -103,63 +75,6 @@ def call_ollama_text(text: str, model: str, language: str = "en") -> dict:
         logger.warning("Extraction returned invalid JSON, retrying once")
         response = get_backend().chat(model, messages, num_ctx=nctx, think=False)
         return _parse_llm_response(response)
-
-
-def call_ollama_vision(image_bytes: bytes, model: str, language: str = "en") -> dict:
-    """Send an image to vision backend for structured extraction. Retries once on bad JSON."""
-    prompt = f"{_lang_line(language)}{EXTRACTION_PROMPT}{_lang_reminder(language)}"
-    messages = [{"role": "user", "content": prompt}]
-    nctx = get_num_ctx("vision")
-    response = get_vision_backend().chat(model, messages, images=[image_bytes], num_ctx=nctx)
-    try:
-        return _parse_llm_response(response)
-    except (json.JSONDecodeError, ValueError):
-        logger.warning("Vision extraction returned invalid JSON, retrying once")
-        response = get_vision_backend().chat(model, messages, images=[image_bytes], num_ctx=nctx)
-        return _parse_llm_response(response)
-
-
-def extract_document(
-    file_bytes: bytes,
-    content_type: str,
-    model: Optional[str] = None,
-    language: str = "en",
-) -> dict:
-    """Main extraction entry point. Routes to text or vision model based on content.
-
-    Returns dict with keys: extracted_text, entities
-    """
-    model = model or get_model("extract")
-
-    extracted_text = ""
-    entities = {}
-
-    if content_type == "application/pdf":
-        text, images = extract_text_from_pdf(file_bytes)
-        extracted_text = text
-
-        # If substantial text found, use text model; otherwise vision
-        if len(text.strip()) > 100:
-            logger.info("PDF has substantial text (%d chars), using text model", len(text))
-            entities = call_ollama_text(text, model, language)
-        elif images:
-            logger.info("PDF has little text, using vision model on first page")
-            entities = call_ollama_vision(images[0], model, language)
-        else:
-            return {"extracted_text": "", "entities": {}}
-    elif content_type in ("image/png", "image/jpeg", "image/jpg"):
-        logger.info("Image file, using vision model")
-        entities = call_ollama_vision(file_bytes, model, language)
-    else:
-        raise ValueError(f"Unsupported content type: {content_type}")
-
-    if isinstance(entities, dict):
-        entities["diagnoses"] = _patients_own(entities.get("diagnoses") or [])
-    entities["medications"] = _written_ingredients(entities.get("medications") or [], text)
-    return {
-        "extracted_text": extracted_text,
-        "entities": entities,
-    }
 
 
 # A laboratory report states measurements. The diagnosis is made afterwards, by a

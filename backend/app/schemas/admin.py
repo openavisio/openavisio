@@ -46,14 +46,6 @@ class AdminGroupDto(OrmBase):
     member_count: int = 0
 
 
-class AdminGroupMemberDto(OrmBase):
-    id: uuid.UUID
-    group_id: uuid.UUID
-    user_id: uuid.UUID
-    role: str
-    status: str
-
-
 class OllamaModelInfo(BaseModel):
     name: str
     size: int | None = None
@@ -84,20 +76,6 @@ class AiModelConfigRequest(BaseModel):
     classify_model: str | None = None
     chat_model: str | None = None
     vision_model: str | None = None
-
-
-class OllamaPullRequest(BaseModel):
-    model: str
-
-
-class OllamaConnectionTestResult(BaseModel):
-    success: bool
-    message: str
-
-
-class OllamaPullStatus(BaseModel):
-    status: str
-    progress: float | None = None
 
 
 class AuditLogDto(OrmBase):

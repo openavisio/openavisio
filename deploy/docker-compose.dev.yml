@@ -67,7 +67,6 @@ services:
       AI_SERVICE_URL: http://aiservice:8000
       APP_SECRET: ${APP_SECRET:-dev-secret-not-for-production-use-replace-me}
       DOCUMENT_STORAGE_PATH: /data/documents
-      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
       EMBEDDING_SCHEDULER_BATCH_SIZE: ${EMBEDDING_SCHEDULER_BATCH_SIZE:-50}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       ENVIRONMENT: development
@@ -121,7 +120,6 @@ services:
       REDIS_URL: redis://redis:6379/0
       AI_SERVICE_URL: http://aiservice:8000
       APP_SECRET: ${APP_SECRET:-dev-secret-not-for-production-use-replace-me}
-      EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
     volumes:
       - ../backend:/app
     depends_on:

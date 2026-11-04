@@ -3,8 +3,7 @@
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { actionError } from "@/lib/action-errors";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 async function token() {
   const session = await auth();
@@ -19,7 +18,7 @@ export async function setCorrespondentAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/documents/${docId}`, {
+  const res = await backendFetch(`/api/documents/${docId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ correspondent_id: correspondentId }),
@@ -40,7 +39,7 @@ export async function createCorrespondentAction(
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
 
-  const res = await fetch(`${API}/api/correspondents`, {
+  const res = await backendFetch(`/api/correspondents`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
     body: JSON.stringify({ name }),

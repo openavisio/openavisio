@@ -3,8 +3,7 @@ import { auth } from "@/auth";
 import { getTranslations } from "next-intl/server";
 import { DataGovernanceClient } from "./DataGovernanceClient";
 import type { S } from "@/lib/api";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +14,7 @@ export default async function DataGovernancePage() {
 
   let categories: S<"DataCategoryDto">[] = [];
   try {
-    const res = await fetch(`${API}/api/admin/data-categories`, {
+    const res = await backendFetch(`/api/admin/data-categories`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

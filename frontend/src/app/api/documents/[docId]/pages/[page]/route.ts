@@ -1,14 +1,14 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { backendFetch } from "@/lib/backend";
 
 // A PDF page as PNG for phones; always image/png, never the uploaded type.
 export const GET = auth(async (req, context) => {
   const { docId, page } = await (context as { params: Promise<{ docId: string; page: string }> }).params;
   const token = (req.auth as { accessToken?: string } | null)?.accessToken;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const apiUrl = process.env.API_URL || "http://localhost:8000";
-  const res = await fetch(
-    `${apiUrl}/api/documents/${encodeURIComponent(docId)}/pages/${encodeURIComponent(page)}` +
+  const res = await backendFetch(
+    `/api/documents/${encodeURIComponent(docId)}/pages/${encodeURIComponent(page)}` +
       `?width=${encodeURIComponent(req.nextUrl.searchParams.get("width") ?? "1200")}`,
     { headers: { Authorization: `Bearer ${token}` } },
   );

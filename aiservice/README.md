@@ -6,10 +6,12 @@ Python FastAPI microservice for medical document extraction. Supports Ollama (lo
 
 ## How It Works
 
-1. Receives uploaded document (PDF or image) via `/extract`
-2. PDFs: extracts text with pypdfium2. If text is substantial → text model. If scanned → vision model on page images.
-3. Images: sends directly to vision model.
-4. Returns structured JSON summary (diagnoses, medications, observations, etc.)
+The backend's pipeline calls one endpoint per stage:
+
+1. `/ocr` reads the text (OCRmyPDF/Tesseract, or the vision model on scanned pages)
+2. `/classify` names the document type
+3. `/extract-entities` returns the structured summary (diagnoses, medications, observations, etc.)
+4. `/embed` turns the chunks into vectors for the chat
 
 ## Determinism
 
@@ -74,13 +76,13 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8000
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `SERVICES__OLLAMA__HTTP__0` | Ollama URL (Aspire convention) | — |
-| `OLLAMA_URL` | Ollama URL(s), comma-separated for round-robin | `http://localhost:11434` |
+| `OLLAMA_URL` | Ollama URL | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Default model for extraction | `qwen3.6:27b-mtp-q4_K_M` |
 | `OLLAMA_<STAGE>_MODEL` | Per-stage model (`EXTRACT`/`CLASSIFY`/`CHAT`/`VISION`) | — |
 | `OLLAMA_<STAGE>_NUM_CTX` | Per-stage Ollama context window (tokens). The aiservice sets a per-stage default (extract 32768, chat 16384, vision/classify 8192) because Ollama's own default is 4096 and truncates multi-page documents — and neither a server-wide `OLLAMA_CONTEXT_LENGTH` nor an OpenWebUI per-model setting reaches these API calls. Override up (longer docs) or down (save VRAM) per stage. Bigger = more KV-cache VRAM | *(stage default above)* |
 | `AI_BACKEND` | Backend: `ollama` or `vllm` (any OpenAI-compatible endpoint, your own or a hosted provider's) | `ollama` |
 | `AI_PROFILE` | Profile for model defaults: `homelab`, `team`, `org`, `cloud` | *(none)* |
-| `VLLM_URL` | vLLM or any OpenAI-compatible endpoint(s), comma-separated for round-robin | — |
+| `VLLM_URL` | vLLM or any OpenAI-compatible endpoint | — |
 | `VLLM_MODEL` / `VLLM_<STAGE>_MODEL` | Model name at that endpoint, overall and per stage | — |
 | `VLLM_API_KEY` | Bearer token for `VLLM_URL`, if the endpoint asks for one (a hosted provider, or your own vLLM started with `--api-key`) | — |
 | `VLLM_VISION_URL` / `VLLM_VISION_MODEL` | Serve vision OCR from an OpenAI-compatible endpoint instead of an Ollama. Defaults to `VLLM_URL` when `AI_BACKEND=vllm`; `OLLAMA_VISION_URL` takes precedence if set | — |
@@ -89,14 +91,9 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8000
 ## API Endpoints
 
 - `GET /health` — health check
-- `POST /extract` — upload file, get structured extraction
 - `POST /ocr` — Tesseract/OCRmyPDF text extraction
-- `POST /ocr/vision` — vision model OCR fallback
 - `POST /classify` — document classification
 - `POST /extract-entities` — entity extraction from text
 - `POST /embed` — generate embeddings
 - `POST /chat` — RAG chat
-- `POST /chat/stream` — RAG chat with SSE streaming
 - `GET /models` — list available models
-- `GET /backend` — backend info
-- `GET /connection/test` — test connectivity

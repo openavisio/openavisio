@@ -3,8 +3,7 @@ import { auth } from "@/auth";
 import { getTranslations } from "next-intl/server";
 import { OrgForm } from "./OrgForm";
 import { NotificationSettings } from "./NotificationSettings";
-
-const API = process.env.API_URL || "http://localhost:8000";
+import { backendFetch } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +12,7 @@ export default async function AdminOrganizationPage() {
   const session = await auth();
   const token = session?.accessToken;
 
-  const res = await fetch(`${API}/api/organization`, {
+  const res = await backendFetch(`/api/organization`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -31,7 +30,7 @@ export default async function AdminOrganizationPage() {
 
   let notifySettings = { event_reminder: true, caregiver_added: true, invitation: true, include_content: false, document_processed: false };
   try {
-    const nRes = await fetch(`${API}/api/admin/notification-settings`, {
+    const nRes = await backendFetch(`/api/admin/notification-settings`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

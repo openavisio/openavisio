@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { RegisterForm } from "./RegisterForm";
+import { backendFetch } from "@/lib/backend";
 
 async function RegisterContent({ token }: { token: string }) {
   const t = await getTranslations("Auth");
@@ -18,8 +19,8 @@ async function RegisterContent({ token }: { token: string }) {
   let email: string | null = null;
   let tokenError: string | null = null;
   try {
-    const res = await fetch(
-      `${process.env.API_URL || "http://localhost:8000"}/api/auth/invite?token=${encodeURIComponent(token)}`,
+    const res = await backendFetch(
+      `/api/auth/invite?token=${encodeURIComponent(token)}`,
       { cache: "no-store" }
     );
     if (res.ok) {

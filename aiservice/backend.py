@@ -5,10 +5,7 @@ Supports Ollama (default), vLLM or any OpenAI-compatible endpoint, and Mock (dev
 
 import logging
 import os
-import time
-import threading
 from abc import ABC, abstractmethod
-from typing import Generator
 
 import ollama
 
@@ -52,55 +49,9 @@ def _stop_for_model(model: str) -> list[str] | None:
     return None
 
 
-# --- Multi-URL round-robin ---
-
-class UrlPool:
-    """Round-robin URL pool with 30s cooldown on failure."""
-
-    def __init__(self, urls: list[str]):
-        self._urls = urls
-        self._index = 0
-        self._lock = threading.Lock()
-        self._unhealthy: dict[str, float] = {}  # url -> unhealthy_until timestamp
-        self._cooldown = 30.0
-
-    @property
-    def urls(self) -> list[str]:
-        return list(self._urls)
-
-    def next(self) -> str:
-        """Get next healthy URL (round-robin). Falls back to any URL if all unhealthy."""
-        with self._lock:
-            now = time.time()
-            # Try round-robin through healthy URLs
-            for _ in range(len(self._urls)):
-                url = self._urls[self._index % len(self._urls)]
-                self._index += 1
-                until = self._unhealthy.get(url, 0)
-                if now >= until:
-                    return url
-            # All unhealthy — return next anyway
-            url = self._urls[self._index % len(self._urls)]
-            self._index += 1
-            return url
-
-    def mark_unhealthy(self, url: str):
-        with self._lock:
-            self._unhealthy[url] = time.time() + self._cooldown
-            logger.warning("Marked %s unhealthy for %.0fs", url, self._cooldown)
-
-    def mark_healthy(self, url: str):
-        with self._lock:
-            self._unhealthy.pop(url, None)
-
-    @property
-    def is_single(self) -> bool:
-        return len(self._urls) == 1
-
-
-def _parse_urls(raw: str) -> list[str]:
-    """Parse comma-separated URLs into a list."""
-    return [u.strip() for u in raw.split(",") if u.strip()]
+def _first_url(raw: str) -> str:
+    # ponytail: one host per role; a comma list from before 0.7.1 keeps its first URL
+    return raw.split(",")[0].strip()
 
 
 # --- Abstract backend ---
@@ -154,20 +105,10 @@ class InferenceBackend(ABC):
     @abstractmethod
     def supports_pull(self) -> bool: ...
 
-    @property
-    @abstractmethod
-    def supports_vision(self) -> bool: ...
-
     @abstractmethod
     def chat(self, model: str, messages: list[dict], images: list[bytes] | None = None,
              num_ctx: int | None = None, think: bool | None = None) -> str:
         """Send chat completion. Returns response text."""
-        ...
-
-    @abstractmethod
-    def chat_stream(self, model: str, messages: list[dict], num_ctx: int | None = None,
-                    think: bool | None = None) -> Generator[str, None, None]:
-        """Stream chat completion token by token. Yields response text chunks."""
         ...
 
     def yes_probability(self, model: str, messages: list[dict]) -> float | None:
@@ -189,43 +130,16 @@ class InferenceBackend(ABC):
         """List models with metadata. Subclasses may override for richer info."""
         return [{"name": m} for m in self.list_models()]
 
-    @abstractmethod
-    def test_connection(self) -> dict:
-        """Test connectivity. Returns {"connected": bool, "model_count": int, "error": str|None}."""
-        ...
-
-    def pull_model_stream(self, model: str) -> Generator:
-        """Stream model pull progress. Only supported by Ollama."""
-        raise NotImplementedError(f"{self.name} does not support model pulling")
-
-
-# --- Ollama backend (multi-URL) ---
+# --- Ollama backend ---
 
 class OllamaBackend(InferenceBackend):
-    """Ollama backend via ollama Python SDK. Supports multi-URL round-robin."""
+    """Ollama backend via ollama Python SDK."""
 
-    def __init__(self, urls: str | list[str]):
-        if isinstance(urls, str):
-            parsed = _parse_urls(urls)
-            if not parsed:
-                parsed = ["http://localhost:11434"]
-            self._pool = UrlPool(parsed)
-        else:
-            self._pool = UrlPool(urls if urls else ["http://localhost:11434"])
-        # Primary client for single-URL compat
-        self._clients: dict[str, ollama.Client] = {}
-        for url in self._pool.urls:
-            # generous timeout: a ~26B model on a multi-page HTML doc can run minutes (#73)
-            self._clients[url] = ollama.Client(host=url, timeout=600)
-        logger.info("OllamaBackend initialized with %d URL(s): %s", len(self._pool.urls), self._pool.urls)
-
-    @property
-    def pool(self) -> UrlPool:
-        return self._pool
-
-    def _get_client(self) -> tuple[str, ollama.Client]:
-        url = self._pool.next()
-        return url, self._clients[url]
+    def __init__(self, url: str):
+        url = _first_url(url) or "http://localhost:11434"
+        # generous timeout: a ~26B model on a multi-page HTML doc can run minutes (#73)
+        self._client = ollama.Client(host=url, timeout=600)
+        logger.info("OllamaBackend initialized: %s", url)
 
     @property
     def name(self) -> str:
@@ -233,10 +147,6 @@ class OllamaBackend(InferenceBackend):
 
     @property
     def supports_pull(self) -> bool:
-        return True
-
-    @property
-    def supports_vision(self) -> bool:
         return True
 
     def chat(self, model: str, messages: list[dict], images: list[bytes] | None = None,
@@ -254,81 +164,28 @@ class OllamaBackend(InferenceBackend):
         if images:
             msgs = [m.copy() for m in messages]
             msgs[-1]["images"] = images
-        url, client = self._get_client()
         try:
-            response = client.chat(model=model, messages=msgs, options=opts, **think_kw)
-            self._pool.mark_healthy(url)
-            if not self._pool.is_single:
-                logger.info("Ollama chat handled by %s", url)
+            response = self._client.chat(model=model, messages=msgs, options=opts, **think_kw)
         except Exception as exc:
             if _is_overflow(exc):  # newer Ollama builds may refuse instead of cutting
                 raise ContextOverflow(str(exc)) from exc
-            self._pool.mark_unhealthy(url)
-            if self._pool.is_single:
-                raise
-            # Retry with next URL
-            url2, client2 = self._get_client()
-            logger.info("Retrying chat on %s after %s failed", url2, url)
-            response = client2.chat(model=model, messages=msgs, options=opts, **think_kw)
-            self._pool.mark_healthy(url2)
+            raise
         _check_fit(response, num_ctx)
         return response.message.content
 
-    def chat_stream(self, model: str, messages: list[dict], num_ctx: int | None = None,
-                    think: bool | None = None) -> Generator[str, None, None]:
-        opts = {**_DETERMINISTIC, **({"num_ctx": num_ctx} if num_ctx else {})}
-        # Thinking is worse than useless while streaming: Ollama puts reasoning
-        # in message.thinking, this loop only forwards message.content, so the
-        # reader watches an empty screen for the whole thinking phase. Measured
-        # on a real chat question: 51.5s to the first character with thinking,
-        # 0.8s without, and the fast answer was not worse.
-        think_kw = {} if think is None else {"think": think}
-        url, client = self._get_client()
-        if not self._pool.is_single:
-            logger.info("Ollama chat_stream handled by %s", url)
-        for chunk in client.chat(model=model, messages=messages, stream=True, options=opts, **think_kw):
-            content = chunk.message.content
-            if content:
-                yield content
-            if chunk.done:
-                # a chat answer writes nothing into the record, so a cut prompt only warns (#239)
-                try:
-                    _check_fit(chunk, num_ctx)
-                except ContextOverflow as e:
-                    logger.warning("Chat %s", e)
-
     def yes_probability(self, model: str, messages: list[dict]) -> float | None:
-        _, client = self._get_client()
-        r = client.chat(model=model, messages=messages, think=False, logprobs=True, top_logprobs=10,
+        r = self._client.chat(model=model, messages=messages, think=False, logprobs=True, top_logprobs=10,
                         options={**_DETERMINISTIC, "num_predict": 1})
         return p_yes([(t.token, t.logprob) for t in r.logprobs[0].top_logprobs]) if r.logprobs else None
 
     def embed(self, model: str, texts: list[str], dimensions: int | None = None) -> list[list[float]]:
-        url, client = self._get_client()
-        try:
-            result = client.embed(model=model, input=texts, dimensions=dimensions)
-            self._pool.mark_healthy(url)
-            if not self._pool.is_single:
-                logger.info("Ollama embed handled by %s", url)
-            return result.embeddings
-        except Exception:
-            self._pool.mark_unhealthy(url)
-            if self._pool.is_single:
-                raise
-            url2, client2 = self._get_client()
-            logger.info("Retrying embed on %s after %s failed", url2, url)
-            result = client2.embed(model=model, input=texts, dimensions=dimensions)
-            self._pool.mark_healthy(url2)
-            return result.embeddings
+        return self._client.embed(model=model, input=texts, dimensions=dimensions).embeddings
 
     def list_models(self) -> list[str]:
-        _, client = self._get_client()
-        models = client.list()
-        return [m.model for m in models.models]
+        return [m.model for m in self._client.list().models]
 
     def list_models_detailed(self) -> list[dict]:
-        _, client = self._get_client()
-        models = client.list()
+        models = self._client.list()
         return [
             {
                 "name": m.model,
@@ -338,44 +195,20 @@ class OllamaBackend(InferenceBackend):
             for m in models.models
         ]
 
-    def test_connection(self) -> dict:
-        try:
-            _, client = self._get_client()
-            models = client.list()
-            return {"connected": True, "model_count": len(models.models), "error": None}
-        except Exception as e:
-            return {"connected": False, "model_count": 0, "error": str(e)}
-
-    def pull_model_stream(self, model: str) -> Generator:
-        _, client = self._get_client()
-        return client.pull(model, stream=True)
-
-
-# --- vLLM backend (multi-URL) ---
+# --- vLLM backend ---
 
 class VllmBackend(InferenceBackend):
-    """vLLM backend via OpenAI-compatible API. Supports multi-URL round-robin."""
+    """vLLM backend via OpenAI-compatible API."""
 
-    def __init__(self, urls: str | list[str]):
+    def __init__(self, url: str):
         from openai import OpenAI
-        if isinstance(urls, str):
-            parsed = _parse_urls(urls)
-        else:
-            parsed = urls
-        if not parsed:
+        url = _first_url(url)
+        if not url:
             raise RuntimeError("VLLM_URL is required for vLLM backend")
-        self._pool = UrlPool(parsed)
-        self._clients: dict[str, OpenAI] = {}
         # Whatever key the endpoint asks for; "unused" keeps a keyless vLLM working.
         key = os.environ.get("VLLM_API_KEY", "").strip() or "unused"
-        for url in parsed:
-            self._clients[url] = OpenAI(base_url=url, api_key=key)
-        logger.info("VllmBackend initialized with %d URL(s), key %s: %s",
-                    len(parsed), "set" if key != "unused" else "none", parsed)
-
-    def _get_client(self):
-        url = self._pool.next()
-        return url, self._clients[url]
+        self._client = OpenAI(base_url=url, api_key=key)
+        logger.info("VllmBackend initialized, key %s: %s", "set" if key != "unused" else "none", url)
 
     @property
     def name(self) -> str:
@@ -384,10 +217,6 @@ class VllmBackend(InferenceBackend):
     @property
     def supports_pull(self) -> bool:
         return False
-
-    @property
-    def supports_vision(self) -> bool:
-        return True
 
     @staticmethod
     def _with_images(messages: list[dict], images: list[bytes]) -> list[dict]:
@@ -448,37 +277,10 @@ class VllmBackend(InferenceBackend):
         if images:
             messages = self._with_images(messages, images)
         opts = {} if think is not False else dict(self._NO_THINK)
-        url, client = self._get_client()
-        try:
-            response = self._create(client, model, messages, opts)
-            self._pool.mark_healthy(url)
-            if not self._pool.is_single:
-                logger.info("vLLM chat handled by %s", url)
-            return response.choices[0].message.content
-        except ContextOverflow:
-            raise
-        except Exception:
-            self._pool.mark_unhealthy(url)
-            if self._pool.is_single:
-                raise
-            url2, client2 = self._get_client()
-            logger.info("Retrying vLLM chat on %s after %s failed", url2, url)
-            response = self._create(client2, model, messages, opts)
-            self._pool.mark_healthy(url2)
-            return response.choices[0].message.content
-
-    def chat_stream(self, model: str, messages: list[dict], num_ctx: int | None = None,
-                    think: bool | None = None) -> Generator[str, None, None]:
-        opts = {} if think is not False else dict(self._NO_THINK)
-        _, client = self._get_client()
-        stream = self._create(client, model, messages, opts, stream=True)
-        for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.content
+        return self._create(self._client, model, messages, opts).choices[0].message.content
 
     def yes_probability(self, model: str, messages: list[dict]) -> float | None:
-        _, client = self._get_client()
-        r = self._create(client, model, messages, dict(self._NO_THINK), max_tokens=1, logprobs=True, top_logprobs=10)
+        r = self._create(self._client, model, messages, dict(self._NO_THINK), max_tokens=1, logprobs=True, top_logprobs=10)
         lp = r.choices[0].logprobs
         return p_yes([(t.token, t.logprob) for t in lp.content[0].top_logprobs]) if lp and lp.content else None
 
@@ -511,34 +313,10 @@ class VllmBackend(InferenceBackend):
         return [item.embedding for item in response.data]
 
     def embed(self, model: str, texts: list[str], dimensions: int | None = None) -> list[list[float]]:
-        url, client = self._get_client()
-        try:
-            vectors = self._embed_one(client, model, texts, dimensions)
-            self._pool.mark_healthy(url)
-            return vectors
-        except Exception:
-            self._pool.mark_unhealthy(url)
-            if self._pool.is_single:
-                raise
-            url2, client2 = self._get_client()
-            vectors = self._embed_one(client2, model, texts, dimensions)
-            self._pool.mark_healthy(url2)
-            return vectors
+        return self._embed_one(self._client, model, texts, dimensions)
 
     def list_models(self) -> list[str]:
-        _, client = self._get_client()
-        response = client.models.list()
-        return [m.id for m in response.data]
-
-    def test_connection(self) -> dict:
-        try:
-            _, client = self._get_client()
-            response = client.models.list()
-            count = len(list(response.data))
-            return {"connected": True, "model_count": count, "error": None}
-        except Exception as e:
-            return {"connected": False, "model_count": 0, "error": str(e)}
-
+        return [m.id for m in self._client.models.list().data]
 
 # --- Mock backend (dev/testing — no GPU needed) ---
 
@@ -592,10 +370,6 @@ class MockBackend(InferenceBackend):
     def supports_pull(self) -> bool:
         return False
 
-    @property
-    def supports_vision(self) -> bool:
-        return True
-
     def chat(self, model: str, messages: list[dict], images: list[bytes] | None = None,
              num_ctx: int | None = None, think: bool | None = None) -> str:
         last_msg = messages[-1]["content"] if messages else ""
@@ -639,13 +413,6 @@ class MockBackend(InferenceBackend):
             return f"Based on the available documents: {context_summary[:200]}. This is a mock response for development — connect Ollama for real AI answers."
         return "This is a mock AI response for development. Set OLLAMA_URL and AI_BACKEND=ollama to enable real AI inference."
 
-    def chat_stream(self, model: str, messages: list[dict], num_ctx: int | None = None,
-                    think: bool | None = None) -> Generator[str, None, None]:
-        response = self.chat(model, messages)
-        # Simulate streaming by yielding word by word
-        for word in response.split(" "):
-            yield word + " "
-
     def embed(self, model: str, texts: list[str], dimensions: int | None = None) -> list[list[float]]:
         import random
         random.seed(42)  # deterministic for consistency
@@ -653,10 +420,6 @@ class MockBackend(InferenceBackend):
 
     def list_models(self) -> list[str]:
         return ["mock-model"]
-
-    def test_connection(self) -> dict:
-        return {"connected": True, "model_count": 1, "error": None}
-
 
 def _vllm_url(stage: str) -> str:
     """The OpenAI-compatible endpoint serving this stage, or "" when Ollama or mock does (#312)."""
@@ -780,9 +543,7 @@ def get_embed_backend() -> InferenceBackend:
 
 def get_ollama_url() -> str:
     """Legacy helper — returns first OLLAMA_URL for backwards compat."""
-    raw = os.environ.get("OLLAMA_URL") or "http://localhost:11434"
-    urls = _parse_urls(raw)
-    return urls[0] if urls else "http://localhost:11434"
+    return _first_url(os.environ.get("OLLAMA_URL", "")) or "http://localhost:11434"
 
 
 def get_model(stage: str) -> str:

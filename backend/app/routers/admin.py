@@ -25,17 +25,13 @@ from app.models.user import User, UserRole
 from app.schemas.admin import (
     AiModelConfigRequest,
     AdminGroupDto,
-    AdminGroupMemberDto,
     AdminUserDto,
     AuditLogDto,
     CreateInvitationRequest,
     InvitationDto,
     DataCategoryDto,
     LicenseDto,
-    OllamaConnectionTestResult,
     OllamaModelInfo,
-    OllamaPullRequest,
-    OllamaPullStatus,
     OllamaSettingsDto,
     PipelineTaskDto,
     TaskRunDto,
@@ -49,20 +45,13 @@ from app.schemas.erasure import EraseUserRequest
 
 router = APIRouter()
 
-_pull_status: dict[str, OllamaPullStatus] = {}
-
-
 def _get_app_version() -> str:
     try:
         import tomllib
         with open("/app/pyproject.toml", "rb") as f:
             return tomllib.load(f)["project"]["version"]
     except Exception:
-        try:
-            from importlib.metadata import version
-            return version("openavisio")
-        except Exception:
-            return "unknown"
+        return "unknown"
 
 
 def _get_commit_hash() -> str:
@@ -180,12 +169,6 @@ async def list_groups(admin: User = Depends(require_admin), db: AsyncSession = D
         .group_by(GroupMembership.group_id)
     )).all())
     return [AdminGroupDto(**AdminGroupDto.model_validate(g).model_dump(exclude={"member_count"}), member_count=members.get(g.id, 0)) for g in groups]
-
-
-@router.get("/groups/{group_id}/members", response_model=list[AdminGroupMemberDto])
-async def list_group_members(group_id: uuid.UUID, admin: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(GroupMembership).where(GroupMembership.group_id == group_id, GroupMembership.is_deleted == False))  # noqa: E712
-    return result.scalars().all()
 
 
 @router.get("/invitations", response_model=list[InvitationDto])
@@ -344,34 +327,6 @@ async def save_ai_model_config(
             await db.execute(stmt)
     await db.commit()
     return {"ok": True}
-
-
-@router.post("/ollama/test", dependencies=[Depends(operator_only)], response_model=OllamaConnectionTestResult)
-async def test_ollama(admin: User = Depends(require_admin)):
-    try:
-        async with httpx.AsyncClient(timeout=5, headers=settings.ai_service_headers) as client:
-            resp = await client.get(f"{settings.ai_service_url}/health")
-            if resp.status_code == 200:
-                return OllamaConnectionTestResult(success=True, message="AI service reachable")
-    except Exception as e:
-        return OllamaConnectionTestResult(success=False, message=str(e))
-    return OllamaConnectionTestResult(success=False, message="Unexpected response")
-
-
-@router.post("/ollama/pull", dependencies=[Depends(operator_only)])
-async def pull_model(body: OllamaPullRequest, admin: User = Depends(require_admin)):
-    _pull_status[body.model] = OllamaPullStatus(status="pulling", progress=0)
-    try:
-        async with httpx.AsyncClient(timeout=5, headers=settings.ai_service_headers) as client:
-            await client.post(f"{settings.ai_service_url}/models/pull", json={"model": body.model})
-    except Exception:
-        pass
-    return {"ok": True}
-
-
-@router.get("/ollama/pull/status", dependencies=[Depends(operator_only)])
-async def get_pull_status(admin: User = Depends(require_admin)):
-    return _pull_status
 
 
 @router.get("/logs/tasks", dependencies=[Depends(operator_only)], response_model=list[PipelineTaskDto])

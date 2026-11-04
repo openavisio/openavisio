@@ -14,17 +14,13 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
-from app.workers.celery_app import celery_app
+from app.workers.celery_app import celery_app, run_async
 
 logger = logging.getLogger(__name__)
 
 _WINDOW_HOURS = 1
 # One failure is a bad scan; several in an hour is a broken pipeline.
 _THRESHOLD = 3
-
-
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
 
 
 @celery_app.task
@@ -100,4 +96,4 @@ def failed_document_watchdog():
 
             logger.warning("watchdog: %d failed documents in the last hour, %d notified", total, len(recipients))
 
-    _run(_check())
+    run_async(_check())

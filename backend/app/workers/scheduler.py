@@ -1,13 +1,8 @@
 """Embedding scheduler, diary embedding, and event reminder tasks."""
 
-import asyncio
 import uuid
 
-from app.workers.celery_app import celery_app
-
-
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+from app.workers.celery_app import celery_app, run_async
 
 
 @celery_app.task
@@ -34,7 +29,7 @@ def embedding_scheduler():
                 embedding_stage.delay(str(doc.id))
             return len(docs)
 
-    count = _run(_scan())
+    count = run_async(_scan())
     return {"enqueued": count}
 
 
@@ -88,7 +83,7 @@ def diary_embedding_job(self, entry_id: str):
             ))
             await db.commit()
 
-    _run(_embed())
+    run_async(_embed())
 
 
 @celery_app.task
@@ -153,7 +148,7 @@ def event_reminder_scheduler():
 
         return {"reminded": len(to_remind)}
 
-    return _run(_scan())
+    return run_async(_scan())
 
 
 @celery_app.task
@@ -168,7 +163,7 @@ def retention_purge_scheduler():
             await ensure_categories_seeded(db)
             return await run_retention_purge(db)
 
-    return _run(_purge())
+    return run_async(_purge())
 
 
 def _parse_event_dt(start_at: str, window_start, window_end) -> bool:

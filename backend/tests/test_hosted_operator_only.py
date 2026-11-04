@@ -12,8 +12,6 @@ from app.models.user import User
 OPERATOR_ROUTES = [
     ("GET", "/api/admin/ollama"),
     ("PUT", "/api/admin/ollama/models"),
-    ("POST", "/api/admin/ollama/test"),
-    ("POST", "/api/admin/ollama/pull"),
     ("GET", "/api/admin/system"),
     ("GET", "/api/admin/license"),
     ("POST", "/api/admin/license"),
