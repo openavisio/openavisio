@@ -20,6 +20,7 @@ from app.models.user import User
 from app.schemas.intake import (
     HistoryFactDto, HistoryFactIn, IntakeFormDetailDto, IntakeFormDto, IntakeItemDto, IntakeItemIn,
 )
+from app.routers import chat
 from app.services import intake as svc
 
 router = APIRouter()
@@ -121,8 +122,12 @@ async def answer_item(form_id: uuid.UUID, index: int, body: IntakeItemIn,
     sheet = svc.load_sheet(form, kek)
     if not 0 <= index < len(sheet):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    await svc.update_item(form, sheet[index], answer=body.answer, answer_given="answer" in body.model_fields_set,
-                          aging=body.aging, confirm=body.confirm, owner_id=user.id, db=db)
+    item = sheet[index]
+    if body.observation and not item.get("ability"):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Not an ability question")
+    await svc.update_item(form, item, answer=body.answer, answer_given="answer" in body.model_fields_set,
+                          aging=body.aging, confirm=body.confirm, user=user, db=db, observation=body.observation,
+                          lang=await chat._org_language(db))
     form.sheet = encrypt_str(json.dumps(sheet), kek)
     await db.commit()
     await db.refresh(form)

@@ -23,6 +23,8 @@ const atkinson = localFont({
 export const metadata: Metadata = {
   title: "OpenAvisio",
   description: "The AI assistant for everyone who cares",
+  // Every instance holds health data behind a login: nothing here belongs in a search index.
+  robots: { index: false, follow: false },
   // Safari ignores the manifest's icons — without appleWebApp iOS uses a
   // screenshot of the page as the home-screen icon. app/apple-icon.png supplies
   // the image; `capable` makes the launched app full-screen instead of a tab.

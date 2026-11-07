@@ -10,10 +10,11 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.ratelimit import client_ip, enforce
 from app.deps import get_current_user
-from app.models.calendar import CalendarEvent, EventCategory
+from app.models.calendar import CalendarEvent
 from app.models.care_notes import HEADINGS as CARE_HEADINGS, CareNotes
 from app.models.carer_update import CarerUpdate
 from app.models.dose import Dose
+from app.models.development import LABELS as DEV_LABELS, Ability, AbilityObservation, TestAttempt, no_longer
 from app.models.chat import ChatMessage
 from app.models.emergency_plan import EmergencyPlan
 from app.models.condition import Condition
@@ -30,6 +31,7 @@ router = APIRouter()
 # are the known ceiling; when one bites, the answer has to say so.
 APPOINTMENT_LIMIT = 150
 INCIDENT_LIMIT = 100
+OBSERVATION_LIMIT = 200
 CARER_UPDATE_LIMIT = 100
 DOSE_LIMIT = 200
 # Labs are the one source that runs into the thousands, so they are capped per
@@ -60,13 +62,13 @@ CHUNK_MAX_DISTANCE = 0.59
 # Organization's language like the rest of the pipeline does (pipeline.py).
 _LABELS = {
     "en": {
-        "milestone": "Milestone", "appointment": "Appointment", "medication": "Medication",
+        "ability": "Ability", "test_attempt": "Test attempt", "appointment": "Appointment", "medication": "Medication",
         "condition": "Diagnosis", "incident": "Incident", "document": "Document",
         "suspected": "suspected, not confirmed",
         "lab": "Lab value",
         "until": "until", "status": "status",
         "cap": "NOTE: only the {n} most recent {what} are included, older ones are missing.",
-        "appointments": "appointments", "incidents": "incidents",
+        "appointments": "appointments", "incidents": "incidents", "observations": "ability observations",
         "carer_update": "Carer update", "retold": "retold, not word for word",
         "carer_updates": "carer updates",
         "dose": "Dose given", "given_by": "given by", "doses": "doses",
@@ -86,13 +88,13 @@ _LABELS = {
                     " name the entries with their dates.",
     },
     "de": {
-        "milestone": "Meilenstein", "appointment": "Termin", "medication": "Medikament",
+        "ability": "Fähigkeit", "test_attempt": "Testversuch", "appointment": "Termin", "medication": "Medikament",
         "condition": "Diagnose", "incident": "Vorfall", "document": "Dokument",
         "suspected": "Verdacht, nicht bestätigt",
         "lab": "Laborwert",
         "until": "bis", "status": "Status",
         "cap": "HINWEIS: nur die {n} neuesten {what} sind enthalten, ältere fehlen.",
-        "appointments": "Termine", "incidents": "Vorfälle",
+        "appointments": "Termine", "incidents": "Vorfälle", "observations": "Beobachtungen",
         "carer_update": "Rückmeldung", "retold": "mündlich, nacherzählt",
         "carer_updates": "Rückmeldungen",
         "dose": "Gabe", "given_by": "gegeben von", "doses": "Gaben",
@@ -241,15 +243,39 @@ async def _structured_context(
         .where(CalendarEvent.patient_id == patient_id, CalendarEvent.is_deleted == False)  # noqa: E712
         .order_by(CalendarEvent.start_at.desc())
     )).scalars().all()
-    milestones = [e for e in events if e.category == EventCategory.milestone]
-    appointments = [e for e in events if e.category != EventCategory.milestone]
-    for e in milestones:
-        lines.append(_line(L["milestone"], e.start_at, e.title, e.developmental_domain, e.description))
-    for e in appointments[:APPOINTMENT_LIMIT]:
+    for e in events[:APPOINTMENT_LIMIT]:
         lines.append(_line(L["appointment"], e.start_at, e.title, e.provider, e.location, e.purpose))
-    if len(appointments) > APPOINTMENT_LIMIT:
+    if len(events) > APPOINTMENT_LIMIT:
         lines.append(L["cap"].format(n=APPOINTMENT_LIMIT, what=L["appointments"]))
     months.update(e.start_at[:7] for e in events if e.start_at)
+
+    # ADR 063: single Observations as recorded, never summed up into a level
+    D = DEV_LABELS[lang]
+    abilities = (await db.execute(select(Ability).where(
+        Ability.patient_id == patient_id, Ability.is_deleted == False))).scalars().all()  # noqa: E712
+    observed: list[tuple[AbilityObservation, Ability, bool]] = []
+    for a in abilities:
+        lapsed = no_longer(a.observations)
+        observed += [(o, a, o.id in lapsed) for o in a.observations]
+    observed.sort(key=lambda x: x[0].observed_on, reverse=True)
+    for o, a, lapsed in observed[:OBSERVATION_LIMIT]:
+        lines.append(_line(
+            L["ability"], o.observed_on, a.name, D["no_longer" if lapsed else "works" if o.works else "fails"],
+            D["with_help" if o.with_help else "alone"], D.get(o.place or ""), D.get(a.domain or ""),
+            D.get(o.source), o.note,
+        ))
+    months.update(o.observed_on[:7] for o, _, _ in observed[:OBSERVATION_LIMIT])
+    if len(observed) > OBSERVATION_LIMIT:
+        lines.append(L["cap"].format(n=OBSERVATION_LIMIT, what=L["observations"]))
+    for t in (await db.execute(select(TestAttempt).where(
+            TestAttempt.patient_id == patient_id, TestAttempt.is_deleted == False)  # noqa: E712
+            .order_by(TestAttempt.attempted_on.desc()))).scalars().all():
+        lines.append(_line(
+            L["test_attempt"], t.attempted_on, t.test_name, D[t.outcome], t.reason,
+            t.correspondent.name if t.correspondent else None, D.get(t.setting or ""),
+            f"{t.duration_minutes} min" if t.duration_minutes else None,
+        ))
+        months.add(t.attempted_on[:7])
 
     meds = (await db.execute(
         select(MedicationStatement)

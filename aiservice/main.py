@@ -202,6 +202,7 @@ async def extract_entities_endpoint(request: ExtractEntitiesRequest):
 
 class IntakeQuestionsRequest(BaseModel):
     text: str
+    abilities: list[str] = []
     model: Optional[str] = None
     language: str = "en"
 
@@ -217,7 +218,8 @@ class IntakeAnswerRequest(BaseModel):
 async def intake_questions_endpoint(request: IntakeQuestionsRequest):
     """Read an Intake Form's questions in order (ADR 047)."""
     try:
-        return {"questions": await asyncio.to_thread(read_questions, request.text, request.model, request.language)}
+        return {"questions": await asyncio.to_thread(
+            read_questions, request.text, request.model, request.language, request.abilities)}
     except RateLimitError:
         raise
     except Exception as e:

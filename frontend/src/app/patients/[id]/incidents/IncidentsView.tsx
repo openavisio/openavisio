@@ -197,7 +197,7 @@ export function IncidentsView({ patientId, incidents, medications, doses, rescue
           {draft && (
             <form onSubmit={save}>
               <DialogHeader><DialogTitle>{draft.id ? t("Edit") : t("Add")}</DialogTitle></DialogHeader>
-              <div className="space-y-3 px-6">
+              <div className="space-y-4 px-6 pt-5">
                 <label className="block text-sm font-medium">{t("Type")}
                   <select value={draft.incident_type} onChange={(e) => setDraft({ ...draft, incident_type: e.target.value as IncidentType })} className={inputCls}>
                     {TYPES.map((ty) => <option key={ty} value={ty}>{t(`types.${ty}`)}</option>)}
@@ -244,7 +244,7 @@ export function IncidentsView({ patientId, incidents, medications, doses, rescue
           {dose && (
             <form onSubmit={saveDose}>
               <DialogHeader><DialogTitle>{t("AddDose")}</DialogTitle></DialogHeader>
-              <div className="space-y-3 px-6">
+              <div className="space-y-4 px-6 pt-5">
                 <Fields t={td} draft={dose} setDraft={(d) => setDose({ ...d, incident_id: dose.incident_id })} medications={doseChoices} />
                 {error && <p className="text-sm text-destructive">{error}</p>}
               </div>

@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.common import OrmBase
+from app.schemas.development import AbilityObservationIn
 
 Aging = Literal["lasting", "changeable", "visit_only"]
 
@@ -44,6 +45,8 @@ class IntakeItemDto(BaseModel):
     passage: str | None
     confirmed: bool
     record_corrected: bool
+    ability: str | None = None
+    observation_id: uuid.UUID | None = None
 
 
 class IntakeFormDetailDto(IntakeFormDto):
@@ -55,6 +58,8 @@ class IntakeItemIn(BaseModel):
     answer: str | None = Field(None, max_length=5000)
     aging: Aging | None = None
     confirm: bool = False
+    # ADR 063: the answer to an ability question, kept as an Ability Observation
+    observation: AbilityObservationIn | None = None
 
 
 class HistoryFactDto(OrmBase):

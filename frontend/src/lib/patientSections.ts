@@ -13,6 +13,7 @@ import {
   MessageSquareText,
   ClipboardPen,
   Zap,
+  Sprout,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export const PATIENT_SECTIONS: { key: string; segment: string; Icon: LucideIcon;
   { key: "Incidents", segment: "incidents", Icon: Zap, tint: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400" },
   { key: "CareNotes", segment: "care-notes", Icon: HandHeart, tint: "bg-pink-500/10 text-pink-600 dark:text-pink-400" },
   { key: "CarerUpdates", segment: "carer-updates", Icon: MessageSquareText, tint: "bg-lime-500/10 text-lime-700 dark:text-lime-400" },
+  { key: "Development", segment: "development", Icon: Sprout, tint: "bg-green-500/10 text-green-700 dark:text-green-400" },
   { key: "IntakeForms", segment: "intake-forms", Icon: ClipboardPen, tint: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
   { key: "Documents", segment: "documents", Icon: FileText, tint: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
   { key: "Medications", segment: "medications", Icon: Pill, tint: "bg-orange-500/10 text-orange-600 dark:text-orange-400" },

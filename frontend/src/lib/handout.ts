@@ -7,6 +7,7 @@ export interface HandoutEntry {
   suspected: boolean;
   retold: boolean;
   items: { text: string; flag: string | null }[];
+  labels?: string[]; // ADR 063: words from the Development namespace
 }
 
 export const VARIANTS = ["doctors", "emergency", "steckbrief", "authorities"] as const;

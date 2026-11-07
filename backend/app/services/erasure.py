@@ -25,6 +25,7 @@ from app.models.emergency_plan import EmergencyPlan
 from app.models.care_notes import CareNotes
 from app.models.carer_update import CarerUpdate
 from app.models.dose import Dose
+from app.models.development import Ability, AbilityObservation, TestAttempt
 from app.models.expense import Expense
 from app.models.incident import Incident
 from app.models.intake import HistoryFact, IntakeForm
@@ -85,6 +86,8 @@ async def erase_patient(
     einst_ids   = await _collect(Einstufung, Einstufung.patient_id)
     carer_ids   = await _collect(CarerUpdate, CarerUpdate.patient_id)
     dose_ids    = await _collect(Dose, Dose.patient_id)
+    dev_ids     = (await _collect(AbilityObservation, AbilityObservation.patient_id)
+                   + await _collect(Ability, Ability.patient_id) + await _collect(TestAttempt, TestAttempt.patient_id))
     fact_ids    = await _collect(HistoryFact, HistoryFact.patient_id)
     form_ids    = [str(r.id) for r in forms]
     diary_ids   = await _collect(DiaryEntry, DiaryEntry.patient_id)
@@ -105,6 +108,10 @@ async def erase_patient(
     await db.execute(delete(Dose).where(Dose.patient_id == patient_id))
     await db.execute(delete(MedicationStatement).where(MedicationStatement.patient_id == patient_id))
     await db.execute(delete(Incident).where(Incident.patient_id == patient_id))
+    # Observations and Test Attempts before the Abilities and Documents they point at (ADR 063)
+    await db.execute(delete(AbilityObservation).where(AbilityObservation.patient_id == patient_id))
+    await db.execute(delete(Ability).where(Ability.patient_id == patient_id))
+    await db.execute(delete(TestAttempt).where(TestAttempt.patient_id == patient_id))
     await db.execute(delete(Expense).where(Expense.patient_id == patient_id))
     # a decision about a named person's care need is theirs (ADR 042)
     await db.execute(delete(Einstufung).where(Einstufung.patient_id == patient_id))
@@ -144,7 +151,7 @@ async def erase_patient(
     all_entity_ids = (
         [pid_str]
         + doc_ids + cond_ids + med_ids + obs_ids
-        + inc_ids + exp_ids + einst_ids + carer_ids + dose_ids + fact_ids + form_ids + diary_ids + cal_ids + feed_ids + rec_ids
+        + inc_ids + exp_ids + einst_ids + carer_ids + dose_ids + dev_ids + fact_ids + form_ids + diary_ids + cal_ids + feed_ids + rec_ids
         + share_ids + decline_ids + link_ids
     )
     await db.execute(delete(AuditLog).where(AuditLog.entity_id.in_(all_entity_ids)))

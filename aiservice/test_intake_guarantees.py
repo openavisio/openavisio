@@ -35,7 +35,14 @@ def test_unknown_kind_counts_as_judgement_and_unknown_aging_as_changeable():
     intake._ask = lambda prompt, model: {"questions": [
         {"text": "How does your child sleep?", "kind": "opinion", "aging": "forever"}, {"text": " "}]}
     assert intake.read_questions("form") == [
-        {"text": "How does your child sleep?", "section": None, "kind": "judgement", "aging": "changeable"}]
+        {"text": "How does your child sleep?", "section": None, "kind": "judgement", "aging": "changeable", "ability": None}]
+
+
+def test_only_a_fact_names_an_ability():
+    intake._ask = lambda prompt, model: {"questions": [
+        {"text": "When did your child first walk?", "kind": "fact", "aging": "lasting", "ability": " Walking "},
+        {"text": "Is walking age-appropriate?", "kind": "judgement", "ability": "Walking"}]}
+    assert [q["ability"] for q in intake.read_questions("form", abilities=["Walking"])] == ["Walking", None]
 
 
 if __name__ == "__main__":

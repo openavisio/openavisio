@@ -14,6 +14,7 @@ from app.models.emergency_plan import EmergencyPlan
 from app.models.care_notes import CareNotes
 from app.models.carer_update import CarerUpdate
 from app.models.dose import Dose
+from app.models.development import Ability, AbilityObservation, TestAttempt
 from app.models.expense import Expense
 from app.models.intake import HistoryFact, IntakeForm
 from app.models.diary import DiaryEntry, DiaryTemplate
@@ -56,6 +57,9 @@ __all__ = [
     "MedicationStatement",
     "DocumentReference",
     "Incident",
+    "Ability",
+    "AbilityObservation",
+    "TestAttempt",
     "Einstufung",
     "EmergencyPlan",
     "CareNotes",

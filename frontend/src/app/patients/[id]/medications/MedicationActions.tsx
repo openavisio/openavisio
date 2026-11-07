@@ -118,14 +118,14 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
             <DialogTitle>{t("StopTitle", { name: med.medication_display })}</DialogTitle>
             <DialogDescription>{t("StopHint")}</DialogDescription>
           </DialogHeader>
-          <div className="px-6">
+          <div className="px-6 pt-5">
             <label className="text-sm font-medium">{t("EndDate")}</label>
             <input
               type="date"
               value={stopDate}
               max={today()}
               onChange={(e) => setStopDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+              className="mt-1.5 block w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
             />
           </div>
           <DialogFooter>
@@ -149,13 +149,13 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
           <DialogHeader>
             <DialogTitle>{t("EditTitle")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 px-6">
+          <div className="space-y-4 px-6 pt-5">
             <div>
               <label className="text-sm font-medium">{t("Name")}</label>
               <input
                 value={form.medication_display}
                 onChange={(e) => setForm({ ...form, medication_display: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                className="mt-1.5 block w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
               />
             </div>
             <div>
@@ -164,7 +164,7 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
                 value={form.ingredient}
                 onChange={(e) => setForm({ ...form, ingredient: e.target.value })}
                 placeholder={t("IngredientPlaceholder")}
-                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                className="mt-1.5 block w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
               />
             </div>
             <div>
@@ -173,7 +173,7 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
                 value={form.dosage_text}
                 onChange={(e) => setForm({ ...form, dosage_text: e.target.value })}
                 placeholder="1-0-1, 300 mg"
-                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                className="mt-1.5 block w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
               />
             </div>
             <div className="flex gap-3">
@@ -183,7 +183,7 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
                   type="date"
                   value={form.effective_start}
                   onChange={(e) => setForm({ ...form, effective_start: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                  className="mt-1.5 block w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
                 />
               </div>
               <div className="flex-1">
@@ -192,7 +192,7 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
                   type="date"
                   value={form.effective_end}
                   onChange={(e) => setForm({ ...form, effective_end: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
+                  className="mt-1.5 block w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
                 />
               </div>
             </div>

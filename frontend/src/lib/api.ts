@@ -181,6 +181,17 @@ export const createIncident = async (patientId: string, data: S<"IncidentIn">) =
 export const updateIncident = async (id: string, data: S<"IncidentIn">) => api.put<S<"IncidentDto">>(`/api/incidents/${id}`, data);
 export const deleteIncident = async (id: string) => api.delete<void>(`/api/incidents/${id}`);
 
+// Development (ADR 063)
+export const getAbilities = async (patientId: string) => api.get<S<"AbilityDto">[]>(`/api/patients/${patientId}/abilities`);
+export const updateAbility = async (id: string, data: S<"AbilityIn">) => api.put<S<"AbilityDto">>(`/api/abilities/${id}`, data);
+export const createAbilityObservation = async (patientId: string, data: S<"AbilityObservationIn">) => api.post<S<"AbilityObservationDto">>(`/api/patients/${patientId}/ability-observations`, data);
+export const updateAbilityObservation = async (id: string, data: S<"AbilityObservationIn">) => api.put<S<"AbilityObservationDto">>(`/api/ability-observations/${id}`, data);
+export const deleteAbilityObservation = async (id: string) => api.delete<void>(`/api/ability-observations/${id}`);
+export const getTestAttempts = async (patientId: string) => api.get<S<"TestAttemptDto">[]>(`/api/patients/${patientId}/test-attempts`);
+export const createTestAttempt = async (patientId: string, data: S<"TestAttemptIn">) => api.post<S<"TestAttemptDto">>(`/api/patients/${patientId}/test-attempts`, data);
+export const updateTestAttempt = async (id: string, data: S<"TestAttemptIn">) => api.put<S<"TestAttemptDto">>(`/api/test-attempts/${id}`, data);
+export const deleteTestAttempt = async (id: string) => api.delete<void>(`/api/test-attempts/${id}`);
+
 // Calendar
 export const getCalendarFeed = async (patientId: string, params?: Record<string, string>) => {
   const q = params ? "?" + new URLSearchParams(params).toString() : "";
@@ -258,7 +269,8 @@ export const getShareLinks = async (patientId: string) => api.get<S<"ShareLinkDt
 // Intake Forms and History Facts (ADR 047); the upload goes through /api/intake-upload
 export const getIntakeForms = async (patientId: string) => api.get<IntakeForm[]>(`/api/patients/${patientId}/intake-forms`);
 export const getIntakeForm = async (id: string) => api.get<IntakeFormDetail>(`/api/intake-forms/${id}`);
-export const answerIntakeItem = async (id: string, index: number, body: { answer?: string | null; aging?: Aging; confirm?: boolean }) =>
+export type IntakeAnswer = { answer?: string | null; aging?: Aging; confirm?: boolean; observation?: S<"AbilityObservationIn"> };
+export const answerIntakeItem = async (id: string, index: number, body: IntakeAnswer) =>
   api.put<IntakeFormDetail>(`/api/intake-forms/${id}/items/${index}`, body);
 export const releaseIntakeForm = async (id: string) => api.post<IntakeFormDetail>(`/api/intake-forms/${id}/release`);
 export const reviseIntakeForm = async (id: string) => api.post<IntakeForm>(`/api/intake-forms/${id}/revise`);

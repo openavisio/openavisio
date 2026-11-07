@@ -33,7 +33,6 @@ router = APIRouter()
 # kept distinguishable from each other and from the clay primary.
 _TYPE_COLORS = {
     "appointment": "#4f7cac",
-    "milestone": "#c79a45",
     "deadline": "#b06a3b",  # a last date, not an appointment (ADR 041)
     "incident": "#c0503f",
     "diary": "#5f8a6b",
@@ -147,13 +146,12 @@ async def get_feed(
         ev_q = ev_q.where(CalendarEvent.start_at <= to)
     events = (await db.execute(ev_q)).scalars().all()
     for ev in events:
-        ev_type = ev.category if ev.category in ("milestone", "deadline") else "appointment"
+        ev_type = "deadline" if ev.category == "deadline" else "appointment"
         if not types or ev_type in types:
             if not q or q.lower() in ev.title.lower():
                 items.append(CalendarFeedItem(
                     id=ev.id, title=ev.title, start=ev.start_at, end=ev.end_at,
                     all_day=ev.all_day, type=ev_type, color=_TYPE_COLORS[ev_type],
-                    developmental_domain=ev.developmental_domain,
                 ))
 
     # Incidents

@@ -25,6 +25,7 @@ from app.models.document import DocumentReference
 from app.models.dose import Dose
 from app.models.emergency_plan import EmergencyPlan
 from app.models.incident import Incident
+from app.models.development import AbilityObservation, TestAttempt
 from app.models.intake import HistoryFact
 from app.models.medication import MedicationStatement
 from app.models.observation import Observation
@@ -203,6 +204,42 @@ async def _bundle(patient_id: uuid.UUID, db: AsyncSession) -> dict:
                 "event": {"text": inc.incident_type_display or inc.incident_type},
                 "date": inc.occurred_at,
                 "description": "\n".join(filter(None, [inc.actions_taken, inc.note])) or None,
+            },
+        })
+
+    # --- Abilities as Observations, Test Attempts as Procedures (ADR 063): no score, no interpretation ---
+    for o in (await db.execute(
+        select(AbilityObservation).where(AbilityObservation.patient_id == pid, AbilityObservation.is_deleted == False)  # noqa: E712
+    )).scalars().all():
+        entries.append({
+            "fullUrl": f"urn:uuid:{o.id}",
+            "resource": {
+                "resourceType": "Observation",
+                "id": str(o.id),
+                "status": "final",
+                "subject": _PATIENT_REF(pid),
+                "code": {"text": o.ability.name},
+                "effectiveDateTime": o.observed_on,
+                "valueBoolean": o.works,
+                "component": [{"code": {"text": "with help"}, "valueBoolean": o.with_help}]
+                + ([{"code": {"text": "place"}, "valueString": o.place}] if o.place else []),
+                **({"note": [{"text": o.note}]} if o.note else {}),
+            },
+        })
+    for t in (await db.execute(
+        select(TestAttempt).where(TestAttempt.patient_id == pid, TestAttempt.is_deleted == False)  # noqa: E712
+    )).scalars().all():
+        entries.append({
+            "fullUrl": f"urn:uuid:{t.id}",
+            "resource": {
+                "resourceType": "Procedure",
+                "id": str(t.id),
+                "status": {"completed": "completed", "stopped": "stopped"}.get(t.outcome, "not-done"),
+                "subject": _PATIENT_REF(pid),
+                "code": {"text": t.test_name},
+                "performedDateTime": t.attempted_on,
+                **({"statusReason": {"text": t.reason}} if t.reason else {}),
+                "outcome": {"text": t.outcome},
             },
         })
 

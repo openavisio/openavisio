@@ -249,3 +249,37 @@ async def test_a_document_passage_is_offered_and_becomes_a_fact_only_when_confir
     await client.put(f"/api/intake-forms/{form_id}/items/2", headers=h, json={"confirm": True})
     facts = (await client.get(f"/api/patients/{p.id}/history-facts", headers=h)).json()
     assert len(facts) == 1 and facts[0]["source"] == "document" and facts[0]["document_reference_id"] == str(doc.id)
+
+
+async def test_an_ability_answer_becomes_an_observation_not_a_history_fact(client, db, monkeypatch):
+    """ADR 063: "when did your child first walk?" is an Ability Observation from the Intake Form."""
+    import tests.test_intake_forms as me
+    monkeypatch.setattr(me, "QUESTIONS", QUESTIONS + [
+        {"text": "When did your child first walk?", "section": None, "kind": "fact", "aging": "lasting", "ability": "Walking"},
+        {"text": "Is walking age-appropriate?", "section": None, "kind": "judgement", "aging": "changeable", "ability": "Walking"},
+    ])
+    _, p, h = await _setup(db, client)
+    seen = []
+    form_id, items = await _read(client, db, h, p, monkeypatch, seen)
+    assert seen[0][1]["abilities"] == []
+    assert items[5]["ability"] == "Walking" and items[5]["answer"] is None
+    assert items[6]["ability"] is None
+
+    url = f"/api/intake-forms/{form_id}/items"
+    walk = {"ability_name": "Walking", "observed_on": "2021-03", "works": True, "with_help": False}
+    assert (await client.put(f"{url}/1", headers=h, json={"observation": walk})).status_code == 422
+    item = (await client.put(f"{url}/5", headers=h, json={"observation": walk})).json()["items"][5]
+    assert item["origin"] == "caregiver" and item["observation_id"] and item["answer"] == "Walking: works, on its own (2021-03)"
+    # corrected on the sheet: the same Observation changes, no second one
+    await client.put(f"{url}/5", headers=h, json={"observation": {**walk, "observed_on": "2021-04"}})
+    # in words only: kept on the sheet, never a History Fact
+    await client.put(f"{url}/5", headers=h, json={"answer": "around two"})
+
+    abilities = (await client.get(f"/api/patients/{p.id}/abilities", headers=h)).json()
+    assert [(a["name"], [(o["observed_on"], o["source"]) for o in a["observations"]]) for a in abilities] == [
+        ("Walking", [("2021-04", "intake_form")])]
+    assert (await client.get(f"/api/patients/{p.id}/history-facts", headers=h)).json() == []
+
+    seen = []
+    await _read(client, db, h, p, monkeypatch, seen)
+    assert seen[0][1]["abilities"] == ["Walking"]

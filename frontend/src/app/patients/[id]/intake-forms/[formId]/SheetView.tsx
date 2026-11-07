@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Check, Download, FilePlus2, Loader2, Pencil, Printer, RefreshCw, Send, Trash2 } from "lucide-react";
 import {
-  answerIntakeItem, deleteIntakeForm, releaseIntakeForm, retryIntakeForm, reviseIntakeForm,
+  answerIntakeItem, deleteIntakeForm, releaseIntakeForm, retryIntakeForm, reviseIntakeForm, type IntakeAnswer,
 } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { AGINGS, type Aging, type IntakeFormDetail, type IntakeItem } from "@/lib/intake";
@@ -15,6 +15,7 @@ import { STATUS_CLS } from "../IntakeFormsView";
 const inputCls = "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
 const btnCls = "inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50";
 const ghostCls = "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50";
+const thisMonth = () => new Date().toLocaleDateString("sv").slice(0, 7);
 
 export function SheetView({ patientId, form, children }: {
   patientId: string; form: IntakeFormDetail; children: React.ReactNode;
@@ -114,12 +115,20 @@ export function SheetView({ patientId, form, children }: {
 
 function ItemCard({ item, draft, pending, patientId, onSave }: {
   item: IntakeItem; draft: boolean; pending: boolean; patientId: string;
-  onSave: (body: { answer?: string | null; aging?: Aging; confirm?: boolean }) => void;
+  onSave: (body: IntakeAnswer) => void;
 }) {
   const t = useTranslations("IntakeForms");
+  const td = useTranslations("Development");
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(item.answer ?? "");
   const judgement = item.kind === "judgement";
+  // ADR 063: the family's answer to an ability question is an Ability Observation
+  const observed = !!item.ability && item.origin !== "record";
+  const [obs, setObs] = useState({ name: item.ability ?? "", month: "", works: true, withHelp: false });
+  const choice = (label: string, on: boolean, set: () => void) => (
+    <button type="button" onClick={set} aria-pressed={on}
+      className={`rounded-lg border px-3 py-1.5 text-sm ${on ? "border-primary bg-primary/10 font-medium" : "bg-background"}`}>{label}</button>
+  );
   const segments = [...new Set(item.sources.map((s) => s.segment).filter(Boolean))] as string[];
 
   return (
@@ -127,7 +136,7 @@ function ItemCard({ item, draft, pending, patientId, onSave }: {
       <div className="flex flex-wrap items-start gap-2">
         <p className="font-semibold">{item.text}</p>
         {judgement && <span className="rounded border px-1 text-xs text-muted-foreground">{t("Judgement")}</span>}
-        {draft && !judgement && (
+        {draft && !judgement && !item.ability && (
           <select value={item.aging} disabled={pending} aria-label={t("AgingLabel")}
             onChange={(e) => onSave({ aging: e.target.value as Aging })}
             className="ml-auto rounded border bg-background px-1 py-0.5 text-xs">
@@ -136,7 +145,32 @@ function ItemCard({ item, draft, pending, patientId, onSave }: {
         )}
       </div>
 
-      {editing ? (
+      {editing && observed ? (
+        <form className="mt-3 space-y-3" onSubmit={(e) => {
+          e.preventDefault();
+          onSave({ observation: { ability_name: obs.name, observed_on: obs.month, works: obs.works, with_help: obs.withHelp } });
+          setEditing(false);
+        }}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm font-medium">{td("Ability")}
+              <input required maxLength={256} value={obs.name} onChange={(e) => setObs({ ...obs, name: e.target.value })}
+                className={`mt-1.5 block ${inputCls}`} />
+            </label>
+            <label className="block text-sm font-medium">{td("Month")}
+              <input type="month" required max={thisMonth()} value={obs.month} onChange={(e) => setObs({ ...obs, month: e.target.value })}
+                className={`mt-1.5 block ${inputCls}`} />
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {choice(td("Works"), obs.works, () => setObs({ ...obs, works: true }))}{choice(td("Fails"), !obs.works, () => setObs({ ...obs, works: false }))}
+            {choice(td("Alone"), !obs.withHelp, () => setObs({ ...obs, withHelp: false }))}{choice(td("WithHelp"), obs.withHelp, () => setObs({ ...obs, withHelp: true }))}
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" disabled={pending || !obs.name.trim() || !obs.month} className={btnCls}>{t("Save")}</button>
+            <button type="button" onClick={() => setEditing(false)} className={ghostCls}>{t("Cancel")}</button>
+          </div>
+        </form>
+      ) : editing ? (
         <form className="mt-2 space-y-2" onSubmit={(e) => { e.preventDefault(); onSave({ answer: text }); setEditing(false); }}>
           <textarea autoFocus rows={2} className={inputCls} value={text} aria-label={t("Answer")}
             onChange={(e) => setText(e.target.value)} />
@@ -192,7 +226,12 @@ function ItemCard({ item, draft, pending, patientId, onSave }: {
             )}
           </div>
         )}
-        {item.origin === "caregiver" && !item.record_corrected && <p>{t("FromCaregiver")}</p>}
+        {observed && draft && !item.answer && <p>{t("AbilityHint")}</p>}
+        {item.observation_id ? (
+          <p>{t("SavedAsObservation")}{" "}
+            <Link href={`/patients/${patientId}/development`} className="underline">{t("ShowDevelopment")}</Link>
+          </p>
+        ) : item.origin === "caregiver" && !item.record_corrected && <p>{t("FromCaregiver")}</p>}
         {item.answer && !item.confirmed && <p>{t("Unconfirmed")}</p>}
         {item.record_corrected && (
           <p>{t("RecordCorrected")}{" "}

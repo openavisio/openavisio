@@ -61,12 +61,11 @@ def _token_of(url: str) -> str:
     return url.rsplit("/", 1)[-1].removesuffix(".ics")
 
 
-async def test_feed_serves_appointments_and_hides_milestones(client: AsyncClient, db: AsyncSession):
+async def test_feed_serves_appointments(client: AsyncClient, db: AsyncSession):
     u, p, _ = await _setup(db)
     h = await _auth(client)
     soon = (datetime.now(UTC) + timedelta(days=7)).date().isoformat()
     _add_event(db, p, u, "Neurologie", f"{soon}T09:30:00", provider="Dr. Müller", location="Tübingen")
-    _add_event(db, p, u, "Erste Schritte", soon, category=EventCategory.milestone)
     await db.commit()
 
     url = await _create_feed(client, p, h)
@@ -76,7 +75,6 @@ async def test_feed_serves_appointments_and_hides_milestones(client: AsyncClient
     body = r.text
 
     assert "Neurologie" in body
-    assert "Erste Schritte" not in body, "milestones are not appointments (ADR-037)"
     assert "Dr. Müller" in body and "Tübingen" in body
     # floating time: no Z, no TZID — 09:30 stays 09:30 wherever the subscriber is
     assert f"DTSTART:{soon.replace('-', '')}T093000" in body

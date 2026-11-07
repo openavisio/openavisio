@@ -47,6 +47,8 @@ from app.core.storage import get_storage  # noqa: E402
 from app.services.lab_codes import canonical_code, parse_reference_range  # noqa: E402
 from app.models.condition import ConditionSource  # noqa: E402
 from app.models import (  # noqa: E402
+    Ability,
+    AbilityObservation,
     CalendarEvent,
     CareNotes,
     Einstufung,
@@ -63,6 +65,7 @@ from app.models import (  # noqa: E402
     Patient,
     PatientAccess,
     Recommendation,
+    TestAttempt,
     User,
     UserRole,
 )
@@ -72,6 +75,24 @@ DOCS_DIR = Path(__file__).parent.parent / "docs" / "demo"
 # ──────────────────────────────────────────────────────────────
 # Demo data
 # ──────────────────────────────────────────────────────────────
+
+# ADR 063: what Anna, Lena's mother and the demo caregiver, saw, in her words. "Socken anziehen" works only at home, "Allein auf
+# die Toilette" no longer works since the February hospital stay (06_hospital_discharge).
+ABILITIES = [
+    ("Frei laufen", "motor", [("2021-02", "home", True, False, "Die ersten Schritte zu Papa im Wohnzimmer.")]),
+    ("Mit dem Löffel essen", "daily_living", [("2024-09", "home", True, True, None)]),
+    ("Socken anziehen", "daily_living", [
+        ("2026-02", "kita_school", False, False, "Beim Umziehen für den Sport, mit den anderen Kindern drumherum."),
+        ("2026-03", "home", True, False, None),
+    ]),
+    ("Allein auf die Toilette", "daily_living", [
+        ("2025-10", "home", True, False, None),
+        ("2026-03", "home", False, False, "Seit dem Klinikaufenthalt im Februar braucht sie wieder Erinnerung und Begleitung."),
+    ]),
+    ("Mit anderen Kindern spielen", "social", [
+        ("2025-11", "kita_school", True, True, "Mit der Schulbegleiterin in der Pause, zu zweit."),
+    ]),
+]
 
 CORRESPONDENTS = [
     "Hausarztpraxis Dr. Schmidt",
@@ -1038,6 +1059,23 @@ async def main() -> None:
                 **{f"module_{k}": v for k, v in ein.get("modules", {}).items()},
             ))
         print(f"  Einstufungen: {len(EINSTUFUNGEN)}")
+
+        for name, domain, observations in ABILITIES:
+            ability = Ability(patient_id=patient.id, owner_id=caregiver_user.id, name=name, domain=domain)
+            db.add(ability)
+            await db.flush()
+            for observed_on, place, works, with_help, note in observations:
+                db.add(AbilityObservation(
+                    patient_id=patient.id, owner_id=caregiver_user.id, ability_id=ability.id, observed_on=observed_on,
+                    place=place, works=works, with_help=with_help, note=note, source="family",
+                ))
+        # no score field: a stopped test has none, and a finished one keeps it in its report (ADR 063)
+        db.add(TestAttempt(
+            patient_id=patient.id, owner_id=caregiver_user.id, test_name="SON-R 2-8", attempted_on="2025-07",
+            correspondent_id=corr_map["St. Marien-Kinderklinik"].id, setting="clinic", duration_minutes=20,
+            outcome="stopped", reason="Nach 20 Minuten abgebrochen, Lena war erschöpft und hat die Aufgaben verweigert.",
+        ))
+        print(f"  Abilities: {len(ABILITIES)}, Test Attempts: 1")
 
         await db.commit()
 

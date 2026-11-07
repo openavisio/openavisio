@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.calendar import CalendarEvent, EventCategory
 from app.models.care_notes import HEADINGS as CARE_HEADINGS, CareNotes
 from app.models.carer_update import CarerUpdate
+from app.models.development import LABELS as DEV_LABELS, Ability, TestAttempt, no_longer
 from app.models.dose import Dose
 from app.models.condition import Condition
 from app.models.document import DocumentReference
@@ -30,13 +31,13 @@ CARE = [f"care_{h}" for h in CARE_HEADINGS]
 VARIANTS = {
     "doctors": dict.fromkeys(["allergies", "diagnoses_active", "diagnoses_resolved", "medications", "weight",
                               "incidents", "lab_results", "events", "correspondents", "documents"], True)
-    | {"carer_updates": False, "rescue_doses": False},  # ADR 049, 060: only the period the User picks
+    | {"carer_updates": False, "rescue_doses": False, "abilities": False, "test_attempts": False},  # ADR 049, 060, 063: only the period the User picks
     "emergency": dict.fromkeys(["allergies", "weight", "diagnoses_active", "medications", *PLAN, "correspondents"], True),
     "steckbrief": {"allergies": True, "diagnoses_active": False, "medications": True,
                    **dict.fromkeys(PLAN + CARE, True)},
     "authorities": dict.fromkeys(["allergies", "diagnoses_active", "diagnoses_resolved", "medications", "incidents_12m",
                                   "events", "einstufungen", "correspondents", "documents"], True)
-    | {"carer_updates": False},
+    | {"carer_updates": False, "abilities": False, "test_attempts": False},
 }
 ONE_PAGE = {"emergency"}
 
@@ -57,6 +58,7 @@ LABELS = {
         "correspondents": "Behandelnde Ärzte und Einrichtungen", "documents": "Dokumente (12 Monate)",
         "carer_updates": "Rückmeldungen von Betreuenden", "retold": "mündlich, nacherzählt",
         "rescue_doses": "Gaben von Notfallmedikamenten",
+        "abilities": "Fähigkeiten, wie beobachtet", "test_attempts": "Testversuche",
         "footer": "Aus OpenAvisio, nur von der Familie bestätigte Einträge, so wie erfasst.",
     },
     "en": {
@@ -75,14 +77,16 @@ LABELS = {
         "correspondents": "Treating doctors and facilities", "documents": "Documents (12 months)",
         "carer_updates": "Updates from carers", "retold": "retold, not word for word",
         "rescue_doses": "Doses of rescue medications",
+        "abilities": "Abilities, as observed", "test_attempts": "Test attempts",
         "footer": "From OpenAvisio, only entries the family confirmed, as recorded.",
     },
 }
 
 
-def _entry(id_, text, detail=None, when=None, suspected=False, retold=False, items=()) -> dict:
+def _entry(id_, text, detail=None, when=None, suspected=False, retold=False, items=(), labels=()) -> dict:
+    # labels: DEV_LABELS keys, worded in the reader's language when shown
     return {"id": id_, "text": text, "detail": detail, "date": when, "suspected": suspected, "retold": retold,
-            "items": list(items)}
+            "items": list(items), "labels": list(labels)}
 
 
 def _num(v: float) -> str:
@@ -149,7 +153,21 @@ async def build(patient_id: uuid.UUID, variant: str, db: AsyncSession) -> dict:
     rescue_doses = sorted((d for d in await rows(Dose) if d.medication_id in med_names
                            and (str(d.medication_id) in rescue or d.incident_id)), key=lambda d: d.given_at, reverse=True)
 
+    # ADR 063: single Observations as recorded, never summed up
+    observed = []
+    for a in await rows(Ability):
+        lapsed = no_longer(a.observations)
+        observed += [_entry(f"ability_observation:{o.id}", a.name, o.note, o.observed_on, labels=filter(None, [
+            "no_longer" if o.id in lapsed else "works" if o.works else "fails", "with_help" if o.with_help else "alone",
+            o.place, o.source if o.source != "family" else None]))
+            for o in a.observations if o.document_id is None or o.document_id in verified]
+    attempts = [_entry(f"test_attempt:{t.id}", t.test_name, ", ".join(filter(None, [
+        t.reason, t.correspondent and t.correspondent.name, t.duration_minutes and f"{t.duration_minutes} min"])) or None,
+        t.attempted_on, labels=filter(None, [t.outcome, t.setting])) for t in await rows(TestAttempt)]
+
     sections = {
+        "abilities": sorted(observed, key=lambda e: e["date"], reverse=True),
+        "test_attempts": sorted(attempts, key=lambda e: e["date"], reverse=True),
         "allergies": [dx(c) for c in conds if c.category == "allergy"],
         "diagnoses_active": [dx(c) for c in conds if c.category != "allergy" and c.clinical_status == "active"],
         "diagnoses_resolved": [dx(c) for c in conds if c.category != "allergy" and c.clinical_status in ("resolved", "remission")],
@@ -210,6 +228,8 @@ async def build(patient_id: uuid.UUID, variant: str, db: AsyncSession) -> dict:
 def _date(iso: str | None, lang: str) -> str:
     if not iso:
         return ""
+    if len(iso) == 7:  # a month is enough for an Ability Observation (ADR 063)
+        return escape(f"{iso[5:]}/{iso[:4]}" if lang == "de" else iso)
     try:
         d = date.fromisoformat(iso[:10])
     except ValueError:
@@ -232,6 +252,8 @@ def render_html(handout: dict, lang: str, exclude: set[str] = frozenset(), font_
                 bits.append(f'<span class="flag">{L["suspected"]}</span>')
             if e.get("retold"):
                 bits.append(f'<span class="flag">{L["retold"]}</span>')
+            if e.get("labels"):
+                bits.append(escape(", ".join(DEV_LABELS[lang][k] for k in e["labels"])))
             if e["detail"]:
                 bits.append(escape(e["detail"]))
             if e["date"]:

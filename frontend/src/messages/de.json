@@ -263,7 +263,8 @@
       "CareNotes": "Wie der Alltag gut gelingt",
       "CarerUpdates": "Was Kita, Schule und Betreuende berichten",
       "IntakeForms": "Arztfragebögen aus der Akte beantworten",
-      "Incidents": "Anfälle, Stürze und andere Vorfälle"
+      "Incidents": "Anfälle, Stürze und andere Vorfälle",
+      "Development": "Was euer Kind im Alltag kann"
     },
     "TodayAtGlance": "Heute auf einen Blick",
     "ShowAllAppointments": "Alle Termine anzeigen",
@@ -308,7 +309,8 @@
     "Creating": "Wird angelegt…",
     "CreateSubmit": "Patient anlegen",
     "CreateError": "Der Patient konnte nicht angelegt werden ({status}).",
-    "Created": "Patient angelegt."
+    "Created": "Patient angelegt.",
+    "Development": "Entwicklung"
   },
   "Admin": {
     "Title": "Administration",
@@ -515,25 +517,14 @@
     "StatusDeadlineDone": "Widerspruch eingelegt",
     "StatusDeadlineCancelled": "Kein Widerspruch",
     "Reopen": "Wieder öffnen",
-    "Milestone": "Meilenstein",
     "PrevMonth": "Vorheriger Monat",
     "NextMonth": "Nächster Monat",
     "LoadError": "Der Kalender konnte nicht geladen werden.",
     "More": "+{count} weitere",
     "NewEvent": "Neuer Termin",
-    "Domain": "Bereich",
-    "AchievedAt": "Alter",
-    "AgeYears": "{n, plural, one {# Jahr} other {# Jahre}}",
-    "AgeMonths": "{n, plural, one {# Monat} other {# Monate}}",
-    "Newborn": "Neugeboren",
     "ConfirmDelete": "Wirklich löschen",
     "DeleteError": "Löschen fehlgeschlagen. Bitte erneut versuchen.",
     "TitlePlaceholder": "z. B. Kinderarzt",
-    "DevDomain": "Entwicklungsbereich",
-    "Domain_motor": "Motorik",
-    "Domain_speech": "Sprache",
-    "Domain_cognitive": "Kognition",
-    "Domain_social": "Sozialverhalten",
     "ProviderPlaceholder": "z. B. Dr. Müller",
     "LocationPlaceholder": "z. B. Uniklinik",
     "PurposePlaceholder": "z. B. Vorsorgeuntersuchung"
@@ -1098,6 +1089,101 @@
       "other": "Sonstiges"
     }
   },
+  "Development": {
+    "Title": "Entwicklung",
+    "NotFound": "Patient nicht gefunden.",
+    "LoadError": "Die Entwicklung konnte nicht geladen werden.",
+    "SaveError": "Speichern hat nicht geklappt. Bitte noch einmal versuchen.",
+    "Intro": "Haltet fest, was euer Kind im Alltag kann, wann und wo. OpenAvisio bewertet nichts und vergleicht nicht mit dem Alter.",
+    "Abilities": "Fähigkeiten",
+    "AbilitiesEmpty": "Noch keine Fähigkeiten. Tragt die erste Beobachtung ein, zum Beispiel „Socken anziehen“.",
+    "AddObservation": "Beobachtung eintragen",
+    "AddObservationTo": "Beobachtung dazu",
+    "EditObservation": "Beobachtung bearbeiten",
+    "EditAbility": "Fähigkeit bearbeiten",
+    "Ability": "Fähigkeit",
+    "AbilityPlaceholder": "z. B. Socken anziehen, Löffel benutzen",
+    "Domain": "Bereich",
+    "NoDomain": "Ohne Bereich",
+    "NotGiven": "Nicht angegeben",
+    "ChooseOutcome": "Bitte wählen",
+    "DayPlaceholder": "TT",
+    "Month": "Monat",
+    "Day": "Tag (optional)",
+    "Place": "Wo",
+    "Result": "Ergebnis",
+    "Works": "Klappt",
+    "Fails": "Klappt nicht",
+    "Alone": "Allein",
+    "WithHelp": "Mit Hilfe",
+    "Note": "Notiz",
+    "EnteredBy": "eingetragen von {name}",
+    "History": "Verlauf",
+    "NameTaken": "Diesen Namen hat schon eine andere Fähigkeit.",
+    "TestAttempts": "Testversuche",
+    "TestAttemptsHint": "Auch ein abgebrochener oder verweigerter Test ist eine wichtige Angabe. Das Testergebnis selbst steht im Bericht.",
+    "TestAttemptsEmpty": "Noch keine Testversuche eingetragen.",
+    "AddTestAttempt": "Testversuch eintragen",
+    "EditTestAttempt": "Testversuch bearbeiten",
+    "TestName": "Test",
+    "TestNamePlaceholder": "z. B. SON-R 2-8",
+    "RanBy": "Durchgeführt von",
+    "RanByPlaceholder": "z. B. SPZ",
+    "Setting": "Umfeld",
+    "Duration": "Dauer (Minuten)",
+    "Minutes": "{n} Min.",
+    "Outcome": "Ergebnis",
+    "Reason": "Grund, in euren Worten",
+    "Report": "Bericht",
+    "NoReport": "Kein Bericht",
+    "OpenReport": "Bericht öffnen",
+    "MedicationsThatDay": "Medikamente an dem Tag: {names}",
+    "AgeThen": "mit {age}",
+    "Delete": "Löschen",
+    "DeleteConfirm": "Wirklich löschen",
+    "Cancel": "Abbrechen",
+    "Save": "Speichern",
+    "Saving": "Speichert …",
+    "Edit": "Bearbeiten",
+    "AgeYears": "{n, plural, one {# Jahr} other {# Jahre}}",
+    "AgeMonths": "{n, plural, one {# Monat} other {# Monate}}",
+    "Newborn": "Neugeboren",
+    "domains": {
+      "communication": "Kommunikation",
+      "daily_living": "Alltag",
+      "social": "Sozialverhalten",
+      "motor": "Motorik",
+      "learning": "Lernen"
+    },
+    "places": {
+      "home": "Zuhause",
+      "kita_school": "Kita oder Schule",
+      "therapy": "Therapie",
+      "out": "Unterwegs"
+    },
+    "settings": {
+      "clinic": "Klinik oder SPZ",
+      "practice": "Praxis",
+      "home": "Zuhause",
+      "kita_school": "Kita oder Schule"
+    },
+    "outcomes": {
+      "completed": "Durchgeführt",
+      "stopped": "Abgebrochen",
+      "refused": "Verweigert",
+      "not_attempted": "Nicht versucht"
+    },
+    "status": {
+      "works": "klappt",
+      "works_with_help": "klappt mit Hilfe",
+      "fails": "klappt nicht",
+      "no_longer": "klappt nicht mehr"
+    },
+    "sources": {
+      "intake_form": "laut Anamnesebogen",
+      "document": "laut Dokument"
+    }
+  },
   "CarerUpdates": {
     "Title": "Rückmeldungen",
     "NotFound": "Patient nicht gefunden.",
@@ -1164,7 +1250,9 @@
       "care_what_overwhelms": "Was überfordert",
       "incidents_12m": "Vorfälle der letzten 12 Monate (Anzahl)",
       "einstufungen": "Einstufungen (Pflegegrad)",
-      "rescue_doses": "Gaben von Notfallmedikamenten"
+      "rescue_doses": "Gaben von Notfallmedikamenten",
+      "abilities": "Fähigkeiten, wie beobachtet",
+      "test_attempts": "Testversuche"
     },
     "flag": {
       "medication_deleted": "Medikament nicht mehr in der Akte",
@@ -1182,7 +1270,31 @@
     "ShareCopyOnce": "Kopiere den Link jetzt, er wird nur einmal angezeigt. Das Infoblatt bleibt im Link so, wie es jetzt ist, auch wenn sich die Akte ändert.",
     "Copy": "Kopieren",
     "Copied": "Kopiert",
-    "ShareError": "Der Link konnte nicht erstellt werden. Freigabe-Links dürfen nur Betreuende und gesetzliche Vertreter erstellen."
+    "ShareError": "Der Link konnte nicht erstellt werden. Freigabe-Links dürfen nur Betreuende und gesetzliche Vertreter erstellen.",
+    "dev": {
+      "communication": "Kommunikation",
+      "daily_living": "Alltag",
+      "social": "Sozialverhalten",
+      "motor": "Motorik",
+      "learning": "Lernen",
+      "home": "zuhause",
+      "kita_school": "Kita/Schule",
+      "therapy": "Therapie",
+      "out": "unterwegs",
+      "clinic": "Klinik/SPZ",
+      "practice": "Praxis",
+      "completed": "durchgeführt",
+      "stopped": "abgebrochen",
+      "refused": "verweigert",
+      "not_attempted": "nicht versucht",
+      "works": "klappt",
+      "fails": "klappt nicht",
+      "no_longer": "klappt nicht mehr",
+      "alone": "allein",
+      "with_help": "mit Hilfe",
+      "intake_form": "laut Anamnesebogen",
+      "document": "laut Dokument"
+    }
   },
   "Einstufung": {
     "Title": "Pflegegrad",
@@ -1400,7 +1512,10 @@
     },
     "PrintTitle": "Anamnesebogen für {name}",
     "PrintBorn": "geboren am {date}",
-    "PrintAsOf": "Stand: {date}"
+    "PrintAsOf": "Stand: {date}",
+    "AbilityHint": "Deine Antwort wird als Beobachtung unter Entwicklung gespeichert.",
+    "SavedAsObservation": "Als Beobachtung unter Entwicklung gespeichert.",
+    "ShowDevelopment": "Ansehen"
   },
   "HistoryFacts": {
     "Title": "Vorgeschichte",

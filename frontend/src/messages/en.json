@@ -263,7 +263,8 @@
       "CareNotes": "How an ordinary day goes well",
       "CarerUpdates": "What the Kita, school and carers report",
       "IntakeForms": "Answer history forms from the record",
-      "Incidents": "Seizures, falls and other incidents"
+      "Incidents": "Seizures, falls and other incidents",
+      "Development": "What your child can do in everyday life"
     },
     "TodayAtGlance": "Today at a glance",
     "ShowAllAppointments": "Show all appointments",
@@ -308,7 +309,8 @@
     "Creating": "Creating…",
     "CreateSubmit": "Create patient",
     "CreateError": "Failed to create patient ({status}).",
-    "Created": "Patient created successfully."
+    "Created": "Patient created successfully.",
+    "Development": "Development"
   },
   "Admin": {
     "Title": "Administration",
@@ -515,25 +517,14 @@
     "StatusDeadlineDone": "Widerspruch raised",
     "StatusDeadlineCancelled": "No Widerspruch",
     "Reopen": "Reopen",
-    "Milestone": "Milestone",
     "PrevMonth": "Previous month",
     "NextMonth": "Next month",
     "LoadError": "Failed to load the calendar.",
     "More": "+{count} more",
     "NewEvent": "New event",
-    "Domain": "Domain",
-    "AchievedAt": "Achieved at",
-    "AgeYears": "{n, plural, one {# year} other {# years}}",
-    "AgeMonths": "{n, plural, one {# month} other {# months}}",
-    "Newborn": "Newborn",
     "ConfirmDelete": "Confirm delete",
     "DeleteError": "Failed to delete. Please try again.",
     "TitlePlaceholder": "e.g. GP appointment",
-    "DevDomain": "Developmental domain",
-    "Domain_motor": "Motor",
-    "Domain_speech": "Speech",
-    "Domain_cognitive": "Cognitive",
-    "Domain_social": "Social",
     "ProviderPlaceholder": "e.g. Dr. Smith",
     "LocationPlaceholder": "e.g. City Hospital",
     "PurposePlaceholder": "e.g. Annual checkup"
@@ -1098,6 +1089,101 @@
       "other": "Other"
     }
   },
+  "Development": {
+    "Title": "Development",
+    "NotFound": "Patient not found.",
+    "LoadError": "Development could not be loaded.",
+    "SaveError": "Saving did not work. Please try again.",
+    "Intro": "Note what your child can do in everyday life, when and where. OpenAvisio judges nothing and compares nothing with age.",
+    "Abilities": "Abilities",
+    "AbilitiesEmpty": "No abilities yet. Add the first observation, for example “putting on socks”.",
+    "AddObservation": "Add observation",
+    "AddObservationTo": "Add observation",
+    "EditObservation": "Edit observation",
+    "EditAbility": "Edit ability",
+    "Ability": "Ability",
+    "AbilityPlaceholder": "e.g. putting on socks, using a spoon",
+    "Domain": "Domain",
+    "NoDomain": "No domain",
+    "NotGiven": "Not given",
+    "ChooseOutcome": "Please choose",
+    "DayPlaceholder": "DD",
+    "Month": "Month",
+    "Day": "Day (optional)",
+    "Place": "Where",
+    "Result": "Result",
+    "Works": "Works",
+    "Fails": "Does not work",
+    "Alone": "On its own",
+    "WithHelp": "With help",
+    "Note": "Note",
+    "EnteredBy": "entered by {name}",
+    "History": "History",
+    "NameTaken": "Another ability already has this name.",
+    "TestAttempts": "Test attempts",
+    "TestAttemptsHint": "A stopped or refused test is worth recording too. The score itself is in the report.",
+    "TestAttemptsEmpty": "No test attempts yet.",
+    "AddTestAttempt": "Add test attempt",
+    "EditTestAttempt": "Edit test attempt",
+    "TestName": "Test",
+    "TestNamePlaceholder": "e.g. SON-R 2-8",
+    "RanBy": "Run by",
+    "RanByPlaceholder": "e.g. SPZ",
+    "Setting": "Setting",
+    "Duration": "Duration (minutes)",
+    "Minutes": "{n} min",
+    "Outcome": "Outcome",
+    "Reason": "Reason, in your words",
+    "Report": "Report",
+    "NoReport": "No report",
+    "OpenReport": "Open report",
+    "MedicationsThatDay": "Medication that day: {names}",
+    "AgeThen": "aged {age}",
+    "Delete": "Delete",
+    "DeleteConfirm": "Really delete",
+    "Cancel": "Cancel",
+    "Save": "Save",
+    "Saving": "Saving …",
+    "Edit": "Edit",
+    "AgeYears": "{n, plural, one {# year} other {# years}}",
+    "AgeMonths": "{n, plural, one {# month} other {# months}}",
+    "Newborn": "Newborn",
+    "domains": {
+      "communication": "Communication",
+      "daily_living": "Daily living",
+      "social": "Social",
+      "motor": "Motor",
+      "learning": "Learning"
+    },
+    "places": {
+      "home": "At home",
+      "kita_school": "Kita or school",
+      "therapy": "Therapy",
+      "out": "Out and about"
+    },
+    "settings": {
+      "clinic": "Clinic or SPZ",
+      "practice": "Practice",
+      "home": "At home",
+      "kita_school": "Kita or school"
+    },
+    "outcomes": {
+      "completed": "Completed",
+      "stopped": "Stopped",
+      "refused": "Refused",
+      "not_attempted": "Not attempted"
+    },
+    "status": {
+      "works": "works",
+      "works_with_help": "works with help",
+      "fails": "does not work",
+      "no_longer": "no longer works"
+    },
+    "sources": {
+      "intake_form": "per intake form",
+      "document": "per document"
+    }
+  },
   "CarerUpdates": {
     "Title": "Carer updates",
     "NotFound": "Patient not found.",
@@ -1164,7 +1250,9 @@
       "care_what_overwhelms": "What overwhelms",
       "incidents_12m": "Incidents in the last 12 months (count)",
       "einstufungen": "Care assessments (Pflegegrad)",
-      "rescue_doses": "Doses of rescue medications"
+      "rescue_doses": "Doses of rescue medications",
+      "abilities": "Abilities, as observed",
+      "test_attempts": "Test attempts"
     },
     "flag": {
       "medication_deleted": "medication no longer in the record",
@@ -1182,7 +1270,31 @@
     "ShareCopyOnce": "Copy the link now, it is shown only once. The handout stays in the link as it is now, even if the record changes.",
     "Copy": "Copy",
     "Copied": "Copied",
-    "ShareError": "The link could not be created. Only caregivers and legal representatives may create share links."
+    "ShareError": "The link could not be created. Only caregivers and legal representatives may create share links.",
+    "dev": {
+      "communication": "Communication",
+      "daily_living": "Daily living",
+      "social": "Social",
+      "motor": "Motor",
+      "learning": "Learning",
+      "home": "at home",
+      "kita_school": "Kita/school",
+      "therapy": "therapy",
+      "out": "out and about",
+      "clinic": "clinic/SPZ",
+      "practice": "practice",
+      "completed": "completed",
+      "stopped": "stopped",
+      "refused": "refused",
+      "not_attempted": "not attempted",
+      "works": "works",
+      "fails": "does not work",
+      "no_longer": "no longer works",
+      "alone": "on its own",
+      "with_help": "with help",
+      "intake_form": "per intake form",
+      "document": "per document"
+    }
   },
   "Einstufung": {
     "Title": "Pflegegrad",
@@ -1400,7 +1512,10 @@
     },
     "PrintTitle": "Intake form for {name}",
     "PrintBorn": "born {date}",
-    "PrintAsOf": "As of {date}"
+    "PrintAsOf": "As of {date}",
+    "AbilityHint": "Your answer is saved as an observation under Development.",
+    "SavedAsObservation": "Saved as an observation under Development.",
+    "ShowDevelopment": "View"
   },
   "HistoryFacts": {
     "Title": "History",

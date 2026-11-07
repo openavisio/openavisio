@@ -101,6 +101,17 @@ test("login, open a patient, and keep navigating", async ({ page, request }) => 
     .toBeVisible({ timeout: 15_000 });
   await page.goBack();
 
+  // Development tab (ADR 063): record one Observation and see it under its Ability. A rerun
+  // against the same dev seed adds to the same Ability, so this holds on a second run too.
+  await page.locator('a[href$="/development"]').first().click();
+  await page.waitForURL(/\/development$/);
+  await page.getByRole("button", { name: /Beobachtung eintragen|Add observation/ }).click({ timeout: 15_000 });
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel(/^(Fähigkeit|Ability)$/).fill("Socken anziehen");
+  await dialog.getByRole("button", { name: /^(Speichern|Save)$/ }).click();
+  await expect(page.locator("summary", { hasText: "Socken anziehen" })).toBeVisible({ timeout: 15_000 });
+  await page.goBack();
+
   // Intake Forms (ADR 047): its own upload route, then the sheet page. CI runs no
   // worker, so the form stays in "reading"; that state rendering is the assertion.
   await page.locator('a[href$="/intake-forms"]').first().click();

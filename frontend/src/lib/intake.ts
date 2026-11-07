@@ -27,6 +27,8 @@ export interface IntakeItem {
   passage: string | null;
   confirmed: boolean;
   record_corrected: boolean;
+  ability?: string | null; // ADR 063: answered as an Ability Observation
+  observation_id?: string | null;
 }
 
 export interface IntakeFormDetail extends IntakeForm {

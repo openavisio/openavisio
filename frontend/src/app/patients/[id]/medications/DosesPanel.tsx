@@ -13,7 +13,7 @@ type Medication = S<"MedicationDto">;
 type Dose = S<"DoseDto">;
 export type Draft = { id?: string; medication_id: string; when: string; other: boolean; given_by: string; amount: string; note: string };
 
-export const inputCls = "mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm";
+export const inputCls = "mt-1.5 block w-full rounded-lg border border-input bg-card px-3 py-2 text-sm";
 const chipCls = "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-800 dark:text-emerald-300";
 // local wall time (ADR 060)
 export const now = () => new Date().toLocaleString("sv").slice(0, 16).replace(" ", "T");
@@ -153,7 +153,7 @@ export function DosesPanel({ patientId, medications, doses }: { patientId: strin
               <DialogHeader>
                 <DialogTitle>{draft.id ? t("EditTitle") : t("NewTitle")}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3 px-6">
+              <div className="space-y-4 px-6 pt-5">
                 <Fields t={t} draft={draft} setDraft={setDraft} medications={draft.id ? medications : active} />
               </div>
               <DialogFooter>
@@ -203,7 +203,7 @@ export function Fields({ t, draft, setDraft, medications, when = true }: {
       )}
       <fieldset className="text-sm">
         <legend className="font-medium">{t("GivenBy")}</legend>
-        <div className="mt-1 flex gap-4">
+        <div className="mt-1.5 flex gap-4">
           <label className="flex items-center gap-1.5"><input type="radio" checked={!draft.other} onChange={() => set({ other: false })} />{t("Me")}</label>
           <label className="flex items-center gap-1.5"><input type="radio" checked={draft.other} onChange={() => set({ other: true })} />{t("Someone")}</label>
         </div>
@@ -262,7 +262,7 @@ function CatchUp({ t, medications, doses, pending, error, onClose, onSave }: {
             <DialogTitle>{t("CatchUpTitle")}</DialogTitle>
             <DialogDescription>{t("CatchUpHint")}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 px-6">
+          <div className="space-y-4 px-6 pt-5">
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-sm font-medium">{t("From")}
                 <input type="date" required value={range.from} max={limit.slice(0, 10)} onChange={(e) => setRange({ ...range, from: e.target.value })} className={inputCls} />
@@ -273,7 +273,7 @@ function CatchUp({ t, medications, doses, pending, error, onClose, onSave }: {
             </div>
             <fieldset className="text-sm">
               <legend className="font-medium">{t("Times")}</legend>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 {times.map((tm, i) => (
                   <span key={i} className="inline-flex items-center gap-1">
                     <input type="time" required value={tm} aria-label={t("Times")} className="rounded-lg border border-input bg-card px-2 py-1"

@@ -23,7 +23,7 @@ export default async function CalendarPage({
         crumbs={patient ? [{ label: `${patient.given_name} ${patient.family_name}`, href: `/patients/${id}` }] : []}
         current={tp("Calendar")}
       />
-      <CalendarGrid patientId={id} birthDate={patient?.birth_date} initialMonth={month} />
+      <CalendarGrid patientId={id} initialMonth={month} />
       <div className="mt-6">
         <CalendarFeedPanel patientId={id} />
       </div>

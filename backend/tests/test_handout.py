@@ -152,7 +152,7 @@ async def test_every_doctor_section_but_the_by_period_ones_is_preselected(client
     _, p = await _setup(db)
     h = await _auth(client)
     body = (await client.get(f"/api/patients/{p.id}/handouts/doctors", headers=h)).json()
-    assert {s["key"] for s in body["sections"] if not s["preselected"]} == {"carer_updates", "rescue_doses"}  # ADR 049, 060
+    assert {s["key"] for s in body["sections"] if not s["preselected"]} == {"carer_updates", "rescue_doses", "abilities", "test_attempts"}  # ADR 049, 060, 063
 
 
 async def test_a_suspected_diagnosis_stays_marked(client: AsyncClient, db: AsyncSession):

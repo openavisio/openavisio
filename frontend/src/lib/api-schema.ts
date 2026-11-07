@@ -665,6 +665,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/patients/{patient_id}/abilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Abilities */
+        get: operations["list_abilities_api_patients__patient_id__abilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/patients/{patient_id}/ability-observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Observation */
+        post: operations["create_observation_api_patients__patient_id__ability_observations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ability-observations/{observation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Observation */
+        put: operations["update_observation_api_ability_observations__observation_id__put"];
+        post?: never;
+        /** Delete Observation */
+        delete: operations["delete_observation_api_ability_observations__observation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/abilities/{ability_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Ability */
+        put: operations["update_ability_api_abilities__ability_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/patients/{patient_id}/test-attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Test Attempts */
+        get: operations["list_test_attempts_api_patients__patient_id__test_attempts_get"];
+        put?: never;
+        /** Create Test Attempt */
+        post: operations["create_test_attempt_api_patients__patient_id__test_attempts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test-attempts/{attempt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Test Attempt */
+        put: operations["update_test_attempt_api_test_attempts__attempt_id__put"];
+        post?: never;
+        /** Delete Test Attempt */
+        delete: operations["delete_test_attempt_api_test_attempts__attempt_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/patients/{patient_id}/einstufungen": {
         parameters: {
             query?: never;
@@ -2602,6 +2707,82 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AbilityDto */
+        AbilityDto: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Domain */
+            domain: string | null;
+            /** Can Edit */
+            can_edit: boolean;
+            /** Observations */
+            observations: components["schemas"]["AbilityObservationDto"][];
+        };
+        /** AbilityIn */
+        AbilityIn: {
+            /** Name */
+            name: string;
+            /** Domain */
+            domain?: ("communication" | "daily_living" | "social" | "motor" | "learning") | null;
+        };
+        /** AbilityObservationDto */
+        AbilityObservationDto: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Ability Id
+             * Format: uuid
+             */
+            ability_id: string;
+            /** Observed On */
+            observed_on: string;
+            /** Place */
+            place: string | null;
+            /** Works */
+            works: boolean;
+            /** With Help */
+            with_help: boolean;
+            /** No Longer */
+            no_longer: boolean;
+            /** Note */
+            note: string | null;
+            /** Source */
+            source: string;
+            /** Document Id */
+            document_id: string | null;
+            /** Entered By */
+            entered_by: string;
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /** AbilityObservationIn */
+        AbilityObservationIn: {
+            /** Ability Name */
+            ability_name: string;
+            /** Domain */
+            domain?: ("communication" | "daily_living" | "social" | "motor" | "learning") | null;
+            /** Observed On */
+            observed_on: string;
+            /** Place */
+            place?: ("home" | "kita_school" | "therapy" | "out") | null;
+            /** Works */
+            works: boolean;
+            /**
+             * With Help
+             * @default false
+             */
+            with_help?: boolean;
+            /** Note */
+            note?: string | null;
+        };
         /** AdminGroupDto */
         AdminGroupDto: {
             /**
@@ -2776,7 +2957,6 @@ export interface components {
             status?: "scheduled" | "done" | "cancelled";
             /** @default appointment */
             category?: components["schemas"]["EventCategory"];
-            developmental_domain?: components["schemas"]["DevelopmentalDomain"] | null;
         };
         /** CalendarEventDto */
         CalendarEventDto: {
@@ -2812,8 +2992,6 @@ export interface components {
             status: string;
             /** Category */
             category: string;
-            /** Developmental Domain */
-            developmental_domain: string | null;
             /**
              * Created At
              * Format: date-time
@@ -2848,7 +3026,6 @@ export interface components {
              */
             status?: "scheduled" | "done" | "cancelled";
             category?: components["schemas"]["EventCategory"] | null;
-            developmental_domain?: components["schemas"]["DevelopmentalDomain"] | null;
         };
         /** CalendarFeedCreatedDto */
         CalendarFeedCreatedDto: {
@@ -2917,8 +3094,6 @@ export interface components {
             color: string;
             /** Url */
             url: string | null;
-            /** Developmental Domain */
-            developmental_domain: string | null;
             /** Classification */
             classification: string | null;
         };
@@ -3374,11 +3549,6 @@ export interface components {
             /** Condition Id */
             condition_id?: string | null;
         };
-        /**
-         * DevelopmentalDomain
-         * @enum {string}
-         */
-        DevelopmentalDomain: "motor" | "speech" | "cognitive" | "social";
         /** DiaryEntryCreateRequest */
         DiaryEntryCreateRequest: {
             /** Entry Date */
@@ -3884,7 +4054,7 @@ export interface components {
          * EventCategory
          * @enum {string}
          */
-        EventCategory: "appointment" | "milestone" | "deadline";
+        EventCategory: "appointment" | "deadline";
         /** ExpenseCreateRequest */
         ExpenseCreateRequest: {
             /** Amount */
@@ -4324,6 +4494,10 @@ export interface components {
             confirmed: boolean;
             /** Record Corrected */
             record_corrected: boolean;
+            /** Ability */
+            ability: string | null;
+            /** Observation Id */
+            observation_id: string | null;
         };
         /**
          * IntakeItemIn
@@ -4339,6 +4513,7 @@ export interface components {
              * @default false
              */
             confirm?: boolean;
+            observation?: components["schemas"]["AbilityObservationIn"] | null;
         };
         /** IntakeSourceDto */
         IntakeSourceDto: {
@@ -5469,6 +5644,60 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** TestAttemptDto */
+        TestAttemptDto: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Test Name */
+            test_name: string;
+            /** Attempted On */
+            attempted_on: string;
+            /** Correspondent Id */
+            correspondent_id: string | null;
+            /** Correspondent Name */
+            correspondent_name: string | null;
+            /** Setting */
+            setting: string | null;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Outcome */
+            outcome: string;
+            /** Reason */
+            reason: string | null;
+            /** Document Id */
+            document_id: string | null;
+            /** Medications */
+            medications: string[];
+            /** Entered By */
+            entered_by: string;
+            /** Can Edit */
+            can_edit: boolean;
+        };
+        /** TestAttemptIn */
+        TestAttemptIn: {
+            /** Test Name */
+            test_name: string;
+            /** Attempted On */
+            attempted_on: string;
+            /** Correspondent Id */
+            correspondent_id?: string | null;
+            /** Setting */
+            setting?: ("clinic" | "practice" | "home" | "kita_school") | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "completed" | "stopped" | "refused" | "not_attempted";
+            /** Reason */
+            reason?: string | null;
+            /** Document Id */
+            document_id?: string | null;
         };
         /** UpdateAccessRequest */
         UpdateAccessRequest: {
@@ -7138,6 +7367,301 @@ export interface operations {
             header?: never;
             path: {
                 incident_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_abilities_api_patients__patient_id__abilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbilityDto"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_observation_api_patients__patient_id__ability_observations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbilityObservationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbilityObservationDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_observation_api_ability_observations__observation_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbilityObservationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbilityObservationDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_observation_api_ability_observations__observation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                observation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ability_api_abilities__ability_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ability_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbilityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AbilityDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_test_attempts_api_patients__patient_id__test_attempts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestAttemptDto"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_test_attempt_api_patients__patient_id__test_attempts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestAttemptIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestAttemptDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_test_attempt_api_test_attempts__attempt_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attempt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestAttemptIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestAttemptDto"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_test_attempt_api_test_attempts__attempt_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attempt_id: string;
             };
             cookie?: never;
         };

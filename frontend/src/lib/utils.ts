@@ -32,3 +32,14 @@ export function statusBadgeColor(status: string): string {
   };
   return map[status?.toLowerCase()] ?? "bg-gray-100 text-gray-800";
 }
+
+/** Age in years and months on a date (YYYY-MM or YYYY-MM-DD); a month-only date ignores the day. */
+export function ageAt(birth?: string | null, at?: string | null): { y: number; m: number } | null {
+  if (!birth || !at) return null;
+  const [by, bm, bd] = birth.slice(0, 10).split("-").map(Number);
+  const [ay, am, ad] = at.slice(0, 10).split("-").map(Number);
+  if (!by || !bm || !ay || !am) return null;
+  let months = (ay - by) * 12 + (am - bm);
+  if (ad && bd && ad < bd) months -= 1;
+  return months < 0 ? null : { y: Math.floor(months / 12), m: months % 12 };
+}

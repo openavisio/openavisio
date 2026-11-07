@@ -23,9 +23,14 @@ For each item decide "aging", how long its answer stays true:
 - "visit_only": about this visit only. Reason for the visit, current complaints, who referred, what the family expects from the appointment.
 - In doubt, "changeable".
 
+For each "fact" item decide "ability" (ADR 063):
+- When the item asks whether the child can do something, or when it first did it (walking, first words, eating with a spoon, getting dressed, using the toilet), give a short name for that ability in the form's language, like "Frei laufen" or "Erste Worte".
+- If one of the KNOWN ABILITIES below means the same, use that name exactly.
+- Otherwise, and for every "judgement" item, null.
+
 Return ONLY valid JSON with this exact structure (no markdown, no explanation):
 {
   "questions": [
-    {"text": "question as printed", "section": "heading or null", "kind": "fact or judgement", "aging": "lasting, changeable or visit_only"}
+    {"text": "question as printed", "section": "heading or null", "kind": "fact or judgement", "aging": "lasting, changeable or visit_only", "ability": "short name or null"}
   ]
 }

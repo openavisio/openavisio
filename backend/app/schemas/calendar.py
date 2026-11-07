@@ -2,9 +2,9 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict
 
-from app.models.calendar import DevelopmentalDomain, EventCategory
+from app.models.calendar import EventCategory
 from app.schemas.common import OrmBase
 
 
@@ -22,7 +22,6 @@ class CalendarEventDto(OrmBase):
     source: str
     status: str
     category: str
-    developmental_domain: str | None
     created_at: datetime
 
 
@@ -44,13 +43,6 @@ class CalendarEventCreateRequest(BaseModel):
     # the credibility of every later reminder.
     status: Literal["scheduled", "done", "cancelled"] = "scheduled"
     category: EventCategory = EventCategory.appointment
-    developmental_domain: DevelopmentalDomain | None = None
-
-    @model_validator(mode="after")
-    def _domain_only_for_milestone(self):
-        if self.developmental_domain is not None and self.category not in (None, EventCategory.milestone):
-            raise ValueError("developmental_domain is only valid for milestone events")
-        return self
 
 
 class CalendarEventUpdateRequest(CalendarEventCreateRequest):
@@ -68,7 +60,6 @@ class CalendarFeedItem(BaseModel):
     type: str
     color: str
     url: str | None = None
-    developmental_domain: str | None = None
     # documents: the class slug (lab_report, doctor_letter, …) so the client can
     # show "Arztbrief · Diak Klinikum" instead of img20240405_08273634.pdf
     classification: str | None = None

@@ -10,16 +10,20 @@ import { downloadHandoutPdf } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import type { Handout } from "@/lib/handout";
 
-// ADR 049, 060: one period for both
-const BY_PERIOD = new Set(["carer_updates", "rescue_doses"]);
+// ADR 049, 060, 063: one period for all
+const BY_PERIOD = new Set(["carer_updates", "rescue_doses", "abilities", "test_attempts"]);
 
 function within(date: string | null, p: { from: string; to: string }) {
-  return !!date && !!p.from && !!p.to && date.slice(0, 10) >= p.from && date.slice(0, 10) <= p.to;
+  if (!date || !p.from || !p.to) return false;
+  // a month-only Observation counts when its month touches the period
+  const n = Math.min(date.length, 10);
+  return date.slice(0, n) >= p.from.slice(0, n) && date.slice(0, n) <= p.to.slice(0, n);
 }
 
 export function HandoutPreview({ patientId, handout, children }: { patientId: string; handout: Handout; children: React.ReactNode }) {
   const t = useTranslations("Handout");
   const ti = useTranslations("Incidents");
+  const td = useTranslations("Handout.dev");
   // ADR 062: an Incident without its own word shows the type in the reader's language
   const entryText = (e: { id: string; text: string }) =>
     e.id.startsWith("incident:") && (TYPES as string[]).includes(e.text) ? ti(`types.${e.text}`) : e.text;
@@ -182,8 +186,13 @@ export function HandoutPreview({ patientId, handout, children }: { patientId: st
                         <span className="ml-1.5 rounded border border-amber-600 px-1 text-xs text-amber-700 dark:text-amber-400">{t("Suspected")}</span>
                       )}
                       {e.retold && <span className="ml-1.5 rounded border px-1 text-xs text-muted-foreground">{t("Retold")}</span>}
+                      {!!e.labels?.length && <span> {e.labels.map((l) => td(l)).join(", ")}</span>}
                       {e.detail && <span> {e.detail}</span>}
-                      {e.date && <span className="text-muted-foreground"> {formatDate(e.date, locale)}</span>}
+                      {e.date && (
+                        <span className="text-muted-foreground"> {e.date.length === 7
+                          ? new Date(`${e.date}-15T12:00`).toLocaleDateString(locale, { month: "long", year: "numeric" })
+                          : formatDate(e.date, locale)}</span>
+                      )}
                       {e.items.length > 0 && (
                         <ol className="mt-1 list-decimal pl-5">
                           {e.items.map((i, n) => (

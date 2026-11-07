@@ -35,21 +35,27 @@ def _ask(prompt: str, model: str | None) -> dict:
             logger.warning("Intake call returned invalid JSON, retrying once")
 
 
-def read_questions(text: str, model: str | None = None, language: str = "en") -> list[dict]:
+def read_questions(text: str, model: str | None = None, language: str = "en",
+                   abilities: list[str] = ()) -> list[dict]:
     lang = _LANGUAGE_NAMES.get(language, "English")
     prompt = (f"JSON keys and the values of kind and aging stay in English; the question text stays in the "
               f"form's language (the family reads {lang}).\n\n{QUESTIONS_PROMPT}\n\n"
+              f"--- KNOWN ABILITIES ---\n{chr(10).join(abilities) or '(none)'}\n--- END ---\n\n"
               f"--- FORM TEXT ---\n{text}\n--- END ---")
     out = []
     for q in _ask(prompt, model).get("questions") or []:
         if not isinstance(q, dict) or not str(q.get("text") or "").strip():
             continue
+        kind = "fact" if q.get("kind") == "fact" else "judgement"
+        ability = str(q.get("ability") or "").strip()[:256] if kind == "fact" else ""
         out.append({
             "text": str(q["text"]).strip(),
             "section": (str(q.get("section") or "").strip() or None),
             # in doubt a judgement (GLOSSARY, Intake Form)
-            "kind": "fact" if q.get("kind") == "fact" else "judgement",
+            "kind": kind,
             "aging": q.get("aging") if q.get("aging") in AGINGS else "changeable",
+            # ADR 063: answered as an Ability Observation, never as a History Fact
+            "ability": ability or None,
         })
     return out
 

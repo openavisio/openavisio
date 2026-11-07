@@ -18,6 +18,7 @@ from app.routers import (
     correspondents,
     dashboard,
     dev,
+    development,
     diary,
     documents,
     proposals,
@@ -82,6 +83,7 @@ app.include_router(observations.router, prefix="/api", tags=["observations"])
 app.include_router(documents.router, prefix="/api", tags=["documents"])
 app.include_router(proposals.router, prefix="/api", tags=["proposals"])
 app.include_router(incidents.router, prefix="/api", tags=["incidents"])
+app.include_router(development.router, prefix="/api", tags=["development"])
 app.include_router(einstufungen.router, prefix="/api", tags=["einstufungen"])
 app.include_router(emergency_plan.router, prefix="/api", tags=["emergency-plan"])
 app.include_router(care_notes.router, prefix="/api", tags=["care-notes"])

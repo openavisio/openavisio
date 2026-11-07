@@ -9,40 +9,24 @@ import { getCalendarFeed, getCalendarEvent, createCalendarEvent, updateCalendarE
 
 type FeedItem = S<"CalendarFeedItem">;
 
-const DOMAINS = ["motor", "speech", "cognitive", "social"] as const;
-
 // A deadline is a last date, not an appointment — ADR 041.
-const CATEGORIES = ["appointment", "milestone", "deadline"] as const;
+const CATEGORIES = ["appointment", "deadline"] as const;
 
 // The pill showed the raw category name, so a German record said "Deadline".
 const TYPE_LABEL = (t: (k: string) => string, type: string) =>
-  ({ appointment: "Appointment", milestone: "Milestone", deadline: "Deadline" }[type]
-    ? t({ appointment: "Appointment", milestone: "Milestone", deadline: "Deadline" }[type]!)
+  ({ appointment: "Appointment", deadline: "Deadline" }[type]
+    ? t({ appointment: "Appointment", deadline: "Deadline" }[type]!)
     : type);
 type EventCategory = (typeof CATEGORIES)[number];
-type Domain = (typeof DOMAINS)[number];
 
 
 const TYPE_PILL: Record<string, string> = {
   appointment: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  milestone: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
   deadline: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
   incident: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   diary: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
   medication: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
 };
-
-/** Age at which a milestone was achieved, from patient birth date and event date. */
-function achievedAge(birth?: string | null, at?: string | null): { y: number; m: number } | null {
-  if (!birth || !at) return null;
-  const b = new Date(birth.slice(0, 10));
-  const d = new Date(at.slice(0, 10));
-  if (isNaN(b.getTime()) || isNaN(d.getTime()) || d < b) return null;
-  let months = (d.getFullYear() - b.getFullYear()) * 12 + (d.getMonth() - b.getMonth());
-  if (d.getDate() < b.getDate()) months -= 1;
-  if (months < 0) return null;
-  return { y: Math.floor(months / 12), m: months % 12 };
-}
 
 const inputCls =
   "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -62,7 +46,7 @@ function withDefaultTime(dateStr: string): string {
   return dateStr.length === 10 ? `${dateStr}T08:00` : dateStr;
 }
 
-export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId: string; birthDate?: string | null; initialMonth?: string }) {
+export function CalendarGrid({ patientId, initialMonth }: { patientId: string; initialMonth?: string }) {
   const router = useRouter();
   const today = new Date();
   const todayStr = toDateStr(today);
@@ -75,8 +59,6 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   const monthName = (m: number) => new Date(2000, m, 1).toLocaleDateString(locale, { month: "long" });
   // 2001-01-01 was a Monday
   const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6].map((i) => new Date(2001, 0, 1 + i).toLocaleDateString(locale, { weekday: "short" }));
-  const ageLabel = (a: { y: number; m: number }) =>
-    [a.y && t("AgeYears", { n: a.y }), a.m && t("AgeMonths", { n: a.m })].filter(Boolean).join(" ") || t("Newborn");
   // ?month=YYYY-MM makes a month linkable — the chat links dates it mentions here (#201)
   const start = /^\d{4}-\d{2}$/.test(initialMonth ?? "") ? initialMonth!.split("-") : null;
   const [year, setYear] = useState(start ? Number(start[0]) : today.getFullYear());
@@ -109,7 +91,6 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
   const [fLocation, setFLocation] = useState("");
   const [fPurpose, setFPurpose] = useState("");
   const [fCategory, setFCategory] = useState<EventCategory>("appointment");
-  const [fDomain, setFDomain] = useState<Domain | "">("");
 
   const lastDate = new Date(year, month + 1, 0).getDate();
 
@@ -182,7 +163,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
       return;
     }
     setDrawerMode("detail");
-    if (item.type === "appointment" || item.type === "milestone" || item.type === "deadline") {
+    if (item.type === "appointment" || item.type === "deadline") {
       getCalendarEvent(item.id)
         .then((d) => setEventDetail(d))
         .catch(() => {});
@@ -198,7 +179,6 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
     setFLocation("");
     setFPurpose("");
     setFCategory("appointment");
-    setFDomain("");
     setMutError("");
     setDrawerMode("create");
   }
@@ -214,7 +194,6 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
     setFLocation(detail.location ?? "");
     setFPurpose(detail.purpose ?? "");
     setFCategory(CATEGORIES.includes(detail.category as EventCategory) ? (detail.category as EventCategory) : "appointment");
-    setFDomain(DOMAINS.includes(detail.developmental_domain as Domain) ? (detail.developmental_domain as Domain) : "");
     setMutError("");
     setDrawerMode("edit");
   }
@@ -241,7 +220,6 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
       ...(fProvider ? { provider: fProvider } : {}),
       ...(fLocation ? { location: fLocation } : {}),
       ...(fPurpose ? { purpose: fPurpose } : {}),
-      ...(fCategory === "milestone" && fDomain ? { developmental_domain: fDomain } : {}),
     };
     startTransition(async () => {
       try {
@@ -624,24 +602,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
                     </div>
                   )}
 
-                  {selected.type === "milestone" && (
-                    <div className="space-y-2 text-sm">
-                      {selected.developmental_domain && (
-                        <div>
-                          <span className="text-muted-foreground">{t("Domain")}: </span>
-                          {(DOMAINS as readonly string[]).includes(selected.developmental_domain) ? t(`Domain_${selected.developmental_domain}`) : selected.developmental_domain}
-                        </div>
-                      )}
-                      {achievedAge(birthDate, selected.start) && (
-                        <div>
-                          <span className="text-muted-foreground">{t("AchievedAt")}: </span>
-                          {ageLabel(achievedAge(birthDate, selected.start)!)}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {eventDetail && selected.type !== "milestone" && (
+                  {eventDetail && (
                     <div className="flex items-center gap-2 flex-wrap pt-2 border-t">
                       {eventDetail.status === "scheduled" ? (
                         <>
@@ -683,7 +644,7 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
                     </div>
                   )}
 
-                  {(selected.type === "appointment" || selected.type === "milestone" || selected.type === "deadline") && (
+                  {(selected.type === "appointment" || selected.type === "deadline") && (
                     <div className="flex items-center gap-2 pt-2">
                       <button
                         onClick={openEdit}
@@ -734,24 +695,8 @@ export function CalendarGrid({ patientId, birthDate, initialMonth }: { patientId
                     >
                       <option value="appointment">{t("Appointment")}</option>
                       <option value="deadline">{t("Deadline")}</option>
-                      <option value="milestone">{t("Milestone")}</option>
                     </select>
                   </div>
-                  {fCategory === "milestone" && (
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium">{t("DevDomain")}</label>
-                      <select
-                        value={fDomain}
-                        onChange={(e) => setFDomain(e.target.value as Domain | "")}
-                        className={inputCls}
-                      >
-                        <option value="">—</option>
-                        {DOMAINS.map((d) => (
-                          <option key={d} value={d}>{t(`Domain_${d}`)}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"

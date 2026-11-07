@@ -14,10 +14,14 @@ from app.core.config import settings
 from app.core.encryption import decrypt_document, decrypt_str, encrypt_str
 from app.core.patient_keys import get_patient_kek
 from app.core.storage import get_storage
+from app.models.development import LABELS as DEV_LABELS, Ability, AbilityObservation
 from app.models.einstufung import Einstufung
 from app.models.intake import HistoryFact, IntakeForm
 from app.models.patient import Patient
+from app.models.user import User
 from app.routers import chat
+from app.routers import development as dev
+from app.schemas.development import AbilityObservationIn
 from app.workers.pipeline import _get_ai_model
 
 AGINGS = ("lasting", "changeable", "visit_only")
@@ -25,7 +29,7 @@ PASSAGES_PER_QUESTION = 2
 
 # where the record line's entry can be changed, for the offer after a correction
 _SEGMENTS = {
-    "medication": "medications", "condition": "conditions", "milestone": "calendar", "appointment": "calendar",
+    "medication": "medications", "condition": "conditions", "ability": "development", "test_attempt": "development", "appointment": "calendar",
     "lab": "lab-results", "care_note": "care-notes", "carer_update": "carer-updates",
 }
 
@@ -80,7 +84,8 @@ async def record_entries(patient_id: uuid.UUID, db: AsyncSession, lang: str) -> 
 def _item(q: dict) -> dict:
     return {"text": q["text"], "section": q.get("section"), "kind": q.get("kind"), "aging": q.get("aging"),
             "answer": None, "origin": None, "sources": [], "related": [], "fact_id": None,
-            "document": None, "passage": None, "confirmed": True, "record_corrected": False}
+            "document": None, "passage": None, "confirmed": True, "record_corrected": False,
+            "ability": q.get("ability") if q.get("kind") == "fact" else None, "observation_id": None}
 
 
 async def build_sheet(patient_id: uuid.UUID, questions: list[dict], db: AsyncSession, lang: str,
@@ -88,7 +93,7 @@ async def build_sheet(patient_id: uuid.UUID, questions: list[dict], db: AsyncSes
     items = [_item(q) for q in questions]
     for it in items:
         if it["kind"] != "fact":  # in doubt a judgement (GLOSSARY)
-            it["kind"] = "judgement"
+            it["kind"], it["ability"] = "judgement", None
         if it["aging"] not in AGINGS:
             it["aging"] = "changeable"
     if not items:
@@ -118,8 +123,9 @@ async def build_sheet(patient_id: uuid.UUID, questions: list[dict], db: AsyncSes
         else:
             it["origin"] = "record"
 
-    await _document_answers(patient_id, [it for it in items if it["kind"] == "fact" and not it["answer"]],
-                            db, lang, model)
+    # ADR 063: an ability's history is never mined from a letter; the family answers it
+    await _document_answers(patient_id, [it for it in items if it["kind"] == "fact" and not it["answer"]
+                                         and not it["ability"]], db, lang, model)
     return items
 
 
@@ -163,7 +169,10 @@ async def read_form(form_id: uuid.UUID, db: AsyncSession) -> None:
         data = decrypt_document(get_storage().read(form.storage_path), form.encrypted_dek, kek)
         lang, model = await chat._org_language(db), await _get_ai_model("extract")
         text = await _ocr(form, data)
-        questions = (await _ai("/intake/questions", {"text": text, "model": model, "language": lang}))["questions"]
+        names = (await db.execute(select(Ability.name).where(
+            Ability.patient_id == form.patient_id, Ability.is_deleted.is_(False)))).scalars().all()
+        questions = (await _ai("/intake/questions", {"text": text, "model": model, "language": lang,
+                                                     "abilities": list(names)}))["questions"]
         sheet = await build_sheet(form.patient_id, questions, db, lang, model)
         form.sheet = encrypt_str(json.dumps(sheet), kek)
         form.status, form.processing_error = "draft", None
@@ -186,10 +195,48 @@ async def _fact(fact_id: str | None, patient_id: uuid.UUID, db: AsyncSession) ->
         HistoryFact.is_deleted == False))).scalar_one_or_none()  # noqa: E712
 
 
+def _when(observed_on: str, lang: str) -> str:
+    if lang != "de":
+        return observed_on
+    parts = observed_on.split("-")[::-1]
+    return (".".join if len(parts) == 3 else "/".join)(parts)
+
+
+async def _observe(form: IntakeForm, item: dict, body: AbilityObservationIn, user: User, db: AsyncSession,
+                   lang: str) -> None:
+    """ADR 063: the answer is an Ability Observation from the Intake Form; correcting it changes that one."""
+    row = None
+    if item.get("observation_id"):
+        row = (await db.execute(select(AbilityObservation).where(
+            AbilityObservation.id == uuid.UUID(item["observation_id"]), AbilityObservation.patient_id == form.patient_id,
+            AbilityObservation.is_deleted.is_(False)))).unique().scalar_one_or_none()
+    if row:
+        row, _ = await dev._editable(AbilityObservation, row.id, user, db)
+    old_ability = row.ability_id if row else None
+    if not row:
+        row = AbilityObservation(patient_id=form.patient_id, owner_id=user.id, source="intake_form")
+    await dev._apply_observation(row, body, user, db)
+    db.add(row)
+    await db.flush()
+    if old_ability and old_ability != row.ability_id:
+        await dev._drop_if_empty(old_ability, db)
+    dev._audit(db, user, "updated" if old_ability else "created", "AbilityObservation", row.id,
+               {"source": "intake_form", "intake_form_id": str(form.id)})
+    D = DEV_LABELS[lang]
+    item["answer"] = (f"{body.ability_name}: {D['works' if body.works else 'fails']}, "
+                      f"{D['with_help' if body.with_help else 'alone']} ({_when(body.observed_on, lang)})")
+    item["observation_id"], item["origin"], item["confirmed"] = str(row.id), "caregiver", True
+
+
 async def update_item(form: IntakeForm, item: dict, *, answer: str | None, answer_given: bool,
-                      aging: str | None, confirm: bool, owner_id: uuid.UUID, db: AsyncSession) -> None:
+                      aging: str | None, confirm: bool, user: User, db: AsyncSession,
+                      observation: AbilityObservationIn | None = None, lang: str = "de") -> None:
     """A Caregiver's answer, correction or confirmation. A record answer corrected changes
     the sheet only: the record is offered, never changed by this (ADR 047)."""
+    owner_id = user.id
+    if observation:
+        await _observe(form, item, observation, user, db, lang)
+        return
     if aging:
         item["aging"] = aging
     fact = await _fact(item.get("fact_id"), form.patient_id, db)
@@ -199,7 +246,8 @@ async def update_item(form: IntakeForm, item: dict, *, answer: str | None, answe
         item["confirmed"] = True
         if item["origin"] == "record":
             item["record_corrected"] = True
-        if item["kind"] == "fact" and item["answer"] and item["origin"] != "record":
+        # ADR 063: an ability answer in words stays on the sheet; only an Observation is kept
+        if item["kind"] == "fact" and item["answer"] and item["origin"] != "record" and not item.get("ability"):
             if fact:
                 fact.answer, fact.confirmed_on, fact.source = item["answer"], _today(), "caregiver"
             else:

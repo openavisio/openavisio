@@ -384,6 +384,7 @@ class MockBackend(InferenceBackend):
             return _json.dumps({"questions": [
                 {"text": "Birth weight", "section": "Pregnancy and birth", "kind": "fact", "aging": "lasting"},
                 {"text": "Which medication does your child currently take?", "section": None, "kind": "fact", "aging": "changeable"},
+                {"text": "When did your child first walk on its own?", "section": None, "kind": "fact", "aging": "lasting", "ability": "Walking"},
                 {"text": "Is your child's development age-appropriate?", "section": None, "kind": "judgement", "aging": "changeable"},
                 {"text": "Reason for this visit", "section": None, "kind": "fact", "aging": "visit_only"},
             ]})

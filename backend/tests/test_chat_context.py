@@ -11,6 +11,7 @@ from app.core.security import hash_password
 from app.models.access import PatientAccess
 from app.models.calendar import CalendarEvent
 from app.models.condition import Condition
+from app.models.development import Ability, AbilityObservation
 from app.models.incident import Incident
 from app.models.medication import MedicationStatement
 from app.models.observation import Observation
@@ -51,23 +52,29 @@ async def test_context_labels_follow_the_organization_language(client, db):
     Organization.default_language defaults to en, and the cap notice is quoted
     back to the reader by the prompt."""
     patient, user, _ = await _setup(client, db, "lang@test.com")
-    db.add(CalendarEvent(patient_id=patient.id, owner_id=user.id, title="First steps",
-                         category="milestone", start_at="2025-06-01"))
+    walking = Ability(patient_id=patient.id, owner_id=user.id, name="Walking")
+    db.add(walking)
+    await db.flush()
+    db.add(AbilityObservation(patient_id=patient.id, owner_id=user.id, ability_id=walking.id, observed_on="2025-06",
+                              works=True))
     await db.commit()
 
     await _set_org_language(db, "en")
     lines, _ = await chat_router._structured_context(patient.id, db, await chat_router._org_language(db))
-    assert any(ln.startswith("Milestone |") for ln in lines), lines
+    assert "Ability | 2025-06 | Walking | works | on its own" in lines, lines
 
     await _set_org_language(db, "de")
     lines, _ = await chat_router._structured_context(patient.id, db, await chat_router._org_language(db))
-    assert any(ln.startswith("Meilenstein |") for ln in lines), lines
+    assert "Fähigkeit | 2025-06 | Walking | klappt | allein" in lines, lines
 
 
 async def test_structured_context_lists_every_source_and_caps_the_long_ones(client, db):
     patient, user, _ = await _setup(client, db, "ctx1@test.com")
-    db.add(CalendarEvent(patient_id=patient.id, owner_id=user.id, title="Freies Laufen",
-                         category="milestone", developmental_domain="motor", start_at="2025-06-01"))
+    walking = Ability(patient_id=patient.id, owner_id=user.id, name="Freies Laufen", domain="motor")
+    db.add(walking)
+    await db.flush()
+    db.add(AbilityObservation(patient_id=patient.id, owner_id=user.id, ability_id=walking.id, observed_on="2025-06-01",
+                              works=True))
     for i in range(chat_router.APPOINTMENT_LIMIT + 5):
         db.add(CalendarEvent(patient_id=patient.id, owner_id=user.id, title=f"Termin {i}",
                              category="appointment", provider="Dr. Meier",
@@ -84,7 +91,7 @@ async def test_structured_context_lists_every_source_and_caps_the_long_ones(clie
     lines, months = await chat_router._structured_context(patient.id, db, "de")
 
     text = "\n".join(lines)
-    assert "Meilenstein | 2025-06-01 | Freies Laufen" in text
+    assert "Fähigkeit | 2025-06-01 | Freies Laufen | klappt | allein | Motorik" in text
     assert "Medikament | 2024-02-03 | Levetiracetam" in text
     assert "Diagnose | 2024-01-05 | Epilepsie" in text
     assert "Vorfall | 2025-03-09 | Anfall" in text
