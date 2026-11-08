@@ -59,6 +59,6 @@ share_declines
 ## Consequences
 
 - Shared files are visible to the whole Coordinator/admin tier, not one person — acceptable for a small trusted board; the consent text says "with the study leadership", not a named person.
-- Deferred to later stages: sharing **structured clinical data** (not just Documents); **email notification** of new Purposes (and a manual note that without SMTP configured, Purposes cannot be sent); **pseudonymisation hardening**; a **four-eyes** consent option; a dedicated "may create Purposes" permission decoupled from Coordinator.
+- Deferred to later stages: sharing **structured clinical data** (not just Documents; Development records since ADR 064); **email notification** of new Purposes (and a manual note that without SMTP configured, Purposes cannot be sent); **pseudonymisation hardening**; a **four-eyes** consent option; a dedicated "may create Purposes" permission decoupled from Coordinator.
 
 See also ADR-003 (access model) and the **Data sharing** section of `CONTEXT.md`.

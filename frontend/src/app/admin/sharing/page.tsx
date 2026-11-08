@@ -3,12 +3,16 @@ import { getSharingPurposes } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle, FolderOpen } from "lucide-react";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { CreatePurposeForm } from "./CreatePurposeForm";
+import { dataSetLabel } from "@/lib/data-set";
 
 export default async function AdminSharingPage() {
   const t = await getTranslations("AdminSharing");
   const tc = await getTranslations("Common");
+  const ts = await getTranslations("Sharing");
+  const td = await getTranslations("Development");
+  const locale = await getLocale();
   let purposes: Awaited<ReturnType<typeof getSharingPurposes>> = [];
   let fetchError = false;
   try {
@@ -59,7 +63,7 @@ export default async function AdminSharingPage() {
               {purposes.map((p) => (
                 <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium">{p.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.description || "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.data_set ? dataSetLabel(ts, td, p, locale) : p.description || "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{t(`Mode_${p.identification_mode}`)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.status === "open" ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
@@ -67,7 +71,7 @@ export default async function AdminSharingPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{p.share_count}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(p.created_at)}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(p.created_at, locale)}</td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/admin/sharing/${p.id}`} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted">
                       <FolderOpen className="size-3.5" /> {t("ViewFiles")}

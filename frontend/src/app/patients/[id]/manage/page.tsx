@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
-import { getPatient, getOpenShareRequests, getPatientShares, getDocuments, getShareLinks } from "@/lib/api";
+import { getPatient, getOpenShareRequests, getPatientShares, getDocuments, getShareLinks, getDataSetRows } from "@/lib/api";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -44,6 +44,15 @@ export default async function PatientManagePage({ params }: { params: Promise<{ 
     getShareLinks(id).catch(() => []),
   ]);
 
+  // ADR 064: the rows a Data Set request or "share again" would send
+  const dataSetPurposes = [
+    ...openRequests.filter((r) => r.data_set).map((r) => r.id),
+    ...patientShares.filter((s) => s.data_set && s.status === "active" && s.purpose_open).map((s) => s.sharing_purpose_id),
+  ];
+  const rowsByPurpose = Object.fromEntries(
+    await Promise.all(dataSetPurposes.map(async (pid) => [pid, await getDataSetRows(id, pid).catch(() => [])] as const)),
+  );
+
   const isAdmin = caregivers.some((c) => c.user_email === currentUserEmail && c.access_level === "admin");
 
   return (
@@ -63,7 +72,7 @@ export default async function PatientManagePage({ params }: { params: Promise<{ 
       )}
 
       <div className="mb-6">
-        <SharingConsentPanel patientId={id} openRequests={openRequests} shares={patientShares} documents={documents} />
+        <SharingConsentPanel patientId={id} openRequests={openRequests} shares={patientShares} documents={documents} rowsByPurpose={rowsByPurpose} />
       </div>
 
       {shareLinks.length > 0 && (

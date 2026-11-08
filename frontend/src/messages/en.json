@@ -690,7 +690,20 @@
     "status_active": "active",
     "status_revoked": "revoked",
     "revoke": "Revoke",
-    "revoking": "Revoking…"
+    "revoking": "Revoking…",
+    "DataSet_test_attempts": "Test attempts",
+    "DataSet_ability_observations": "Ability observations",
+    "Since": "since {date}",
+    "dataSetNote": "Only the rows you leave ticked are sent, as they are now. Later changes are not sent; you can share again or revoke at any time. A table already downloaded cannot be recalled.",
+    "dataSetAnonymous": "Your name is not sent, but dates and your own notes may still identify you.",
+    "selectRows": "Entries to share",
+    "noRows": "Nothing to share yet. The request stays open until there is.",
+    "rows": "{n, plural, one {# entry} other {# entries}}",
+    "shareAgain": "Share again",
+    "worksYes": "works",
+    "worksNo": "does not work",
+    "withHelp": "with help",
+    "alone": "on its own"
   },
   "ShareLinks": {
     "title": "Share links",
@@ -1700,7 +1713,7 @@
   },
   "AdminSharing": {
     "Title": "Data sharing",
-    "Intro": "Request files (e.g. EEG data) from patients for a study. Caregivers choose which files to share and consent on the patient page.",
+    "Intro": "Request files (e.g. EEG data) or a data set (test attempts, ability observations) from patients for a study. Caregivers choose what to share and consent on the patient page.",
     "LoadError": "Failed to load sharing purposes. You may not have permission, or the server is unavailable.",
     "Empty": "No sharing purposes yet.",
     "Requested": "Requested",
@@ -1732,7 +1745,17 @@
     "ModeAnonymousOption": "Anonymous (pseudonym only)",
     "ExpiresOptional": "Expires (optional)",
     "Creating": "Creating…",
-    "Closing": "Closing…"
+    "Closing": "Closing…",
+    "AsksFor": "Asks for",
+    "AsksDocuments": "Documents",
+    "Since": "Since (optional)",
+    "Domain": "Domain (optional)",
+    "AnyDomain": "All domains",
+    "Rows": "Entries",
+    "DownloadCsv": "Download table (CSV)",
+    "NoRows": "Nothing shared yet.",
+    "DataSetNote": "One row per entry across all consenting patients. OpenAvisio counts nothing; dates and notes are unchanged and may still identify a family.",
+    "DescriptionOptional": "Description (optional)"
   },
   "AdminGovernance": {
     "Title": "Data governance",

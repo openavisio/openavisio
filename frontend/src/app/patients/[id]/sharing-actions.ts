@@ -13,16 +13,17 @@ async function token() {
 export async function consentShareAction(
   patientId: string,
   purposeId: string,
-  documentIds: string[],
+  ids: string[],
+  kind: "document_ids" | "record_ids",
 ): Promise<{ error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
-  if (documentIds.length === 0) return { error: await actionError("Common.SelectAtLeastOne") };
+  if (ids.length === 0) return { error: await actionError("Common.SelectAtLeastOne") };
 
   const res = await backendFetch(`/api/patients/${patientId}/sharing/purposes/${purposeId}/consent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
-    body: JSON.stringify({ document_ids: documentIds }),
+    body: JSON.stringify({ [kind]: ids }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

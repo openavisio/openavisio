@@ -271,6 +271,7 @@ export const getCollectedShares = async (id: string) => api.get<S<"CollectedShar
 // Data sharing — Caregiver / patient side
 export const getOpenShareRequests = async (patientId: string) => api.get<S<"OpenRequestDto">[]>(`/api/patients/${patientId}/sharing/open-requests`);
 export const getPatientShares = async (patientId: string) => api.get<S<"ShareDto">[]>(`/api/patients/${patientId}/sharing/shares`);
+export const getDataSetRows = async (patientId: string, purposeId: string) => api.get<S<"DataSetRowDto">[]>(`/api/patients/${patientId}/sharing/purposes/${purposeId}/rows`);
 
 // External document share links (ADR-021)
 export const getShareLinks = async (patientId: string) => api.get<S<"ShareLinkDto">[]>(`/api/patients/${patientId}/share-links`);

@@ -15,6 +15,9 @@ export async function createPurposeAction(input: {
   description: string;
   identification_mode: string;
   expires_at: string | null;
+  data_set: string | null;
+  data_set_since: string | null;
+  data_set_domain: string | null;
 }): Promise<{ id?: string; error?: string }> {
   const t = await token();
   if (!t) return { error: await actionError("Common.NotAuthenticated") };
@@ -27,6 +30,9 @@ export async function createPurposeAction(input: {
       description: input.description || null,
       identification_mode: input.identification_mode,
       expires_at: input.expires_at,
+      data_set: input.data_set,
+      data_set_since: input.data_set_since,
+      data_set_domain: input.data_set_domain,
     }),
   });
   if (!res.ok) {

@@ -4,8 +4,9 @@ import { formatDate } from "@/lib/utils";
 import { AlertCircle, Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ClosePurposeButton } from "../ClosePurposeButton";
+import { dataSetLabel } from "@/lib/data-set";
 
 function formatSize(bytes: number | null): string {
   if (!bytes) return "—";
@@ -19,6 +20,9 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
   const { purposeId } = await params;
   const t = await getTranslations("AdminSharing");
   const tc = await getTranslations("Common");
+  const ts = await getTranslations("Sharing");
+  const td = await getTranslations("Development");
+  const locale = await getLocale();
 
   let purpose: Awaited<ReturnType<typeof getSharingPurpose>> | null = null;
   let shares: Awaited<ReturnType<typeof getCollectedShares>> = [];
@@ -32,6 +36,7 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
     fetchError = true;
   }
   if (!fetchError && !purpose) notFound();
+  const dataSet = !!purpose?.data_set;
 
   return (
     <AppLayout>
@@ -52,12 +57,14 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
             <div>
               <h1 className="text-xl font-bold">{purpose.name}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                {purpose.description ? t("RequestedValue", { description: purpose.description }) : t("NoDescription")}
+                {dataSet
+                  ? t("RequestedValue", { description: dataSetLabel(ts, td, purpose, locale) })
+                  : purpose.description ? t("RequestedValue", { description: purpose.description }) : t("NoDescription")}
                 {" · "}
                 <span>{t(`Mode_${purpose.identification_mode}`)}</span>
                 {" · "}
                 <span>{t(`Status_${purpose.status}`)}</span>
-                {purpose.expires_at && ` · ${t("ExpiresOn", { date: formatDate(purpose.expires_at) })}`}
+                {purpose.expires_at && ` · ${t("ExpiresOn", { date: formatDate(purpose.expires_at, locale) })}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -66,14 +73,16 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
                   href={`/api/sharing-purposes/${purposeId}/download`}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90"
                 >
-                  <Download className="size-3.5" /> {t("DownloadAll")}
+                  <Download className="size-3.5" /> {dataSet ? t("DownloadCsv") : t("DownloadAll")}
                 </a>
               )}
               {purpose.status === "open" && <ClosePurposeButton purposeId={purposeId} />}
             </div>
           </div>
 
-          {purpose.identification_mode === "anonymous" && (
+          {dataSet ? (
+            <p className="text-xs text-muted-foreground mb-4">{t("DataSetNote")}</p>
+          ) : purpose.identification_mode === "anonymous" && (
             <p className="text-xs text-muted-foreground mb-4">
               {t("AnonymousNote")}
             </p>
@@ -81,7 +90,26 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
 
           <div className="mt-4 rounded-xl border bg-card overflow-hidden">
             {shares.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">{t("NoFiles")}</div>
+              <div className="text-center py-12 text-muted-foreground text-sm">{dataSet ? t("NoRows") : t("NoFiles")}</div>
+            ) : dataSet ? (
+              <table className="w-full text-sm">
+                <thead className="border-b bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">{t("Patient")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("Rows")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("Shared")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {shares.map((s) => (
+                    <tr key={s.share_id}>
+                      <td className="px-4 py-3">{s.patient_label}</td>
+                      <td className="px-4 py-3 text-muted-foreground tabular-nums">{s.row_count}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(s.consented_at, locale)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <table className="w-full text-sm">
                 <thead className="border-b bg-muted/50">
@@ -99,7 +127,7 @@ export default async function SharingPurposeDetailPage({ params }: { params: Pro
                       <td className="px-4 py-3">{s.patient_label}</td>
                       <td className="px-4 py-3 text-muted-foreground">{s.file_name || "—"}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">{formatSize(s.size)}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(s.consented_at)}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(s.consented_at, locale)}</td>
                       <td className="px-4 py-3 text-right">
                         <a
                           href={`/api/shares/${s.share_id}/file`}

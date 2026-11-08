@@ -21,6 +21,6 @@ export const GET = auth(async (req, context: { params: Promise<{ purposeId: stri
   const blob = await res.blob();
   const disposition = res.headers.get("content-disposition") || "attachment";
   return new NextResponse(blob, {
-    headers: { "Content-Type": "application/zip", "Content-Disposition": disposition },
+    headers: { "Content-Type": res.headers.get("content-type") || "application/zip", "Content-Disposition": disposition },
   });
 });

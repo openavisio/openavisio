@@ -21,7 +21,7 @@ type Place = NonNullable<S<"AbilityObservationIn">["place"]>;
 type Setting = NonNullable<S<"TestAttemptIn">["setting"]>;
 type Outcome = S<"TestAttemptIn">["outcome"];
 
-const DOMAINS: Domain[] = ["communication", "daily_living", "social", "motor", "learning"];
+export const DOMAINS: Domain[] = ["communication", "daily_living", "social", "motor", "learning"];
 const PLACES: Place[] = ["home", "kita_school", "therapy", "out"];
 const SETTINGS: Setting[] = ["clinic", "practice", "home", "kita_school"];
 const OUTCOMES: Outcome[] = ["completed", "stopped", "refused", "not_attempted"];

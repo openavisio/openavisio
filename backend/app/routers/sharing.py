@@ -34,9 +34,11 @@ from app.models.sharing import (
     ShareStatus,
 )
 from app.models.user import User
+from app.services import data_set as ds
 from app.schemas.sharing import (
     CollectedShareDto,
     ConsentRequest,
+    DataSetRowDto,
     OpenRequestDto,
     ShareDto,
     SharingPurposeCreateRequest,
@@ -117,6 +119,9 @@ async def create_purpose(
         status=SharingPurposeStatus.open,
         expires_at=body.expires_at,
         created_by_user_id=user.id,
+        data_set=body.data_set,
+        data_set_since=body.data_set_since.isoformat() if body.data_set and body.data_set_since else None,
+        data_set_domain=body.data_set_domain,
     )
     db.add(purpose)
     await db.flush()
@@ -197,15 +202,15 @@ async def close_purpose(
 
 
 async def _collect_active_shares(purpose: SharingPurpose, db: AsyncSession):
-    """Return (Share, DocumentReference, Patient) for each active, still-existing share."""
+    """Return (Share, DocumentReference | None, Patient) for each active, still-existing share."""
     result = await db.execute(
         select(Share, DocumentReference, Patient)
-        .join(DocumentReference, DocumentReference.id == Share.document_id)
+        .outerjoin(DocumentReference, DocumentReference.id == Share.document_id)
         .join(Patient, Patient.id == Share.patient_id)
         .where(
             Share.sharing_purpose_id == purpose.id,
             Share.status == ShareStatus.active,
-            DocumentReference.is_deleted == False,  # noqa: E712
+            or_(Share.document_id == None, DocumentReference.is_deleted == False),  # noqa: E711, E712
             Patient.is_deleted == False,  # noqa: E712
         )
         .order_by(Share.consented_at.desc())
@@ -231,10 +236,11 @@ async def list_collected_shares(
     for share, doc, patient in await _collect_active_shares(purpose, db):
         out.append(CollectedShareDto(
             share_id=share.id,
-            document_id=doc.id,
-            file_name=doc.file_name,
-            content_type=doc.content_type,
-            size=doc.size,
+            document_id=doc.id if doc else None,
+            row_count=len(share.rows) if share.rows is not None else None,
+            file_name=doc.file_name if doc else None,
+            content_type=doc.content_type if doc else None,
+            size=doc.size if doc else None,
             consented_at=share.consented_at,
             patient_label=_patient_label(purpose, patient),
             patient_id=None if anonymous else patient.id,
@@ -284,6 +290,15 @@ async def download_purpose_bundle(
     rows = await _collect_active_shares(purpose, db)
     if not rows:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No shared files to download.")
+    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in purpose.name) or "shares"
+
+    if purpose.data_set:
+        body = ds.to_csv(purpose.data_set, [(_patient_label(purpose, p), share.rows or []) for share, _, p in rows])
+        return Response(
+            content=body,
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{safe_name}.csv"'},
+        )
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -291,8 +306,6 @@ async def download_purpose_bundle(
             label = _patient_label(purpose, patient).replace("/", "-").replace(", ", "_")
             # share id prefix keeps paths unique without bookkeeping
             zf.writestr(f"{label}/{share.id}_{doc.file_name or doc.id}", await _read_decrypted(doc, db))
-
-    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in purpose.name) or "shares"
     return Response(
         content=buf.getvalue(),
         media_type="application/zip",
@@ -336,17 +349,36 @@ async def list_patient_shares(
     result = await db.execute(
         select(Share, SharingPurpose, DocumentReference)
         .join(SharingPurpose, SharingPurpose.id == Share.sharing_purpose_id)
-        .join(DocumentReference, DocumentReference.id == Share.document_id)
+        .outerjoin(DocumentReference, DocumentReference.id == Share.document_id)
         .where(Share.patient_id == patient_id)
         .order_by(Share.consented_at.desc())
     )
+    now = datetime.now(UTC)
     out = []
     for share, purpose, doc in result.all():
         dto = ShareDto.model_validate(share)
         dto.purpose_name = purpose.name
-        dto.document_file_name = doc.file_name
+        dto.document_file_name = doc.file_name if doc else None
+        dto.data_set = purpose.data_set
+        dto.row_count = len(share.rows) if share.rows is not None else None
+        dto.purpose_open = _is_open(purpose, now)
+        dto.identification_mode = purpose.identification_mode
         out.append(dto)
     return out
+
+
+@router.get("/patients/{patient_id}/sharing/purposes/{purpose_id}/rows", response_model=list[DataSetRowDto])
+async def list_data_set_rows(
+    patient_id: uuid.UUID,
+    purpose_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """The rows that would leave for this Patient, for the consent screen (ADR 064)."""
+    await require_patient_access(patient_id, user, db)
+    purpose = await _get_purpose(purpose_id, db)
+    patient = await db.get(Patient, patient_id)
+    return await ds.matching_rows(db, purpose, patient)
 
 
 async def _consenter_is_legal(patient_id: uuid.UUID, user: User, db: AsyncSession) -> bool:
@@ -374,6 +406,8 @@ async def consent(
     purpose = await _get_purpose(purpose_id, db)
     if not _is_open(purpose, datetime.now(UTC)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Sharing Purpose is no longer open.")
+    if purpose.data_set:
+        return [await _consent_data_set(purpose, patient_id, body, user, db)]
     if not body.document_ids:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No documents selected.")
 
@@ -437,6 +471,50 @@ async def consent(
     return out
 
 
+async def _consent_data_set(
+    purpose: SharingPurpose, patient_id: uuid.UUID, body: ConsentRequest, user: User, db: AsyncSession,
+) -> ShareDto:
+    """Freeze the ticked rows; sharing again replaces the snapshot (ADR 064)."""
+    patient = await db.get(Patient, patient_id)
+    picked = set(body.record_ids)
+    rows = [r["values"] for r in await ds.matching_rows(db, purpose, patient) if r["id"] in picked]
+    # an empty snapshot would read as "never tested"
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No rows selected.")
+
+    existing = await db.execute(
+        select(Share).where(
+            Share.sharing_purpose_id == purpose.id, Share.patient_id == patient_id, Share.document_id == None  # noqa: E711
+        )
+    )
+    share = existing.scalar_one_or_none()
+    if not share:
+        share = Share(sharing_purpose_id=purpose.id, patient_id=patient_id)
+        db.add(share)
+    share.rows = rows
+    share.status = ShareStatus.active
+    share.revoked_at = None
+    share.consented_by_user_id = user.id
+    share.consented_at = datetime.now(UTC)
+    share.consented_legal = await _consenter_is_legal(patient_id, user, db)
+    await db.flush()
+    _audit(db, user, "created", "Share", share.id, {
+        "purpose": str(purpose.id), "rows": len(rows), "mode": purpose.identification_mode,
+    })
+    await db.execute(
+        ShareDecline.__table__.delete().where(
+            ShareDecline.sharing_purpose_id == purpose.id, ShareDecline.patient_id == patient_id
+        )
+    )
+    await db.commit()
+    await db.refresh(share)
+    dto = ShareDto.model_validate(share)
+    dto.purpose_name = purpose.name
+    dto.data_set = purpose.data_set
+    dto.row_count = len(rows)
+    return dto
+
+
 @router.post("/patients/{patient_id}/sharing/purposes/{purpose_id}/decline", status_code=status.HTTP_204_NO_CONTENT)
 async def decline(
     patient_id: uuid.UUID,
@@ -482,6 +560,8 @@ async def revoke_share(
     if share.status == ShareStatus.active:
         share.status = ShareStatus.revoked
         share.revoked_at = datetime.now(UTC)
+        if share.rows is not None:
+            share.rows = []  # a revoked snapshot has no purpose left
         _audit(db, user, "updated", "Share", share.id, {"status": {"new": "revoked"}})
         await db.commit()
         await db.refresh(share)

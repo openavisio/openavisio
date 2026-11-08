@@ -4,10 +4,16 @@ import { useState, useTransition } from "react";
 import { Plus, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createPurposeAction } from "./sharing-admin-actions";
+import { DOMAINS } from "@/app/patients/[id]/development/DevelopmentView";
 
 export function CreatePurposeForm() {
   const t = useTranslations("AdminSharing");
   const tc = useTranslations("Common");
+  const ts = useTranslations("Sharing");
+  const td = useTranslations("Development");
+  const [dataSet, setDataSet] = useState("");
+  const [since, setSince] = useState("");
+  const [domain, setDomain] = useState("");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -25,10 +31,13 @@ export function CreatePurposeForm() {
         description,
         identification_mode: mode,
         expires_at: expires ? new Date(expires).toISOString() : null,
+        data_set: dataSet || null,
+        data_set_since: dataSet && since ? since : null,
+        data_set_domain: dataSet === "ability_observations" && domain ? domain : null,
       });
       if (r.error) setError(r.error);
       else {
-        setName(""); setDescription(""); setMode("identified"); setExpires("");
+        setName(""); setDescription(""); setMode("identified"); setExpires(""); setDataSet(""); setSince(""); setDomain("");
         setOpen(false);
       }
     });
@@ -54,8 +63,36 @@ export function CreatePurposeForm() {
                 className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-medium">{t("WhatData")}</label>
-              <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("WhatDataPlaceholder")}
+              <label className="text-xs font-medium">{t("AsksFor")}</label>
+              <select value={dataSet} onChange={(e) => setDataSet(e.target.value)}
+                className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary">
+                <option value="">{t("AsksDocuments")}</option>
+                <option value="test_attempts">{ts("DataSet_test_attempts")}</option>
+                <option value="ability_observations">{ts("DataSet_ability_observations")}</option>
+              </select>
+            </div>
+            {dataSet && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">{t("Since")}</label>
+                <input type="date" value={since} onChange={(e) => setSince(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+            )}
+            {dataSet === "ability_observations" && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">{t("Domain")}</label>
+                <select value={domain} onChange={(e) => setDomain(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary">
+                  <option value="">{t("AnyDomain")}</option>
+                  {DOMAINS.map((d) => (
+                    <option key={d} value={d}>{td(`domains.${d}`)}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-medium">{dataSet ? t("DescriptionOptional") : t("WhatData")}</label>
+              <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={dataSet ? "" : t("WhatDataPlaceholder")}
                 className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div className="space-y-1">

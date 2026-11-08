@@ -690,7 +690,20 @@
     "status_active": "aktiv",
     "status_revoked": "widerrufen",
     "revoke": "Widerrufen",
-    "revoking": "Widerrufe…"
+    "revoking": "Widerrufe…",
+    "DataSet_test_attempts": "Testversuche",
+    "DataSet_ability_observations": "Beobachtungen zu Fähigkeiten",
+    "Since": "seit {date}",
+    "dataSetNote": "Geschickt werden nur die angehakten Einträge, so wie sie jetzt sind. Spätere Änderungen gehen nicht mit; du kannst jederzeit neu teilen oder widerrufen. Eine schon heruntergeladene Tabelle lässt sich nicht zurückholen.",
+    "dataSetAnonymous": "Dein Name wird nicht mitgeschickt, aber Daten und deine eigenen Notizen können dich trotzdem erkennbar machen.",
+    "selectRows": "Einträge zum Teilen",
+    "noRows": "Noch nichts zum Teilen. Die Anfrage bleibt offen, bis es etwas gibt.",
+    "rows": "{n, plural, one {# Eintrag} other {# Einträge}}",
+    "shareAgain": "Neu teilen",
+    "worksYes": "klappt",
+    "worksNo": "klappt nicht",
+    "withHelp": "mit Hilfe",
+    "alone": "allein"
   },
   "ShareLinks": {
     "title": "Freigabe-Links",
@@ -1700,7 +1713,7 @@
   },
   "AdminSharing": {
     "Title": "Daten teilen",
-    "Intro": "Fordere Dateien (z. B. EEG-Daten) für eine Studie bei Patienten an. Pflegende wählen auf der Patientenseite aus, welche Dateien sie teilen, und stimmen dort zu.",
+    "Intro": "Fordere Dateien (z. B. EEG-Daten) oder einen Datensatz (Testversuche, Beobachtungen) für eine Studie bei Patienten an. Pflegende wählen auf der Patientenseite aus, was sie teilen, und stimmen dort zu.",
     "LoadError": "Die Anfragen konnten nicht geladen werden. Vielleicht fehlt dir die Berechtigung, oder der Server ist nicht erreichbar.",
     "Empty": "Noch keine Anfragen.",
     "Requested": "Angefragt",
@@ -1732,7 +1745,17 @@
     "ModeAnonymousOption": "Anonym (nur Pseudonym)",
     "ExpiresOptional": "Läuft ab (optional)",
     "Creating": "Wird erstellt…",
-    "Closing": "Wird geschlossen…"
+    "Closing": "Wird geschlossen…",
+    "AsksFor": "Bittet um",
+    "AsksDocuments": "Dokumente",
+    "Since": "Seit (optional)",
+    "Domain": "Bereich (optional)",
+    "AnyDomain": "Alle Bereiche",
+    "Rows": "Einträge",
+    "DownloadCsv": "Tabelle herunterladen (CSV)",
+    "NoRows": "Noch nichts geteilt.",
+    "DataSetNote": "Eine Zeile pro Eintrag über alle zustimmenden Patienten. OpenAvisio zählt nichts; Daten und Notizen sind unverändert und können eine Familie trotzdem erkennbar machen.",
+    "DescriptionOptional": "Beschreibung (optional)"
   },
   "AdminGovernance": {
     "Title": "Datenschutz-Regeln",

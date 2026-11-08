@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, UniqueConstraint, func, text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import BaseModel
@@ -12,6 +12,11 @@ from app.models.base import BaseModel
 class IdentificationMode(StrEnum):
     identified = "identified"
     anonymous = "anonymous"
+
+
+class DataSet(StrEnum):
+    test_attempts = "test_attempts"
+    ability_observations = "ability_observations"
 
 
 class SharingPurposeStatus(StrEnum):
@@ -42,22 +47,29 @@ class SharingPurpose(BaseModel):
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
+    # ADR 064: set only at creation; NULL asks for Documents
+    data_set: Mapped[str | None] = mapped_column(String(30))
+    data_set_since: Mapped[str | None] = mapped_column(String(10))  # YYYY-MM-DD
+    data_set_domain: Mapped[str | None] = mapped_column(String(20))
 
 
 class Share(BaseModel):
-    """A consented link between one Document and one Sharing Purpose."""
+    """A consented link between a Sharing Purpose and one Document or a frozen Data Set snapshot (ADR 064)."""
 
     __tablename__ = "shares"
     __table_args__ = (
         UniqueConstraint("sharing_purpose_id", "document_id", name="uq_share_purpose_document"),
+        Index("uq_share_purpose_patient_data_set", "sharing_purpose_id", "patient_id",
+              unique=True, postgresql_where=text("document_id IS NULL")),
     )
 
     sharing_purpose_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sharing_purposes.id"), nullable=False, index=True
     )
-    document_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=False, index=True
+    document_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True, index=True
     )
+    rows: Mapped[list | None] = mapped_column(JSONB)  # Data Set snapshot, frozen at consent
     patient_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True
     )

@@ -2588,6 +2588,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/patients/{patient_id}/sharing/purposes/{purpose_id}/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Data Set Rows
+         * @description The rows that would leave for this Patient, for the consent screen (ADR 064).
+         */
+        get: operations["list_data_set_rows_api_patients__patient_id__sharing_purposes__purpose_id__rows_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/patients/{patient_id}/sharing/purposes/{purpose_id}/consent": {
         parameters: {
             query?: never;
@@ -3406,11 +3426,10 @@ export interface components {
              * Format: uuid
              */
             share_id: string;
-            /**
-             * Document Id
-             * Format: uuid
-             */
-            document_id: string;
+            /** Document Id */
+            document_id: string | null;
+            /** Row Count */
+            row_count: number | null;
             /** File Name */
             file_name: string | null;
             /** Content Type */
@@ -3561,8 +3580,16 @@ export interface components {
         };
         /** ConsentRequest */
         ConsentRequest: {
-            /** Document Ids */
-            document_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids?: string[];
+            /**
+             * Record Ids
+             * @default []
+             */
+            record_ids?: string[];
         };
         /** ContactIn */
         ContactIn: {
@@ -3617,6 +3644,26 @@ export interface components {
             lawful_basis: string | null;
             /** Retention Days */
             retention_days: number | null;
+        };
+        /**
+         * DataSet
+         * @enum {string}
+         */
+        DataSet: "test_attempts" | "ability_observations";
+        /**
+         * DataSetRowDto
+         * @description One row as it would leave: the record id to pick it, the columns as frozen (ADR 064).
+         */
+        DataSetRowDto: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Values */
+            values: {
+                [key: string]: unknown;
+            };
         };
         /** DecideRequest */
         DecideRequest: {
@@ -4974,6 +5021,12 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Data Set */
+            data_set: string | null;
+            /** Data Set Since */
+            data_set_since: string | null;
+            /** Data Set Domain */
+            data_set_domain: string | null;
         };
         /** OrganizationDto */
         OrganizationDto: {
@@ -5440,11 +5493,8 @@ export interface components {
              * Format: uuid
              */
             sharing_purpose_id: string;
-            /**
-             * Document Id
-             * Format: uuid
-             */
-            document_id: string;
+            /** Document Id */
+            document_id: string | null;
             /**
              * Patient Id
              * Format: uuid
@@ -5465,6 +5515,17 @@ export interface components {
             purpose_name: string | null;
             /** Document File Name */
             document_file_name: string | null;
+            /** Data Set */
+            data_set: string | null;
+            /** Row Count */
+            row_count: number | null;
+            /**
+             * Purpose Open
+             * @default false
+             */
+            purpose_open: boolean;
+            /** Identification Mode */
+            identification_mode: string | null;
         };
         /** ShareLinkAddDocumentsRequest */
         ShareLinkAddDocumentsRequest: {
@@ -5626,6 +5687,11 @@ export interface components {
             identification_mode?: components["schemas"]["IdentificationMode"];
             /** Expires At */
             expires_at?: string | null;
+            data_set?: components["schemas"]["DataSet"] | null;
+            /** Data Set Since */
+            data_set_since?: string | null;
+            /** Data Set Domain */
+            data_set_domain?: ("communication" | "daily_living" | "social" | "motor" | "learning") | null;
         };
         /** SharingPurposeDto */
         SharingPurposeDto: {
@@ -5653,6 +5719,12 @@ export interface components {
             created_at: string;
             /** Created By User Id */
             created_by_user_id: string | null;
+            /** Data Set */
+            data_set: string | null;
+            /** Data Set Since */
+            data_set_since: string | null;
+            /** Data Set Domain */
+            data_set_domain: string | null;
             /**
              * Share Count
              * @default 0
@@ -12104,6 +12176,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShareDto"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_data_set_rows_api_patients__patient_id__sharing_purposes__purpose_id__rows_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+                purpose_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSetRowDto"][];
                 };
             };
             /** @description Validation Error */
