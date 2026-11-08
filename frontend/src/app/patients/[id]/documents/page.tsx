@@ -28,8 +28,8 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
     );
   }
 
-  // what the review page can actually settle: letters with undecided diagnoses (ADR 058)
-  const withOpenDiagnoses = documents.filter((d) => d.open_diagnoses > 0).length;
+  // what the review page can actually settle: undecided diagnoses (ADR 058), a report's Abilities (ADR 063)
+  const withOpenDiagnoses = documents.filter((d) => d.open_diagnoses > 0 || d.open_development > 0).length;
   const failedDocIds = documents
     .filter((d) => d.processing_status === "failed")
     .map((d) => d.id);

@@ -66,7 +66,7 @@ async def export_zip(
     docs = (await db.execute(select(DocumentReference).where(
         DocumentReference.patient_id == patient_id, DocumentReference.is_deleted == False,  # noqa: E712
         DocumentReference.storage_path != None,  # noqa: E711
-    ).order_by(DocumentReference.created_at))).scalars().all()
+    ).order_by(DocumentReference.created_at, DocumentReference.id))).scalars().all()  # same names, same order every time
     kek = await get_patient_kek(db, patient_id) if docs else None
 
     # a temp file, not memory: a record with years of scans would not fit next to five Deployments

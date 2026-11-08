@@ -35,8 +35,11 @@ async def _auth(client: AsyncClient, email: str) -> dict:
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
-async def _stored(db: AsyncSession, patient: Patient, owner: User, name: str, payload: bytes | None) -> DocumentReference:
-    d = DocumentReference(patient_id=patient.id, owner_id=owner.id, file_name=name, content_type="application/pdf")
+async def _stored(db: AsyncSession, patient: Patient, owner: User, name: str, payload: bytes | None,
+                  day: int = 1) -> DocumentReference:
+    # explicit: every test runs in one transaction, so now() would give all of them the same created_at
+    d = DocumentReference(patient_id=patient.id, owner_id=owner.id, file_name=name, content_type="application/pdf",
+                          created_at=datetime(2026, 1, day, tzinfo=UTC))
     db.add(d)
     await db.commit()
     await db.refresh(d)
@@ -57,9 +60,10 @@ async def test_the_zip_holds_the_bundle_and_every_document(client: AsyncClient, 
     db.add(PatientAccess(patient_id=patient.id, user_id=owner.id, access_level="view", granted_at=datetime.now(UTC)))
     await db.commit()
     await ensure_patient_kek(db, patient.id)
-    await _stored(db, patient, owner, "befund.pdf", b"%PDF first")
-    await _stored(db, patient, owner, "befund.pdf", b"%PDF second")
-    await _stored(db, patient, owner, "weg.pdf", None)
+    # stored in reverse: the ZIP names them by upload date, not by insert order
+    await _stored(db, patient, owner, "weg.pdf", None, day=3)
+    await _stored(db, patient, owner, "befund.pdf", b"%PDF second", day=2)
+    await _stored(db, patient, owner, "befund.pdf", b"%PDF first", day=1)
 
     assert (await client.get(f"/api/patients/{patient.id}/export/zip",
                              headers=await _auth(client, "zip_stranger@t.com"))).status_code == 404  # no grant, no hint it exists

@@ -1,5 +1,9 @@
 // Proposal Review (ADR 058): one group per condition or Correspondent, its spellings across letters.
-export type ProposalDocument = { id: string; label: string | null; file_name: string | null; issued_date: string | null };
+export type ProposalDocument = {
+  id: string; label: string | null; file_name: string | null; issued_date: string | null;
+  // ADR 063: what a therapy report says, as words of the Handout.dev namespace, and its sentence
+  labels?: string[]; quote?: string | null; date?: string | null;
+};
 type Group<S> = { record: { id: string; name: string } | null; suggested_name: string; spellings: S[] };
 
 // as the API sends them
@@ -9,7 +13,7 @@ export type DiagnosisReview = { grouped_by_model: boolean; groups: Group<Diagnos
 export type CorrespondentReview = { grouped_by_model: boolean; groups: Group<CorrespondentSpelling>[] };
 
 // as the review shows them: ids are proposal ids for a diagnosis, document ids for a Correspondent
-export type ReviewKind = "diagnosis" | "correspondent";
+export type ReviewKind = "diagnosis" | "correspondent" | "ability" | "test_attempt";
 export type Spelling = { name: string; ids: string[]; provisional: boolean; documents: ProposalDocument[] };
 export type ReviewGroup = Group<Spelling>;
 export type Review = { grouped_by_model: boolean; groups: ReviewGroup[] };

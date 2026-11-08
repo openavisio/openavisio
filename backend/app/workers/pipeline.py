@@ -79,6 +79,31 @@ async def _update_doc(doc_id: str, **kwargs):
             await db.commit()
 
 
+async def _development(client: httpx.AsyncClient, doc, plain: str, model: str | None, language: str) -> dict:
+    """ADR 063, #465: a therapy report's Abilities and Test Attempts, for the Proposal Review.
+
+    Only that class: a doctor letter retells the history, and its anamnesis is never mined.
+    A failure here costs the proposals, never the Document.
+    """
+    if doc.document_classification != "therapy_report":
+        return {}
+    from sqlalchemy import select
+    from app.core.config import settings
+    from app.core.database import AsyncSessionLocal
+    from app.models.development import Ability
+    async with AsyncSessionLocal() as db:
+        names = (await db.execute(select(Ability.name).where(
+            Ability.patient_id == doc.patient_id, Ability.is_deleted.is_(False)))).scalars().all()
+    try:
+        resp = await client.post(f"{settings.ai_service_url}/extract/development", json={
+            "text": plain, "abilities": list(names), "model": model, "language": language})
+        resp.raise_for_status()
+        return {k: resp.json().get(k) or [] for k in ("abilities", "test_attempts")}
+    except Exception as e:
+        logger.warning("Development extraction of document %s failed: %s", doc.id, e)
+        return {}
+
+
 async def _patient_kek(patient_id) -> bytes:
     from app.core.database import AsyncSessionLocal
     from app.core.patient_keys import get_patient_kek
@@ -203,6 +228,7 @@ def extraction_stage(self, doc_id: str):
                 elif resp.status_code == 200:
                     extraction = resp.json()
                     entities = extraction.get("entities") or extraction
+                    entities.update(await _development(client, doc, plain, extract_model, language))
                     issued_date = None
                     # the model's date lives inside entities, not at the response top level
                     raw_date = entities.get("document_date") or entities.get("date")

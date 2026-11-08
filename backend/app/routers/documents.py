@@ -116,11 +116,13 @@ async def list_documents(
     term = _fold(search)[1] if search else ""
     # a letter whose diagnoses became Proposals counts the open ones; before that, all it names
     from app.models.proposal import Proposal
-    proposal_rows = (await db.execute(select(Proposal.document_reference_id, Proposal.status).where(
-        Proposal.patient_id == patient_id, Proposal.kind == "diagnosis"))).all()
+    proposal_rows = (await db.execute(select(Proposal.document_reference_id, Proposal.status, Proposal.kind).where(
+        Proposal.patient_id == patient_id))).all()
     open_by_doc: dict = {}
-    for doc_id, st in proposal_rows:
-        open_by_doc[doc_id] = open_by_doc.get(doc_id, 0) + (st == "open")
+    dev_by_doc: dict = {}
+    for doc_id, st, kind in proposal_rows:
+        counts = open_by_doc if kind == "diagnosis" else dev_by_doc
+        counts[doc_id] = counts.get(doc_id, 0) + (st == "open")
     dtos = []
     for doc in docs:
         snippet = None
@@ -140,6 +142,8 @@ async def list_documents(
                 insights = build_insights(entities)
                 if insights:
                     dto.insights = DocumentInsightsDto.model_validate(insights)
+                dto.open_development = dev_by_doc[doc.id] if doc.id in dev_by_doc else sum(
+                    len(entities.get(k) or []) for k in ("abilities", "test_attempts"))
                 if doc.verification_status == "extracted":
                     dto.open_diagnoses = open_by_doc[doc.id] if doc.id in open_by_doc else sum(
                         1 for d in entities.get("diagnoses") or [] if (d.get("name") or "").strip())
@@ -659,8 +663,9 @@ async def verify_document(
             ))
 
         kept = {_norm_condition(d.get("name") or d.get("code_display") or "") for d in body.diagnoses}
+        # only diagnoses are on this form; a therapy report's Abilities stay open for the review (ADR 063)
         open_props = (await db.execute(select(Proposal).where(
-            Proposal.document_reference_id == doc_id, Proposal.status == "open"))).scalars().all()
+            Proposal.document_reference_id == doc_id, Proposal.status == "open", Proposal.kind == "diagnosis"))).scalars().all()
         if open_props:
             from datetime import UTC, datetime
             kek = await get_patient_kek(db, doc.patient_id)

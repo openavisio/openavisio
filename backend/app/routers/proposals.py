@@ -1,6 +1,7 @@
 """Proposal Review: open Proposals of all Documents, sorted by content (ADR 058).
 
-Diagnoses only so far; the other kinds still go through the per-Document verify.
+Diagnoses, and a therapy report's Abilities and Test Attempts (ADR 063); the other kinds
+still go through the per-Document verify.
 """
 
 import json
@@ -36,23 +37,31 @@ class DecideRequest(BaseModel):
     condition_id: uuid.UUID | None = None  # attach to this record entry
 
 
-async def ensure_diagnosis_proposals(db: AsyncSession, patient_id: uuid.UUID, kek) -> None:
-    """One Proposal per extracted diagnosis of every unverified Document, made once."""
-    # ponytail: decrypts every unverified Document without diagnoses on each open, cheap at hundreds
-    have = select(Proposal.document_reference_id).where(Proposal.kind == "diagnosis")
-    docs = (await db.execute(select(DocumentReference).where(
-        DocumentReference.patient_id == patient_id, DocumentReference.is_deleted == False,  # noqa: E712
-        DocumentReference.verification_status == "extracted", DocumentReference.extraction_json.isnot(None),
-        DocumentReference.id.not_in(have),
-    ))).scalars().all()
-    for doc in docs:
+# kind -> (extraction_json key, the field that names it)
+KINDS = {"diagnosis": ("diagnoses", "name"), "ability": ("abilities", "name"), "test_attempt": ("test_attempts", "test_name")}
+
+
+async def ensure_proposals(db: AsyncSession, patient_id: uuid.UUID, kek, kind: str = "diagnosis") -> None:
+    """One Proposal per extracted entry of the kind, made once per Document."""
+    key, field = KINDS[kind]
+    # ponytail: decrypts every Document without such Proposals on each open, cheap at hundreds
+    have = select(Proposal.document_reference_id).where(Proposal.kind == kind)
+    where = [DocumentReference.patient_id == patient_id, DocumentReference.is_deleted == False,  # noqa: E712
+             DocumentReference.extraction_json.isnot(None), DocumentReference.id.not_in(have)]
+    if kind == "diagnosis":  # a verified letter decided its diagnoses on its own form
+        where.append(DocumentReference.verification_status == "extracted")
+    for doc in (await db.execute(select(DocumentReference).where(*where))).scalars().all():
         ej = doc.extraction_json
         ej = json.loads(decrypt_str(ej, kek) or "{}") if isinstance(ej, str) else ej
-        for i, dx in enumerate(ej.get("diagnoses") or []):
-            if (dx.get("name") or "").strip():
-                db.add(Proposal(patient_id=patient_id, document_reference_id=doc.id, kind="diagnosis", index=i,
-                                payload=encrypt_str(json.dumps(dx), kek)))
+        for i, entry in enumerate(ej.get(key) or []):
+            if (entry.get(field) or "").strip():
+                db.add(Proposal(patient_id=patient_id, document_reference_id=doc.id, kind=kind, index=i,
+                                payload=encrypt_str(json.dumps(entry), kek)))
     await db.commit()
+
+
+async def ensure_diagnosis_proposals(db: AsyncSession, patient_id: uuid.UUID, kek) -> None:
+    await ensure_proposals(db, patient_id, kek, "diagnosis")
 
 
 async def _group(names: list[str], record: list[str], db: AsyncSession, kind: str = "diagnosis") -> list[list[str]] | None:
@@ -346,4 +355,158 @@ async def decide_correspondents(patient_id: uuid.UUID, body: CorrespondentDecide
         corr.name = name  # renaming is offered, the existing name preselected
     for d in docs:
         d.correspondent_id = corr.id
+    await db.commit()
+
+
+# --- Abilities and Test Attempts from therapy reports (ADR 063, #465) ---------
+
+def _doc_dto(d: DocumentReference, **extra) -> dict:
+    return {"id": str(d.id), "label": d.detected_provider or d.file_name, "file_name": d.file_name,
+            "issued_date": d.issued_date.isoformat() if d.issued_date else None, **extra}
+
+
+async def _open(db: AsyncSession, patient_id: uuid.UUID, kek, kind: str) -> list[tuple]:
+    await ensure_proposals(db, patient_id, kek, kind)
+    rows = (await db.execute(
+        select(Proposal, DocumentReference).join(DocumentReference, DocumentReference.id == Proposal.document_reference_id)
+        .where(Proposal.patient_id == patient_id, Proposal.kind == kind, Proposal.status == "open",
+               DocumentReference.is_deleted == False)  # noqa: E712
+    )).all()
+    return [(p, d, json.loads(decrypt_str(p.payload, kek))) for p, d in rows]
+
+
+@router.get("/patients/{patient_id}/proposals/abilities")
+async def ability_groups(patient_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """What therapy reports say the child can do now, grouped by ability like diagnoses (ADR 058, 063)."""
+    from app.models.development import Ability
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    kek = await get_patient_kek(db, patient_id)
+    spellings: dict[str, list] = {}
+    for p, d, a in await _open(db, patient_id, kek, "ability"):
+        spellings.setdefault(a["name"].strip(), []).append((p, d, a))
+    if not spellings:
+        return {"grouped_by_model": True, "groups": []}
+    record = {a.name: a for a in (await db.execute(select(Ability).where(
+        Ability.patient_id == patient_id, Ability.is_deleted.is_(False)))).scalars()}
+    groups, by_model = await stored_groups(db, patient_id, kek, "ability", set(spellings), set(record))
+    out = []
+    for g in groups:
+        if not any(n in spellings for n in g):
+            continue
+        entry = next((record[n] for n in g if n in record), None)
+        newest = max((m for n in g for m in spellings.get(n, [])), key=lambda m: (m[1].issued_date is not None, m[1].issued_date))
+        out.append({
+            "record": {"id": str(entry.id), "name": entry.name} if entry else None,
+            "suggested_name": entry.name if entry else newest[2]["name"].strip(),
+            "spellings": [{
+                "name": n, "proposal_ids": [str(p.id) for p, _, _ in spellings[n]], "provisional": False,
+                "documents": [_doc_dto(d, quote=a["quote"], labels=[
+                    "works" if a["works"] else "fails", "with_help" if a.get("with_help") else "alone", *filter(None, [a.get("place")])])
+                    for _, d, a in spellings[n]],
+            } for n in g if n in spellings],
+        })
+    out.sort(key=lambda g: -sum(len(s["proposal_ids"]) for s in g["spellings"]))
+    return {"grouped_by_model": by_model, "groups": out}
+
+
+@router.get("/patients/{patient_id}/proposals/test-attempts")
+async def test_attempt_proposals(patient_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """One card per test a report says was tried; never a score (ADR 063)."""
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    kek = await get_patient_kek(db, patient_id)
+    return {"grouped_by_model": True, "groups": [{
+        "record": None, "suggested_name": t["test_name"],
+        "spellings": [{"name": t["test_name"], "proposal_ids": [str(p.id)], "provisional": False,
+                       "documents": [_doc_dto(d, quote=t.get("reason"), labels=[t["outcome"]], date=t.get("date"))]}],
+    } for p, d, t in await _open(db, patient_id, kek, "test_attempt")]}
+
+
+class DevelopmentDecideRequest(BaseModel):
+    proposal_ids: list[uuid.UUID]
+    accept: bool
+    name: str | None = None              # the Ability or test name to keep
+    ability_id: uuid.UUID | None = None  # attach to this Ability
+
+
+async def _decide(db: AsyncSession, patient_id: uuid.UUID, user: User, body: DevelopmentDecideRequest, kind: str):
+    props = (await db.execute(select(Proposal).where(
+        Proposal.id.in_(body.proposal_ids), Proposal.patient_id == patient_id,
+        Proposal.kind == kind, Proposal.status == "open"))).scalars().all()
+    if not props or len(props) != len(set(body.proposal_ids)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Proposal not open")
+    kek = await get_patient_kek(db, patient_id)
+    docs = {d.id: d for d in (await db.execute(select(DocumentReference).where(
+        DocumentReference.id.in_({p.document_reference_id for p in props})))).scalars()}
+    return props, kek, docs
+
+
+def _close(props, user: User, accept: bool, record_ids: list) -> None:
+    now = datetime.now(UTC)
+    for p, rid in zip(props, record_ids):
+        p.status, p.decided_at, p.decided_by, p.record_id = ("accepted" if accept else "rejected"), now, user.id, rid
+
+
+@router.post("/patients/{patient_id}/proposals/abilities/decide", status_code=status.HTTP_204_NO_CONTENT)
+async def decide_abilities(patient_id: uuid.UUID, body: DevelopmentDecideRequest, user: User = Depends(get_current_user),
+                           db: AsyncSession = Depends(get_db)):
+    """Accepted: one Observation per report, dated to it, citing it (ADR 063)."""
+    from app.models.development import Ability, AbilityObservation
+    from app.routers.development import _ability_named, _audit
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    props, kek, docs = await _decide(db, patient_id, user, body, "ability")
+    if not body.accept:
+        _close(props, user, False, [None] * len(props))
+        await db.commit()
+        return
+    mentions = [(json.loads(decrypt_str(p.payload, kek)), docs[p.document_reference_id]) for p in props]
+    name = " ".join((body.name or mentions[-1][0]["name"]).split())[:256]
+    ability = None
+    if body.ability_id:
+        ability = (await db.execute(select(Ability).where(
+            Ability.id == body.ability_id, Ability.patient_id == patient_id, Ability.is_deleted.is_(False)))).scalar_one_or_none()
+        if ability is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    ability = ability or await _ability_named(patient_id, name, db)
+    if ability is None:
+        ability = Ability(patient_id=patient_id, owner_id=user.id, name=name,
+                          domain=next((a.get("domain") for a, _ in mentions if a.get("domain")), None))
+        db.add(ability)
+        await db.flush()
+    ids = []
+    for a, d in mentions:
+        obs = AbilityObservation(patient_id=patient_id, owner_id=user.id, ability_id=ability.id,
+                                 observed_on=(d.issued_date or d.created_at.date()).isoformat(), place=a.get("place"),
+                                 works=a["works"], with_help=bool(a.get("with_help")), note=a["quote"],
+                                 source="document", document_id=d.id)
+        db.add(obs)
+        await db.flush()
+        _audit(db, user, "created", "AbilityObservation", obs.id, {"source": "document", "document_id": str(d.id)})
+        ids.append(obs.id)
+    _close(props, user, True, ids)
+    await db.commit()
+
+
+@router.post("/patients/{patient_id}/proposals/test-attempts/decide", status_code=status.HTTP_204_NO_CONTENT)
+async def decide_test_attempts(patient_id: uuid.UUID, body: DevelopmentDecideRequest, user: User = Depends(get_current_user),
+                               db: AsyncSession = Depends(get_db)):
+    """Accepted: a Test Attempt with the report linked and its sender as who ran it; no score (ADR 063)."""
+    from app.models.development import TestAttempt
+    from app.routers.development import _audit
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    props, kek, docs = await _decide(db, patient_id, user, body, "test_attempt")
+    ids = []
+    for p in props:
+        if not body.accept:
+            ids.append(None)
+            continue
+        t, d = json.loads(decrypt_str(p.payload, kek)), docs[p.document_reference_id]
+        row = TestAttempt(patient_id=patient_id, owner_id=user.id,
+                          test_name=" ".join((body.name or t["test_name"]).split())[:256],
+                          attempted_on=t.get("date") or (d.issued_date or d.created_at.date()).isoformat(),
+                          correspondent_id=d.correspondent_id, outcome=t["outcome"], reason=t.get("reason"), document_id=d.id)
+        db.add(row)
+        await db.flush()
+        _audit(db, user, "created", "TestAttempt", row.id, {"source": "document", "document_id": str(d.id)})
+        ids.append(row.id)
+    _close(props, user, body.accept, ids)
     await db.commit()

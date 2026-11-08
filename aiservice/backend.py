@@ -388,6 +388,14 @@ class MockBackend(InferenceBackend):
                 {"text": "Is your child's development age-appropriate?", "section": None, "kind": "judgement", "aging": "changeable"},
                 {"text": "Reason for this visit", "section": None, "kind": "fact", "aging": "visit_only"},
             ]})
+        if "# Development from a therapy report" in last_msg:
+            import json as _json
+            report = last_msg.split("--- REPORT ---", 1)[-1].split("--- END ---", 1)[0].strip()
+            first = next((line.strip() for line in report.splitlines() if line.strip()), "")
+            return _json.dumps({"abilities": [{"name": "Mit dem Löffel essen", "works": True, "with_help": False,
+                                               "place": "therapy", "domain": "daily_living", "quote": first}],
+                                "test_attempts": [{"test_name": "SON-R 2-8", "date": None, "outcome": "stopped",
+                                                   "reason": "Konzentration", "quote": first}]})
         if "# Intake Form answers" in last_msg:
             import json as _json
             return _json.dumps({"answers": []})

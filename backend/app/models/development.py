@@ -60,6 +60,12 @@ class AbilityObservation(OwnedResource):
 
     ability: Mapped[Ability] = relationship(Ability, lazy="joined")
     owner: Mapped["User"] = relationship("User", lazy="joined")  # noqa: F821
+    document: Mapped["DocumentReference | None"] = relationship("DocumentReference", lazy="joined")  # noqa: F821
+
+    def sender(self) -> str | None:
+        """Who wrote the report it came from, so "at home, not at the SPZ" stays visible (#465)."""
+        d = self.document
+        return (d.correspondent.name if d.correspondent else d.detected_provider or d.file_name) if d else None
 
 
 class TestAttempt(OwnedResource):

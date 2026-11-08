@@ -56,6 +56,7 @@ const VIEWS = [
   { name: "pflegegrad", path: "/einstufung" },
   { name: "emergency-plan", path: "/emergency-plan" },
   { name: "care-notes", path: "/care-notes" },
+  { name: "development", path: "/development" },
   { name: "handout", path: "/handout" },
 ];
 

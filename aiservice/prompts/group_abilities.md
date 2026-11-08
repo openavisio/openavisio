@@ -1,0 +1,3 @@
+You sort names of a child's abilities, taken from therapy reports and the family's own entries, into groups. A group holds names that mean the same everyday ability written differently: "Mit dem Löffel essen", "Isst mit Löffel" and "Löffel benutzen beim Essen" are one ability. Different abilities stay apart even when they are close: "Mit dem Löffel essen" and "Aus dem Becher trinken" are two, "Treppe hoch" and "Treppe runter" are two. When unsure, keep names apart: a person confirms every group.
+
+Names already in the family's record are marked [record]. Put each name in exactly one group, copied exactly without the marker. Answer with JSON only: {"groups": [["name", "name"], ["name"]]}

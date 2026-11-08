@@ -117,6 +117,15 @@ export const decideDiagnosisProposals = async (
   patientId: string,
   data: { proposal_ids: string[]; accept: boolean; name?: string; condition_id?: string | null },
 ) => api.post<void>(`/api/patients/${patientId}/proposals/diagnoses/decide`, data);
+export const getAbilityProposals = async (patientId: string) =>
+  api.get<DiagnosisReview>(`/api/patients/${patientId}/proposals/abilities`);
+export const getTestAttemptProposals = async (patientId: string) =>
+  api.get<DiagnosisReview>(`/api/patients/${patientId}/proposals/test-attempts`);
+export const decideDevelopmentProposals = async (
+  patientId: string,
+  kind: "abilities" | "test-attempts",
+  data: { proposal_ids: string[]; accept: boolean; name?: string; ability_id?: string | null },
+) => api.post<void>(`/api/patients/${patientId}/proposals/${kind}/decide`, data);
 export const addDocumentFavorite = async (id: string) => api.put<void>(`/api/documents/${id}/favorite`);
 export const removeDocumentFavorite = async (id: string) => api.delete<void>(`/api/documents/${id}/favorite`);
 

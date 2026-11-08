@@ -19,6 +19,7 @@ from extraction import _load_prompt, extract_entities_from_text
 from ocr import ocr_pdf, ocr_image
 from vision_ocr import vision_ocr
 from classification import classify_document
+from development import read_development
 from intake import answer_questions, read_questions
 from backend import ContextOverflow, get_backend, get_embed_backend, get_model, get_num_ctx, get_ollama_url, get_vision_backend
 
@@ -44,7 +45,8 @@ def _annotate_model(name: str, annotations: list[dict]) -> dict:
 _CHAT_SYSTEM_PROMPT = _load_prompt("chat_system.md")
 # German on purpose: the threshold was measured with exactly this text (ADR 059)
 _EMERGENCY_PROMPT = _load_prompt("emergency.md")
-_GROUP_PROMPTS = {"diagnosis": _load_prompt("group_diagnoses.md"), "correspondent": _load_prompt("group_correspondents.md")}
+_GROUP_PROMPTS = {"diagnosis": _load_prompt("group_diagnoses.md"), "correspondent": _load_prompt("group_correspondents.md"),
+                  "ability": _load_prompt("group_abilities.md")}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -198,6 +200,25 @@ async def extract_entities_endpoint(request: ExtractEntitiesRequest):
     except Exception as e:
         logger.exception("Entity extraction failed")
         return ExtractEntitiesResult(error=str(e), confidence=0.0)
+
+
+class DevelopmentRequest(BaseModel):
+    text: str
+    abilities: list[str] = []
+    model: Optional[str] = None
+    language: str = "en"
+
+
+@app.post("/extract/development")
+async def development_endpoint(request: DevelopmentRequest):
+    """Abilities and Test Attempts a therapy report states, each backed by a quote (ADR 063, #465)."""
+    try:
+        return await asyncio.to_thread(read_development, request.text, request.model, request.language, request.abilities)
+    except RateLimitError:
+        raise
+    except Exception as e:
+        logger.exception("Development extraction failed")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 class IntakeQuestionsRequest(BaseModel):
@@ -550,7 +571,7 @@ class GroupRequest(BaseModel):
     names: list[str]
     record: list[str] = []
     model: Optional[str] = None
-    kind: str = "diagnosis"  # or "correspondent"
+    kind: str = "diagnosis"  # or "correspondent", "ability"
 
 
 def _clean_groups(raw: str, names: list[str]) -> list[list[str]]:

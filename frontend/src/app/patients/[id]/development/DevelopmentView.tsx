@@ -202,6 +202,11 @@ export function DevelopmentView({ patientId, birthDate, abilities, attempts, cor
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-2">{pill(o)}<span className="text-muted-foreground">{obsMeta(o)}</span></div>
                                 {o.note && <div className="mt-0.5 whitespace-pre-line">{o.note}</div>}
+                                {o.document_id && (
+                                  <Link href={`/patients/${patientId}/documents/${o.document_id}`} className="inline-flex items-center gap-1 text-xs underline">
+                                    <FileText className="size-3" />{t("OpenReport")}
+                                  </Link>
+                                )}
                                 <div className="text-xs text-muted-foreground">{t("EnteredBy", { name: o.entered_by })}</div>
                               </div>
                               {o.can_edit && (

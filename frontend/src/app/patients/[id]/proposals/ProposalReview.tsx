@@ -4,14 +4,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Check, ChevronDown, ChevronRight, Pencil } from "lucide-react";
-import { decideCorrespondentProposals, decideDiagnosisProposals } from "@/lib/api";
+import { decideCorrespondentProposals, decideDevelopmentProposals, decideDiagnosisProposals } from "@/lib/api";
 import type { Review, ReviewGroup, ReviewKind, Spelling } from "@/lib/proposals";
 import { formatDate } from "@/lib/utils";
 
 const keyOf = (g: ReviewGroup) => g.spellings.map((s) => s.ids[0]).join();
 
-export function ProposalReview({ patientId, correspondents, diagnoses }: {
-  patientId: string; correspondents: Review | null; diagnoses: Review | null;
+const HEADINGS: Record<ReviewKind, string> = {
+  correspondent: "Correspondents", diagnosis: "Diagnoses", ability: "Abilities", test_attempt: "TestAttempts",
+};
+const PREFIX: Record<ReviewKind, string> = { correspondent: "Correspondent", diagnosis: "", ability: "Ability", test_attempt: "TestAttempt" };
+
+export function ProposalReview({ patientId, correspondents, diagnoses, abilities, tests }: {
+  patientId: string; correspondents: Review | null; diagnoses: Review | null; abilities?: Review | null; tests?: Review | null;
 }) {
   const t = useTranslations("ProposalReview");
   return (
@@ -22,6 +27,9 @@ export function ProposalReview({ patientId, correspondents, diagnoses }: {
       </div>
       {correspondents && <Section kind="correspondent" patientId={patientId} review={correspondents} />}
       {diagnoses && <Section kind="diagnosis" patientId={patientId} review={diagnoses} />}
+      {/* ADR 063: only when a therapy report proposed something; most families get none */}
+      {!!abilities?.groups.length && <Section kind="ability" patientId={patientId} review={abilities} />}
+      {!!tests?.groups.length && <Section kind="test_attempt" patientId={patientId} review={tests} />}
     </div>
   );
 }
@@ -43,8 +51,8 @@ function Section({ kind, patientId, review }: { kind: ReviewKind; patientId: str
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="font-semibold">{t(kind === "correspondent" ? "Correspondents" : "Diagnoses")}</h2>
-        {kind === "correspondent" && <p className="text-sm text-muted-foreground">{t("CorrespondentsIntro")}</p>}
+        <h2 className="font-semibold">{t(HEADINGS[kind])}</h2>
+        {kind !== "diagnosis" && <p className="text-sm text-muted-foreground">{t(`${HEADINGS[kind]}Intro`)}</p>}
       </div>
       {!review.grouped_by_model && (
         <p className="rounded-lg bg-amber-500/10 px-4 py-3 text-sm">{t("NotGrouped")}</p>
@@ -77,7 +85,9 @@ function GroupCard({ kind, patientId, group, onSplit, onLater }: {
   const suspected = group.spellings.every((s) => s.provisional);
   const quoted = `„${name}“`;
   const renamed = !!group.record && name.trim() !== group.record.name;
-  const prefix = kind === "correspondent" ? "Correspondent" : "";
+  const prefix = PREFIX[kind];
+  // an Ability already in the record keeps its name here; it is renamed on the Development page
+  const renameable = !(kind === "ability" && group.record);
 
   function decide(accept: boolean) {
     setError(null);
@@ -86,6 +96,9 @@ function GroupCard({ kind, patientId, group, onSplit, onLater }: {
         const ids = group.spellings.flatMap((s) => s.ids);
         if (kind === "correspondent") {
           await decideCorrespondentProposals(patientId, { document_ids: ids, name, correspondent_id: group.record?.id ?? null });
+        } else if (kind !== "diagnosis") {
+          await decideDevelopmentProposals(patientId, kind === "ability" ? "abilities" : "test-attempts",
+                                           { proposal_ids: ids, accept, name, ability_id: group.record?.id ?? null });
         } else {
           await decideDiagnosisProposals(patientId, { proposal_ids: ids, accept, name, condition_id: group.record?.id ?? null });
         }
@@ -129,10 +142,12 @@ function GroupCard({ kind, patientId, group, onSplit, onLater }: {
         ) : (
           <div className="flex items-start gap-2">
             <h3 className="flex-1 text-lg font-semibold leading-snug">{name}</h3>
-            <button onClick={() => setEditing(true)} aria-label={t("Name")} title={t("Name")}
-                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
-              <Pencil className="size-4" />
-            </button>
+            {renameable && (
+              <button onClick={() => setEditing(true)} aria-label={t("Name")} title={t("Name")}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+                <Pencil className="size-4" />
+              </button>
+            )}
           </div>
         )}
         <p className="text-xs text-muted-foreground">{t(`${prefix}${group.record ? "InRecord" : "New"}`)}</p>
@@ -157,7 +172,7 @@ function GroupCard({ kind, patientId, group, onSplit, onLater }: {
                 className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50">
           {group.record ? t("Confirm") : t(`${prefix}YesAdd`)}
         </button>
-        {!group.record && kind === "diagnosis" && (
+        {!group.record && kind !== "correspondent" && (
           <button onClick={() => decide(false)} disabled={pending || editing}
                   className="rounded-md border px-3 py-1.5 text-sm disabled:opacity-50">
             {t("NoNotInRecord")}
@@ -179,7 +194,9 @@ function GroupCard({ kind, patientId, group, onSplit, onLater }: {
 
 function SpellingRow({ patientId, spelling: s, onSplit }: { patientId: string; spelling: Spelling; onSplit?: () => void }) {
   const t = useTranslations("ProposalReview");
-  const [open, setOpen] = useState(false);
+  const td = useTranslations("Handout.dev");
+  // a report's sentence is the point of an Ability card, so it starts open
+  const [open, setOpen] = useState(s.documents.some((d) => d.labels));
   const docs = [...s.documents].sort((a, b) => (b.issued_date ?? "").localeCompare(a.issued_date ?? ""));
   return (
     <li className="px-3 py-2 text-sm">
@@ -190,7 +207,7 @@ function SpellingRow({ patientId, spelling: s, onSplit }: { patientId: string; s
             {s.name}
             {s.provisional && <span className="ml-2 rounded bg-muted px-1.5 text-xs">{t("Suspected")}</span>}
           </span>
-          <span className="shrink-0 text-xs text-muted-foreground">{t("Letters", { count: s.documents.length })}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">{t("Letters", { count: new Set(s.documents.map((d) => d.id)).size })}</span>
         </button>
         {onSplit && (
           <button onClick={onSplit} className="shrink-0 text-xs text-primary hover:underline">{t("NotPart")}</button>
@@ -204,6 +221,8 @@ function SpellingRow({ patientId, spelling: s, onSplit }: { patientId: string; s
                 {d.issued_date ? formatDate(d.issued_date) : t("NoDate")} · {d.label}
               </a>
               {!d.issued_date && d.file_name && <span className="text-muted-foreground"> · {d.file_name}</span>}
+              {!!d.labels?.length && <span className="text-muted-foreground"> · {d.labels.map((l) => td(l)).join(", ")}</span>}
+              {d.quote && <p className="mt-0.5 italic text-muted-foreground">„{d.quote}“</p>}
             </li>
           ))}
         </ul>

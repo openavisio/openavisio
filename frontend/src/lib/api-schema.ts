@@ -629,6 +629,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/patients/{patient_id}/proposals/abilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ability Groups
+         * @description What therapy reports say the child can do now, grouped by ability like diagnoses (ADR 058, 063).
+         */
+        get: operations["ability_groups_api_patients__patient_id__proposals_abilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/patients/{patient_id}/proposals/test-attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Test Attempt Proposals
+         * @description One card per test a report says was tried; never a score (ADR 063).
+         */
+        get: operations["test_attempt_proposals_api_patients__patient_id__proposals_test_attempts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/patients/{patient_id}/proposals/abilities/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide Abilities
+         * @description Accepted: one Observation per report, dated to it, citing it (ADR 063).
+         */
+        post: operations["decide_abilities_api_patients__patient_id__proposals_abilities_decide_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/patients/{patient_id}/proposals/test-attempts/decide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decide Test Attempts
+         * @description Accepted: a Test Attempt with the report linked and its sender as who ran it; no score (ADR 063).
+         */
+        post: operations["decide_test_attempts_api_patients__patient_id__proposals_test_attempts_decide_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/patients/{patient_id}/incidents": {
         parameters: {
             query?: never;
@@ -3549,6 +3629,17 @@ export interface components {
             /** Condition Id */
             condition_id?: string | null;
         };
+        /** DevelopmentDecideRequest */
+        DevelopmentDecideRequest: {
+            /** Proposal Ids */
+            proposal_ids: string[];
+            /** Accept */
+            accept: boolean;
+            /** Name */
+            name?: string | null;
+            /** Ability Id */
+            ability_id?: string | null;
+        };
         /** DiaryEntryCreateRequest */
         DiaryEntryCreateRequest: {
             /** Entry Date */
@@ -3812,6 +3903,11 @@ export interface components {
              * @default 0
              */
             open_diagnoses: number;
+            /**
+             * Open Development
+             * @default 0
+             */
+            open_development: number;
             /**
              * Created At
              * Format: date-time
@@ -7239,6 +7335,134 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CorrespondentDecideRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ability_groups_api_patients__patient_id__proposals_abilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_attempt_proposals_api_patients__patient_id__proposals_test_attempts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_abilities_api_patients__patient_id__proposals_abilities_decide_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevelopmentDecideRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_test_attempts_api_patients__patient_id__proposals_test_attempts_decide_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevelopmentDecideRequest"];
             };
         };
         responses: {

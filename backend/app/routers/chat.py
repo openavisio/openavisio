@@ -262,7 +262,7 @@ async def _structured_context(
         lines.append(_line(
             L["ability"], o.observed_on, a.name, D["no_longer" if lapsed else "works" if o.works else "fails"],
             D["with_help" if o.with_help else "alone"], D.get(o.place or ""), D.get(a.domain or ""),
-            D.get(o.source), o.note,
+            " ".join(filter(None, [D.get(o.source), o.sender()])) or None, o.note,
         ))
     months.update(o.observed_on[:7] for o, _, _ in observed[:OBSERVATION_LIMIT])
     if len(observed) > OBSERVATION_LIMIT:

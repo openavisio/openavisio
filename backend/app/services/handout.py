@@ -157,7 +157,8 @@ async def build(patient_id: uuid.UUID, variant: str, db: AsyncSession) -> dict:
     observed = []
     for a in await rows(Ability):
         lapsed = no_longer(a.observations)
-        observed += [_entry(f"ability_observation:{o.id}", a.name, o.note, o.observed_on, labels=filter(None, [
+        observed += [_entry(f"ability_observation:{o.id}", a.name, ": ".join(filter(None, [o.sender(), o.note])) or None,
+                            o.observed_on, labels=filter(None, [
             "no_longer" if o.id in lapsed else "works" if o.works else "fails", "with_help" if o.with_help else "alone",
             o.place, o.source if o.source != "family" else None]))
             for o in a.observations if o.document_id is None or o.document_id in verified]
